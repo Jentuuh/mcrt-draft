@@ -35,13 +35,6 @@ namespace mcrt {
         glfwMakeContextCurrent(handle);
         glfwSwapInterval(1);
     }
-    void GLFWindow::draw() {}
-    void GLFWindow::render() {}
-    void GLFWindow::resize(const glm::uvec2& newSize) {}
-    void GLFWindow::key(int key, int mods) {}
-    void GLFWindow::mouseMotion(const glm::uvec2& newPos) {}
-    void GLFWindow::mouseButton(int button, int action, int mods) {}
-    glm::uvec2 GLFWindow::getMousePos() const {}
 
     /*! callback for a window resizing event */
     static void glfwindow_reshape_cb(GLFWwindow* window, int width, int height)
@@ -49,8 +42,6 @@ namespace mcrt {
         GLFWindow* gw = static_cast<GLFWindow*>(glfwGetWindowUserPointer(window));
         assert(gw);
         gw->resize(glm::ivec2(width, height));
-        // assert(GLFWindow::current);
-        //   GLFWindow::current->resize(vec2i(width,height));
     }
 
     /*! callback for a key press */
@@ -76,8 +67,6 @@ namespace mcrt {
     {
         GLFWindow* gw = static_cast<GLFWindow*>(glfwGetWindowUserPointer(window));
         assert(gw);
-        // double x, y;
-        // glfwGetCursorPos(window,&x,&y);
         gw->mouseButton(button, action, mods);
     }
 

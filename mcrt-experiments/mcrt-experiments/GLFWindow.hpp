@@ -19,22 +19,26 @@
 */
 
 namespace mcrt {
-	class GLFWindow
+	struct GLFWindow
 	{
-	public:
 		GLFWindow(const std::string& title);
 		~GLFWindow();
 
-		virtual void draw();
-		virtual void resize(const glm::uvec2& newSize);	// resize callback
+		virtual void draw() {}
+		virtual void resize(const glm::ivec2& newSize) {}	// resize callback
 		
 		// io
-		virtual void key(int key, int mods);
-		virtual void mouseMotion(const glm::uvec2& newPos);
-		virtual void mouseButton(int button, int action, int mods);
-		glm::uvec2 getMousePos() const;
+		virtual void key(int key, int mods) {}
+		virtual void mouseMotion(const glm::uvec2& newPos) {}
+		virtual void mouseButton(int button, int action, int mods) {}
+		glm::uvec2 getMousePos() const
+		{
+			double x, y;
+			glfwGetCursorPos(handle, &x, &y);
+			return glm::ivec2((int)x, (int)y);
+		}
 
-		virtual void render();
+		virtual void render() {}
 		void run();
 
 		GLFWwindow* handle = nullptr;

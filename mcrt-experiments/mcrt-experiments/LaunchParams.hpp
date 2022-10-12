@@ -7,6 +7,6 @@ namespace mcrt {
 	{
 		int frameID{ 0 };
 		uint32_t* colorBuffer;
-		glm::uvec2 fbSize;
+		glm::ivec2 fbSize;
 	};
 }

@@ -13,7 +13,7 @@ namespace mcrt {
 
 		void render();
 
-		void resize(const glm::uvec2& newSize);
+		void resize(const glm::ivec2& newSize);
 
 		// Download rendered color buffer from device
 		void downloadPixels(uint32_t h_pixels[]);

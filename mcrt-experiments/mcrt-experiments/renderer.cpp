@@ -368,7 +368,7 @@ namespace mcrt {
         CUDA_SYNC_CHECK();
     }
 
-    void Renderer::resize(const glm::uvec2& newSize)
+    void Renderer::resize(const glm::ivec2& newSize)
     {
         // If window minimized
         if (newSize.x == 0 | newSize.y == 0) return;

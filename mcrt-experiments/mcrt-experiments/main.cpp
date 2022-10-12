@@ -1,8 +1,10 @@
 #include "renderer.hpp"
-#include "GLFWindow.hpp"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
+
+#include "GLFWindow.hpp"
+#include <GL/gl.h>
 // std
 #include <iostream>
 
@@ -12,7 +14,8 @@ namespace mcrt {
     {
         MCRTWindow(const std::string& title)
             : GLFWindow(title)
-        {}
+        {        
+        }
 
         virtual void render() override
         {
@@ -21,7 +24,51 @@ namespace mcrt {
 
         virtual void draw() override
         {
-            std::cout << "Test" << std::endl;
+            sample.downloadPixels(pixels.data());
+
+            if (fbTexture == 0)
+                glGenTextures(1, &fbTexture);
+
+            glBindTexture(GL_TEXTURE_2D, fbTexture);
+            GLenum texFormat = GL_RGBA;
+            GLenum texelType = GL_UNSIGNED_BYTE;
+            glTexImage2D(GL_TEXTURE_2D, 0, texFormat, fbSize.x, fbSize.y, 0, GL_RGBA,
+                texelType, pixels.data());
+
+            glDisable(GL_LIGHTING);
+            glColor3f(1, 1, 1);
+
+            glMatrixMode(GL_MODELVIEW);
+            glLoadIdentity();
+
+            glEnable(GL_TEXTURE_2D);
+            glBindTexture(GL_TEXTURE_2D, fbTexture);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+            glDisable(GL_DEPTH_TEST);
+
+            glViewport(0, 0, fbSize.x, fbSize.y);
+
+            glMatrixMode(GL_PROJECTION);
+            glLoadIdentity();
+            glOrtho(0.f, (float)fbSize.x, 0.f, (float)fbSize.y, -1.f, 1.f);
+
+            glBegin(GL_QUADS);
+            {
+                glTexCoord2f(0.f, 0.f);
+                glVertex3f(0.f, 0.f, 0.f);
+
+                glTexCoord2f(0.f, 1.f);
+                glVertex3f(0.f, (float)fbSize.y, 0.f);
+
+                glTexCoord2f(1.f, 1.f);
+                glVertex3f((float)fbSize.x, (float)fbSize.y, 0.f);
+
+                glTexCoord2f(1.f, 0.f);
+                glVertex3f((float)fbSize.x, 0.f, 0.f);
+            }
+            glEnd();
         }
 
         virtual void resize(const glm::ivec2& newSize)
@@ -33,7 +80,7 @@ namespace mcrt {
 
 
         glm::ivec2                  fbSize;
-        //GLuint                  fbTexture{ 0 };
+        GLuint                      fbTexture{ 0 };
         Renderer                    sample;
         std::vector<uint32_t>       pixels;
     };
@@ -41,25 +88,7 @@ namespace mcrt {
 	// Main entry point
 	extern "C" int main(int argc, char* argv[]) {
         try {
-            //Renderer sample;
-
-            //// Resize framebuffer
-            //const glm::vec2 fbSize{ 1200, 1024 };
-            //sample.resize(fbSize);
-            //sample.render();
-
-            //// Download framebuffer from device
-            //std::vector<uint32_t> pixels(fbSize.x * fbSize.y);
-            //sample.downloadPixels(pixels.data());
-
-            //// Save framebuffer image to file
-            //const std::string fileName = "mcrt_test.png";
-            //stbi_write_png(fileName.c_str(), fbSize.x, fbSize.y, 4,
-            //    pixels.data(), fbSize.x * sizeof(uint32_t));
-            //std::cout << std::endl
-            //    << "Image rendered, and saved to " << fileName << " ... done." << std::endl
-            //    << std::endl;
-            MCRTWindow* window = new MCRTWindow("Optix 7 Course Example");
+            MCRTWindow* window = new MCRTWindow("Memory Coherent Ray Tracing");
             window->run();
         }
         catch (std::runtime_error& e) {

@@ -70,10 +70,11 @@ namespace mcrt {
         // compute a test pattern based on pixel ID
         const int ix = optixGetLaunchIndex().x;
         const int iy = optixGetLaunchIndex().y;
+        const int fID = optixLaunchParams.frameID;
 
-        const int r = (ix % 256);
-        const int g = (iy % 256);
-        const int b = ((ix + iy) % 256);
+        const int r = (fID  + ix % 256);
+        const int g = (fID  + iy % 256);
+        const int b = (fID  + (ix + iy) % 256);
 
         // convert to 32-bit rgba value (we explicitly set alpha to 0xff
         // to make stb_image_write happy ...

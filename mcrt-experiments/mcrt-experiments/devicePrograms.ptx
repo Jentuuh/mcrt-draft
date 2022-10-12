@@ -60,7 +60,7 @@
 	.reg .b64 	%SP;
 	.reg .b64 	%SPL;
 	.reg .pred 	%p<4>;
-	.reg .b32 	%r<39>;
+	.reg .b32 	%r<42>;
 	.reg .b64 	%rd<12>;
 	.loc	1 50 0
 
@@ -159,45 +159,48 @@ $L__BB3_4:
 	// begin inline asm
 	call (%r19), _optix_get_launch_index_y, ();
 	// end inline asm
-	.loc	1 74 21
+	.loc	1 75 21
 	shr.s32 	%r21, %r15, 31;
 	shr.u32 	%r22, %r21, 24;
 	add.s32 	%r23, %r15, %r22;
 	and.b32  	%r24, %r23, 16776960;
 	sub.s32 	%r25, %r15, %r24;
-	.loc	1 75 21
-	shr.s32 	%r26, %r19, 31;
-	shr.u32 	%r27, %r26, 24;
-	add.s32 	%r28, %r19, %r27;
-	and.b32  	%r29, %r28, 65280;
-	sub.s32 	%r30, %r19, %r29;
+	add.s32 	%r26, %r1, %r25;
 	.loc	1 76 21
-	add.s32 	%r31, %r19, %r15;
-	.loc	1 80 29
-	shl.b32 	%r32, %r30, 8;
-	shl.b32 	%r33, %r31, 16;
-	or.b32  	%r34, %r25, %r32;
-	or.b32  	%r35, %r34, %r33;
-	or.b32  	%r36, %r35, -16777216;
-	.loc	1 84 32
-	ld.const.u32 	%r37, [optixLaunchParams+16];
-	mad.lo.s32 	%r38, %r19, %r37, %r15;
-	.loc	1 85 9
+	shr.s32 	%r27, %r19, 31;
+	shr.u32 	%r28, %r27, 24;
+	add.s32 	%r29, %r19, %r28;
+	and.b32  	%r30, %r29, 16776960;
+	sub.s32 	%r31, %r19, %r30;
+	add.s32 	%r32, %r31, %r1;
+	.loc	1 77 21
+	add.s32 	%r33, %r19, %r15;
+	add.s32 	%r34, %r33, %r1;
+	.loc	1 81 29
+	shl.b32 	%r35, %r32, 8;
+	shl.b32 	%r36, %r34, 16;
+	or.b32  	%r37, %r26, %r35;
+	or.b32  	%r38, %r37, %r36;
+	or.b32  	%r39, %r38, -16777216;
+	.loc	1 85 32
+	ld.const.u32 	%r40, [optixLaunchParams+16];
+	mad.lo.s32 	%r41, %r40, %r19, %r15;
+	.loc	1 86 9
 	ld.const.u64 	%rd8, [optixLaunchParams+8];
 	cvta.to.global.u64 	%rd9, %rd8;
-	mul.wide.u32 	%rd10, %r38, 4;
+	mul.wide.u32 	%rd10, %r41, 4;
 	add.s64 	%rd11, %rd9, %rd10;
-	st.global.u32 	[%rd11], %r36;
-	.loc	1 86 5
+	st.global.u32 	[%rd11], %r39;
+	.loc	1 87 5
 	ret;
 
 }
-	.file	1 "C:\\Users\\jente\\Desktop\\University\\mcrt-draft2\\mcrt-draft\\mcrt-experiments\\mcrt-experiments\\devicePrograms.cu"
+	.file	1 "C:\\Users\\jente\\Desktop\\University\\mcrt-draft\\mcrt-draft\\mcrt-experiments\\mcrt-experiments\\devicePrograms.cu"
 	.file	2 "C:\\ProgramData\\NVIDIA Corporation\\OptiX SDK 7.5.0\\include\\internal/optix_7_device_impl.h"
 	.section	.debug_str
 	{
 $L__info_string0:
-.b8 95,90,78,52,56,95,73,78,84,69,82,78,65,76,95,98,99,48,54,100,101,99,56,95,49,55,95,100,101,118,105,99,101,80,114,111,103,114,97,109
+.b8 95,90,78,52,56,95,73,78,84,69,82,78,65,76,95,52,53,57,98,56,52,100,97,95,49,55,95,100,101,118,105,99,101,80,114,111,103,114,97,109
 .b8 115,95,99,117,95,53,50,98,101,55,100,99,54,49,57,111,112,116,105,120,71,101,116,76,97,117,110,99,104,73,110,100,101,120,69,118,0
 
 	}
