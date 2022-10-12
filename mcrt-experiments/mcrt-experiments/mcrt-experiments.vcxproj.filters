@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\Utils">
+      <UniqueIdentifier>{991f718f-3318-4e24-85fa-5bcf35dce399}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -24,18 +27,24 @@
     <ClCompile Include="devicePrograms_embedded.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GLFWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="optix7.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="renderer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CUDABuffer.hpp">
+    <ClInclude Include="LaunchParams.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="LaunchParams.hpp">
+    <ClInclude Include="CUDABuffer.hpp">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="optix7.hpp">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="GLFWindow.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
