@@ -5,11 +5,29 @@
 
 namespace mcrt {
 
+	struct Camera {
+		glm::vec3 eye;
+		glm::vec3 target;
+		glm::vec3 up;
+	};
+
+	// Simple indexed triangle mesh container
+	struct TriangleMesh {
+
+		// Add unit cube, subject to given cfm matrix, to the triangle mesh
+		void addUnitCube(const glm::mat4x4& xfm);
+		// Add aligned cube given its front-lower-left corner + size
+		void addCube(const glm::vec3& center, const glm::vec3& size);
+
+		std::vector<glm::vec3> vertex;
+		std::vector<glm::ivec3> index;
+	};
+
 	class Renderer {
 	public:
 		/*! Constructor : performs setup, including initializing OptiX, creation of module
 		 pipelines, programs, SBT etc. */
-		Renderer();
+		Renderer(const TriangleMesh& model);
 
 		void render();
 
@@ -17,6 +35,9 @@ namespace mcrt {
 
 		// Download rendered color buffer from device
 		void downloadPixels(uint32_t h_pixels[]);
+
+		// Set camera to render from
+		void setCamera(const Camera& camera);
 
 	protected:
 		// ------------------
@@ -48,6 +69,9 @@ namespace mcrt {
 
 		// Construction of shader binding table
 		void buildSBT();
+
+		// Build acceleration structure for our mesh
+		OptixTraversableHandle buildAccel(const TriangleMesh& model);
 
 	protected:
 		// CUDA device context + stream that OptiX pipeline will run on,
@@ -83,5 +107,14 @@ namespace mcrt {
 		CUDABuffer   launchParamsBuffer;
 
 		CUDABuffer colorBuffer;	// Framebuffer we will write to
+
+		Camera renderCamera;
+
+		// Model we are tracing rays against
+		const TriangleMesh model;
+		// Device-side buffers
+		CUDABuffer vertexBuffer;	
+		CUDABuffer indexBuffer;
+		CUDABuffer accelerationStructBuffer;
 	};
 }

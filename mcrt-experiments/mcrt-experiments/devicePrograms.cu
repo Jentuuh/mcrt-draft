@@ -3,6 +3,9 @@
 #include <optix_device.h>
 
 #include "LaunchParams.hpp"
+#include "glm/glm.hpp"
+#include "glm/gtx/transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
 
 using namespace mcrt;
 
@@ -12,6 +15,33 @@ namespace mcrt {
     // optixLaunch)
     extern "C" __constant__ LaunchParams optixLaunchParams;
 
+
+    // for this simple example, we have a single ray type
+    enum { SURFACE_RAY_TYPE = 0, RAY_TYPE_COUNT };
+
+    static __forceinline__ __device__
+        void* unpackPointer(uint32_t i0, uint32_t i1)
+    {
+        const uint64_t uptr = static_cast<uint64_t>(i0) << 32 | i1;
+        void* ptr = reinterpret_cast<void*>(uptr);
+        return ptr;
+    }
+
+    static __forceinline__ __device__
+        void  packPointer(void* ptr, uint32_t& i0, uint32_t& i1)
+    {
+        const uint64_t uptr = reinterpret_cast<uint64_t>(ptr);
+        i0 = uptr >> 32;
+        i1 = uptr & 0x00000000ffffffff;
+    }
+
+    template<typename T>
+    static __forceinline__ __device__ T* getPRD()
+    {
+        const uint32_t u0 = optixGetPayload_0();
+        const uint32_t u1 = optixGetPayload_1();
+        return reinterpret_cast<T*>(unpackPointer(u0, u1));
+    }
 
     //------------------------------------------------------------------------------
     // closest hit and anyhit programs for radiance-type rays.
@@ -24,7 +54,11 @@ namespace mcrt {
     //------------------------------------------------------------------------------
 
     extern "C" __global__ void __closesthit__radiance()
-    { /*! for this simple example, this will remain empty */
+    { 
+        //printf("Hit!");
+        const int   primID = optixGetPrimitiveIndex();
+        glm::vec3& prd = *(glm::vec3*)getPRD<glm::vec3>();
+        prd = glm::vec3{1.0f, 0.0f, 0.0f};
     }
 
     extern "C" __global__ void __anyhit__radiance()
@@ -41,7 +75,9 @@ namespace mcrt {
     // ------------------------------------------------------------------------------
 
     extern "C" __global__ void __miss__radiance()
-    { /*! for this simple example, this will remain empty */
+    {
+        glm::vec3& prd = *(glm::vec3*)getPRD<glm::vec3>();
+        prd = glm::vec3{ 1.0f, 1.0f, 1.0f };
     }
 
     //------------------------------------------------------------------------------
@@ -49,20 +85,6 @@ namespace mcrt {
     //------------------------------------------------------------------------------
     extern "C" __global__ void __raygen__renderFrame()
     {
-        if (optixLaunchParams.frameID == 0 &&
-            optixGetLaunchIndex().x == 0 &&
-            optixGetLaunchIndex().y == 0) {
-            // we could of course also have used optixGetLaunchDims to query
-            // the launch size, but accessing the optixLaunchParams here
-            // makes sure they're not getting optimized away (because
-            // otherwise they'd not get used)
-            printf("############################################\n");
-            printf("Hello world from OptiX 7 raygen program!\n(within a %ix%i-sized launch)\n",
-                optixLaunchParams.fbSize.x,
-                optixLaunchParams.fbSize.y);
-            printf("############################################\n");
-        }
-
         // ------------------------------------------------------------------
         // for this example, produce a simple test pattern:
         // ------------------------------------------------------------------
@@ -70,20 +92,65 @@ namespace mcrt {
         // compute a test pattern based on pixel ID
         const int ix = optixGetLaunchIndex().x;
         const int iy = optixGetLaunchIndex().y;
-        const int fID = optixLaunchParams.frameID;
 
-        const int r = (fID  + ix % 256);
-        const int g = (fID  + iy % 256);
-        const int b = (fID  + (ix + iy) % 256);
+        const auto& camera = optixLaunchParams.camera;
+
+        // our per-ray data for this example. what we initialize it to
+        // won't matter, since this value will be overwritten by either
+        // the miss or hit program, anyway
+        glm::vec3 pixelColorPRD = glm::vec3(0.f);
+
+        // the values we store the PRD pointer in:
+        uint32_t u0, u1;
+        packPointer(&pixelColorPRD, u0, u1);
+
+        // normalized screen plane position, in [0,1]^2
+        const glm::vec2 screen(glm::vec2{ float(ix) + .5f, float(iy) + .5f }
+            / glm::vec2{ optixLaunchParams.frame.size });
+
+        // generate ray direction
+        glm::vec3 rayDir = glm::normalize(camera.direction
+            + (screen.x - 0.5f) * camera.horizontal
+            + (screen.y - 0.5f) * camera.vertical);
+
+        // TODO: something wrong still with cam pos + ray dir
+        float3 camPos = float3{ camera.position.x, camera.position.y, camera.position.z };
+        float3 rayDirection = float3{ rayDir.x, rayDir.y, rayDir.z };
+
+        if (optixLaunchParams.frameID == 0 && ix == 0 && iy == 0)
+        {
+            printf("X:%f", camera.direction.x);
+            printf("Y:%f", camera.direction.y);
+            printf("Z:%f", camera.direction.z);
+            printf("\n\n");
+        }
+
+        optixTrace(optixLaunchParams.traversable,
+            camPos,
+            rayDirection,
+            0.f,    // tmin
+            1e20f,  // tmax
+            0.0f,   // rayTime
+            OptixVisibilityMask(255),
+            OPTIX_RAY_FLAG_DISABLE_ANYHIT,//OPTIX_RAY_FLAG_NONE,
+            SURFACE_RAY_TYPE,             // SBT offset
+            RAY_TYPE_COUNT,               // SBT stride
+            SURFACE_RAY_TYPE,             // missSBTIndex 
+            u0, u1);
+
+        const int r = int(255.99f * pixelColorPRD.x);
+        const int g = int(255.99f * pixelColorPRD.y);
+        const int b = int(255.99f * pixelColorPRD.z);
 
         // convert to 32-bit rgba value (we explicitly set alpha to 0xff
         // to make stb_image_write happy ...
         const uint32_t rgba = 0xff000000
             | (r << 0) | (g << 8) | (b << 16);
 
+
         // and write to frame buffer ...
-        const uint32_t fbIndex = ix + iy * optixLaunchParams.fbSize.x;
-        optixLaunchParams.colorBuffer[fbIndex] = rgba;
+        const uint32_t fbIndex = ix + iy * optixLaunchParams.frame.size.x;
+        optixLaunchParams.frame.colorBuffer[fbIndex] = rgba;
     }
 
 

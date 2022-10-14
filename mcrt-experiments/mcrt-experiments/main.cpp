@@ -5,27 +5,43 @@
 
 #include "GLFWindow.hpp"
 #include <GL/gl.h>
+#include <glm/gtx/string_cast.hpp>
 // std
 #include <iostream>
 
 
 namespace mcrt {
-    struct MCRTWindow: public GLFWindow 
+    struct MCRTWindow: public GLFCameraWindow
     {
-        MCRTWindow(const std::string& title)
-            : GLFWindow(title)
+        MCRTWindow(const std::string& title,
+                    const TriangleMesh& model,
+                    const Camera& camera,
+                    const float worldScale)
+            : GLFCameraWindow(title, camera.eye, camera.target, camera.up, worldScale),
+            sample(model)
         {        
+            sample.setCamera(camera);
         }
 
         virtual void render() override
         {
+            if (cameraFrame.modified) {
+                std::cout << glm::to_string(cameraFrame.get_from()) << std::endl;
+                std::cout << glm::to_string(cameraFrame.get_at()) << std::endl;
+                std::cout << glm::to_string(cameraFrame.get_up()) << std::endl;
+
+
+                sample.setCamera(Camera{ cameraFrame.get_from(),
+                                         cameraFrame.get_at(),
+                                         cameraFrame.get_up() });
+                cameraFrame.modified = false;
+            }
             sample.render();
         }
 
         virtual void draw() override
         {
             sample.downloadPixels(pixels.data());
-
             if (fbTexture == 0)
                 glGenTextures(1, &fbTexture);
 
@@ -88,8 +104,35 @@ namespace mcrt {
 	// Main entry point
 	extern "C" int main(int argc, char* argv[]) {
         try {
-            MCRTWindow* window = new MCRTWindow("Memory Coherent Ray Tracing");
+            TriangleMesh model;
+            // 100x100 thin ground plane
+            model.addCube(glm::vec3(0.f, -1.5f, 0.f), glm::vec3(10.f, .1f, 10.f));
+            // a unit cube centered on top of that
+            model.addCube(glm::vec3(0.f, 0.f, 0.f), glm::vec3(2.f, 2.f, 2.f));
+
+            Camera camera = { /*from*/glm::vec3{ -10.f,2.f,-12.f},
+                /* at */glm::vec3{0.f,0.f,0.f},
+                /* up */glm::vec3{0.f,1.f,0.f} };
+
+            // something approximating the scale of the world, so the
+            // camera knows how much to move for any given user interaction:
+            const float worldScale = 10.f;
+
+            MCRTWindow* window = new MCRTWindow("Memory Coherent Ray Tracing", model, camera, worldScale);
             window->run();
+
+    /*        Renderer sample{model};
+            sample.setCamera(camera);
+
+            const glm::ivec2 fbSize(glm::ivec2(1200, 1024));
+            sample.resize(fbSize);
+            sample.render();
+            std::vector<uint32_t> pixels(fbSize.x * fbSize.y);
+            sample.downloadPixels(pixels.data());
+
+            const std::string fileName = "mcrt_test.png";
+            stbi_write_png(fileName.c_str(), fbSize.x, fbSize.y, 4,
+                pixels.data(), fbSize.x * sizeof(uint32_t));*/
         }
         catch (std::runtime_error& e) {
             std::cout << "FATAL ERROR: " << e.what() << std::endl;

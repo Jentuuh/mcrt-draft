@@ -29,9 +29,9 @@ namespace mcrt {
 		
 		// io
 		virtual void key(int key, int mods) {}
-		virtual void mouseMotion(const glm::uvec2& newPos) {}
+		virtual void mouseMotion(const glm::ivec2& newPos) {}
 		virtual void mouseButton(int button, int action, int mods) {}
-		glm::uvec2 getMousePos() const
+		glm::ivec2 getMousePos() const
 		{
 			double x, y;
 			glfwGetCursorPos(handle, &x, &y);
@@ -62,18 +62,18 @@ namespace mcrt {
 			// set frame.vz
 			if (interest == origin)
 			{
-				glm::column(frame, 2, glm::vec3{ 0,0,1 });
+				glm::column(frame, 2, glm::vec3{ 0.0f,0.0f,1.0f });
 			}
 			else {
 				glm::column(frame, 2, -glm::normalize(interest - origin));
 			}
 
 			// set frame.vx
-			glm::column(frame, 0, glm::cross(up, glm::column(frame,2)));
+			glm::column(frame, 0, glm::cross(up, glm::column(frame, 2)));
 
 			if (glm::dot(glm::column(frame, 0), glm::column(frame, 0)) < 1e-8f)
 			{
-				glm::column(frame, 0, glm::vec3{0, 1, 0});
+				glm::column(frame, 0, glm::vec3{0.0f, 1.0f, 0.0f});
 			}
 			else {
 				glm::column(frame, 0, glm::normalize(glm::column(frame, 0)));
@@ -105,7 +105,7 @@ namespace mcrt {
 
 		inline float computeStableEpsilon(float f) const
 		{
-			return abs(f) * float(1. / (1 << 21));
+			return abs(f) * float(1.0f / (1 << 21));
 		}
 
 		inline float computeStableEpsilon(const glm::vec3 v) const
@@ -120,13 +120,13 @@ namespace mcrt {
 		inline glm::vec3 get_up() const { return upVector; }
 
 
-		glm::mat3 frame {1.0f};
-		glm::vec3 position{ 0, -1, 0 };
+		glm::mat3 frame =  glm::mat3(1.0f);
+		glm::vec3 position{ 0.0f, -1.0f, 0.0f };
 
 		/*! distance to the 'point of interst' (poi); e.g., the point we
 		will rotate around */
 		float poiDistance{ 1.0f };
-		glm::vec3 upVector{ 0,1,0 };
+		glm::vec3 upVector{ 0.0f,1.0f,0.0f };
 
 		/* if set to true, any change to the frame will always use to
 		   upVector to 'force' the frame back upwards; if set to false,
@@ -265,7 +265,7 @@ namespace mcrt {
 		}
 
 		/*! callback that window got resized */
-		virtual void mouseMotion(const glm::uvec2& newPos) override
+		virtual void mouseMotion(const glm::ivec2& newPos) override
 		{
 			glm::ivec2 windowSize;
 			glfwGetWindowSize(handle, &windowSize.x, &windowSize.y);
@@ -300,7 +300,7 @@ namespace mcrt {
 		struct {
 			bool leftButton{ false }, middleButton{ false }, rightButton{ false };
 		} isPressed;
-		glm::uvec2 lastMousePos = { -1,-1 };
+		glm::ivec2 lastMousePos = { -1,-1 };
 
 		friend struct CameraFrameManip;
 

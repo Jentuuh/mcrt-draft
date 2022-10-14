@@ -2,6 +2,8 @@
 
 // This include may only appear in a SINGLE src file:
 #include <optix_function_table_definition.h>
+#include <glm/gtc/matrix_access.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 // std
 #include <iostream>
@@ -36,9 +38,47 @@ namespace mcrt {
         int objectID;
     };
 
-    Renderer::Renderer()
+    void TriangleMesh::addCube(const glm::vec3& center, const glm::vec3& size)
+    {
+        glm::mat4x4 xfm;
+        glm::column(xfm, 3, glm::vec4{ center - 0.5f * size, 1.0f });
+        glm::column(xfm, 0, glm::vec4{ size.x, 0.f, 0.f, 0.0f });
+        glm::column(xfm, 1, glm::vec4{ 0.0f, size.y, 0.f, 0.0f });
+        glm::column(xfm, 2, glm::vec4{ 0.0f, 0.0f,size.z, 0.0f });
+
+        addUnitCube(xfm);
+    }
+
+    void TriangleMesh::addUnitCube(const glm::mat4x4& xfm)
+    {
+        int firstVertexID = (int)vertex.size();
+        vertex.push_back( glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f });
+        vertex.push_back( glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
+        vertex.push_back(glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+        vertex.push_back( glm::vec4{1.0f, 1.0f, 0.0f, 1.0f });
+        vertex.push_back(glm::vec4{ 0.0f, 0.0f, 1.0f, 1.0f });
+        vertex.push_back(glm::vec4{ 1.0f, 0.0f, 1.0f, 1.0f });
+        vertex.push_back(glm::vec4{ 0.0f, 1.0f, 1.0f, 1.0f });
+        vertex.push_back(glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
+
+        int indices[] = { 0,1,3, 2,3,0,
+                         5,7,6, 5,6,4,
+                         0,4,5, 0,5,1,
+                         2,3,7, 2,7,6,
+                         1,5,7, 1,7,3,
+                         4,0,2, 4,2,6
+                        };
+
+        for (int i = 0; i < 12; i++)
+            index.push_back(firstVertexID + glm::ivec3(indices[3 * i + 0],
+                                                        indices[3 * i + 1],
+                                                        indices[3 * i + 2]));
+    }
+
+    Renderer::Renderer(const TriangleMesh& model)
     {
         initOptix();
+        launchParams.frameID = 0;
 
         std::cout << "Creating OptiX context..." << std::endl;
         createContext();
@@ -53,6 +93,8 @@ namespace mcrt {
         std::cout << "Creating hitgroup programs..." << std::endl;
         createHitGroupPrograms();
 
+        launchParams.traversable = buildAccel(model);
+
         std::cout << "Setting up OptiX pipeline..." << std::endl;
         createPipeline();
 
@@ -65,6 +107,132 @@ namespace mcrt {
 
         std::cout << "MCRT renderer fully set up." << std::endl;
     }
+
+    OptixTraversableHandle Renderer::buildAccel(const TriangleMesh& model)
+    {
+        // Upload model to the device: the builder
+        vertexBuffer.alloc_and_upload(model.vertex);
+        indexBuffer.alloc_and_upload(model.index);
+
+        OptixTraversableHandle asHandle{ 0 };
+
+        // ==================================================================
+        // Triangle inputs
+        // ==================================================================
+        OptixBuildInput triangleInput = {};
+        triangleInput.type
+            = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
+
+        // Create local variables, because we need a *pointer* to the
+        // device pointers
+        CUdeviceptr d_vertices = vertexBuffer.d_pointer();
+        CUdeviceptr d_indices = indexBuffer.d_pointer();
+
+        triangleInput.triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
+        triangleInput.triangleArray.vertexStrideInBytes = sizeof(glm::vec3);
+        triangleInput.triangleArray.numVertices = (int)model.vertex.size();
+        triangleInput.triangleArray.vertexBuffers = &d_vertices;
+
+        triangleInput.triangleArray.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
+        triangleInput.triangleArray.indexStrideInBytes = sizeof(glm::ivec3);
+        triangleInput.triangleArray.numIndexTriplets = (int)model.index.size();
+        triangleInput.triangleArray.indexBuffer = d_indices;
+
+        uint32_t triangleInputFlags[1] = { 0 };
+
+        // In this example we have one SBT entry, and no per-primitive
+        // materials:
+        triangleInput.triangleArray.flags = triangleInputFlags;
+        triangleInput.triangleArray.numSbtRecords = 1;
+        triangleInput.triangleArray.sbtIndexOffsetBuffer = 0;
+        triangleInput.triangleArray.sbtIndexOffsetSizeInBytes = 0;
+        triangleInput.triangleArray.sbtIndexOffsetStrideInBytes = 0;
+
+        // ==================================================================
+        // BLAS setup
+        // ==================================================================
+
+        OptixAccelBuildOptions accelOptions = {};
+        accelOptions.buildFlags = OPTIX_BUILD_FLAG_NONE
+            | OPTIX_BUILD_FLAG_ALLOW_COMPACTION
+            ;
+        accelOptions.motionOptions.numKeys = 1;
+        accelOptions.operation = OPTIX_BUILD_OPERATION_BUILD;
+
+        OptixAccelBufferSizes blasBufferSizes;
+        OPTIX_CHECK(optixAccelComputeMemoryUsage
+        (optixContext,
+            &accelOptions,
+            &triangleInput,
+            1,  // num_build_inputs
+            &blasBufferSizes
+        ));
+
+        // ==================================================================
+        // Prepare compaction
+        // ==================================================================
+
+        CUDABuffer compactedSizeBuffer;
+        compactedSizeBuffer.alloc(sizeof(uint64_t));
+
+        OptixAccelEmitDesc emitDesc;
+        emitDesc.type = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE;
+        emitDesc.result = compactedSizeBuffer.d_pointer();
+
+        // ==================================================================
+        // Execute build (main stage)
+        // ==================================================================
+       
+        // Remember from pbrt that we can calculate the max. size of an AS tree beforehand
+        CUDABuffer tempBuffer;
+        tempBuffer.alloc(blasBufferSizes.tempSizeInBytes);
+
+        CUDABuffer outputBuffer;
+        outputBuffer.alloc(blasBufferSizes.outputSizeInBytes);
+
+
+        OPTIX_CHECK(optixAccelBuild(optixContext,
+            /* stream */0,
+            &accelOptions,
+            &triangleInput,
+            1,
+            tempBuffer.d_pointer(),
+            tempBuffer.sizeInBytes,
+
+            outputBuffer.d_pointer(),
+            outputBuffer.sizeInBytes,
+
+            &asHandle,
+
+            &emitDesc, 1
+        ));
+        CUDA_SYNC_CHECK();
+
+        // ==================================================================
+        // perform compaction
+        // ==================================================================
+        uint64_t compactedSize;
+        compactedSizeBuffer.download(&compactedSize, 1);
+
+        accelerationStructBuffer.alloc(compactedSize);
+        OPTIX_CHECK(optixAccelCompact(optixContext,
+            /*stream:*/0,
+            asHandle,
+            accelerationStructBuffer.d_pointer(),
+            accelerationStructBuffer.sizeInBytes,
+            &asHandle));
+        CUDA_SYNC_CHECK();
+
+        // ==================================================================
+        // aaaaaand .... clean up
+        // ==================================================================
+        outputBuffer.free(); // << the UNcompacted, temporary output buffer
+        tempBuffer.free();
+        compactedSizeBuffer.free();
+
+        return asHandle;
+    }
+
 
     void Renderer::initOptix()
     {
@@ -342,10 +510,9 @@ namespace mcrt {
     void Renderer::render()
     {
         // First resize needs to be done before rendering
-        if (launchParams.fbSize.x == 0) return;
+        if (launchParams.frame.size.x == 0) return;
 
         launchParamsBuffer.upload(&launchParams, 1);
-        launchParams.frameID++;
 
         // Launch render pipeline
         OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
@@ -355,10 +522,12 @@ namespace mcrt {
             launchParamsBuffer.sizeInBytes,
             &sbt,
             /*! dimensions of the launch: */
-            launchParams.fbSize.x,
-            launchParams.fbSize.y,
+            launchParams.frame.size.x,
+            launchParams.frame.size.y,
             1
         ));
+
+        launchParams.frameID++;
 
         // TODO: implement double buffering!!!
         // sync - make sure the frame is rendered before we download and
@@ -366,6 +535,22 @@ namespace mcrt {
         // want to use streams and double-buffering, but for this simple
         // example, this will have to do)
         CUDA_SYNC_CHECK();
+    }
+
+    void Renderer::setCamera(const Camera& camera)
+    {
+        renderCamera = camera;
+        launchParams.camera.position = camera.eye;
+        launchParams.camera.direction = normalize(camera.target - camera.eye);
+        const float cosFovy = 0.66f;
+        const float aspect = launchParams.frame.size.x / float(launchParams.frame.size.y);
+        launchParams.camera.horizontal
+            = cosFovy * aspect * normalize(cross(launchParams.camera.direction,
+                camera.up));
+        launchParams.camera.vertical
+            = cosFovy * normalize(cross(launchParams.camera.horizontal,
+                launchParams.camera.direction));
+        std::cout << glm::to_string(launchParams.camera.direction) << std::endl;
     }
 
     void Renderer::resize(const glm::ivec2& newSize)
@@ -377,14 +562,17 @@ namespace mcrt {
         colorBuffer.resize(newSize.x * newSize.y * sizeof(uint32_t));
     
         // Update launch parameters that are passed to OptiX launch
-        launchParams.fbSize = newSize;
-        launchParams.colorBuffer = (uint32_t*)colorBuffer.d_ptr;
+        launchParams.frame.size = newSize;
+        launchParams.frame.colorBuffer = (uint32_t*)colorBuffer.d_pointer();
+
+        // Reset camera, aspect may have changed
+        setCamera(renderCamera);
     }
 
     // Copy rendered color buffer from device to host memory for display
     void Renderer::downloadPixels(uint32_t h_pixels[])
     {
         colorBuffer.download(h_pixels,
-            launchParams.fbSize.x * launchParams.fbSize.y);
+            launchParams.frame.size.x * launchParams.frame.size.y);
     }
 }
