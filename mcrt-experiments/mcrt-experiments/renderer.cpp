@@ -40,11 +40,11 @@ namespace mcrt {
 
     void TriangleMesh::addCube(const glm::vec3& center, const glm::vec3& size)
     {
-        glm::mat4x4 xfm;
-        glm::column(xfm, 3, glm::vec4{ center - 0.5f * size, 1.0f });
-        glm::column(xfm, 0, glm::vec4{ size.x, 0.f, 0.f, 0.0f });
-        glm::column(xfm, 1, glm::vec4{ 0.0f, size.y, 0.f, 0.0f });
-        glm::column(xfm, 2, glm::vec4{ 0.0f, 0.0f,size.z, 0.0f });
+        glm::mat4x4 xfm = glm::mat4x4(1.0f);
+        xfm = glm::column(xfm, 3, glm::vec4{ center - 0.5f * size, 1.0f });
+        xfm = glm::column(xfm, 0, glm::vec4{ size.x, 0.f, 0.f, 0.0f });
+        xfm = glm::column(xfm, 1, glm::vec4{ 0.0f, size.y, 0.f, 0.0f });
+        xfm = glm::column(xfm, 2, glm::vec4{ 0.0f, 0.0f, size.z, 0.0f });
 
         addUnitCube(xfm);
     }
@@ -52,14 +52,15 @@ namespace mcrt {
     void TriangleMesh::addUnitCube(const glm::mat4x4& xfm)
     {
         int firstVertexID = (int)vertex.size();
-        vertex.push_back( glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f });
-        vertex.push_back( glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
-        vertex.push_back(glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
-        vertex.push_back( glm::vec4{1.0f, 1.0f, 0.0f, 1.0f });
-        vertex.push_back(glm::vec4{ 0.0f, 0.0f, 1.0f, 1.0f });
-        vertex.push_back(glm::vec4{ 1.0f, 0.0f, 1.0f, 1.0f });
-        vertex.push_back(glm::vec4{ 0.0f, 1.0f, 1.0f, 1.0f });
-        vertex.push_back(glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
+        glm::vec3 newVertex = (xfm * glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
+        vertex.push_back(xfm * glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f });
+        vertex.push_back(xfm * glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
+        vertex.push_back(xfm * glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+        vertex.push_back(xfm * glm::vec4{ 1.0f, 1.0f, 0.0f, 1.0f });
+        vertex.push_back(xfm * glm::vec4{ 0.0f, 0.0f, 1.0f, 1.0f });
+        vertex.push_back(xfm * glm::vec4{ 1.0f, 0.0f, 1.0f, 1.0f });
+        vertex.push_back(xfm * glm::vec4{ 0.0f, 1.0f, 1.0f, 1.0f });
+        vertex.push_back(xfm * glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
 
         int indices[] = { 0,1,3, 2,3,0,
                          5,7,6, 5,6,4,
@@ -75,9 +76,10 @@ namespace mcrt {
                                                         indices[3 * i + 2]));
     }
 
-    Renderer::Renderer(const TriangleMesh& model)
+    Renderer::Renderer(const TriangleMesh& model, const Camera& camera): renderCamera{camera}
     {
         initOptix();
+        updateCamera(camera);
         launchParams.frameID = 0;
 
         std::cout << "Creating OptiX context..." << std::endl;
@@ -537,11 +539,11 @@ namespace mcrt {
         CUDA_SYNC_CHECK();
     }
 
-    void Renderer::setCamera(const Camera& camera)
+    void Renderer::updateCamera(const Camera& camera)
     {
         renderCamera = camera;
-        launchParams.camera.position = camera.eye;
-        launchParams.camera.direction = normalize(camera.target - camera.eye);
+        launchParams.camera.position = camera.position;
+        launchParams.camera.direction = normalize(camera.target - camera.position);
         const float cosFovy = 0.66f;
         const float aspect = launchParams.frame.size.x / float(launchParams.frame.size.y);
         launchParams.camera.horizontal
@@ -550,7 +552,6 @@ namespace mcrt {
         launchParams.camera.vertical
             = cosFovy * normalize(cross(launchParams.camera.horizontal,
                 launchParams.camera.direction));
-        std::cout << glm::to_string(launchParams.camera.direction) << std::endl;
     }
 
     void Renderer::resize(const glm::ivec2& newSize)
@@ -566,7 +567,7 @@ namespace mcrt {
         launchParams.frame.colorBuffer = (uint32_t*)colorBuffer.d_pointer();
 
         // Reset camera, aspect may have changed
-        setCamera(renderCamera);
+        updateCamera(renderCamera);
     }
 
     // Copy rendered color buffer from device to host memory for display

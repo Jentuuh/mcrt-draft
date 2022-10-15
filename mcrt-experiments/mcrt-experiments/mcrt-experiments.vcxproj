@@ -133,12 +133,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="camera.cpp" />
     <ClCompile Include="devicePrograms_embedded.c" />
     <ClCompile Include="GLFWindow.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="camera.hpp" />
     <ClInclude Include="CUDABuffer.hpp" />
     <ClInclude Include="GLFWindow.hpp" />
     <ClInclude Include="LaunchParams.hpp" />

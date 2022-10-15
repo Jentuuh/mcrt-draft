@@ -17,21 +17,17 @@ namespace mcrt {
                     const TriangleMesh& model,
                     const Camera& camera,
                     const float worldScale)
-            : GLFCameraWindow(title, camera.eye, camera.target, camera.up, worldScale),
-            sample(model)
+            : GLFCameraWindow(title, camera.position, camera.target, camera.up, worldScale),
+            sample(model, camera)
         {        
-            sample.setCamera(camera);
+            sample.updateCamera(camera);
         }
 
         virtual void render() override
         {
             if (cameraFrame.modified) {
-                std::cout << glm::to_string(cameraFrame.get_from()) << std::endl;
-                std::cout << glm::to_string(cameraFrame.get_at()) << std::endl;
-                std::cout << glm::to_string(cameraFrame.get_up()) << std::endl;
 
-
-                sample.setCamera(Camera{ cameraFrame.get_from(),
+                sample.updateCamera(Camera{ cameraFrame.get_from(),
                                          cameraFrame.get_at(),
                                          cameraFrame.get_up() });
                 cameraFrame.modified = false;
@@ -106,13 +102,11 @@ namespace mcrt {
         try {
             TriangleMesh model;
             // 100x100 thin ground plane
-            model.addCube(glm::vec3(0.f, -1.5f, 0.f), glm::vec3(10.f, .1f, 10.f));
+            model.addCube(glm::vec3(0.f, -1.5f, 0.f), glm::vec3(10.0f, 0.1f, 10.0f));
             // a unit cube centered on top of that
-            model.addCube(glm::vec3(0.f, 0.f, 0.f), glm::vec3(2.f, 2.f, 2.f));
+            model.addCube(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(2.0f, 2.0f, 2.0f));
 
-            Camera camera = { /*from*/glm::vec3{ -10.f,2.f,-12.f},
-                /* at */glm::vec3{0.f,0.f,0.f},
-                /* up */glm::vec3{0.f,1.f,0.f} };
+            Camera camera = Camera{ glm::vec3{ -10.f,5.f,-12.f}, glm::vec3{0.f,0.f,0.f}, glm::vec3{0.0f, 1.0f, 0.0f } };
 
             // something approximating the scale of the world, so the
             // camera knows how much to move for any given user interaction:

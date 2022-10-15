@@ -58,7 +58,13 @@ namespace mcrt {
         //printf("Hit!");
         const int   primID = optixGetPrimitiveIndex();
         glm::vec3& prd = *(glm::vec3*)getPRD<glm::vec3>();
-        prd = glm::vec3{1.0f, 0.0f, 0.0f};
+        if (primID > 10)
+        {
+            prd = glm::vec3{ 1.0f, 0.0f, 0.0f };
+        }
+        else {
+            prd = glm::vec3{ 0.0f, 1.0f, 0.0f };
+        }
     }
 
     extern "C" __global__ void __anyhit__radiance()
@@ -116,14 +122,6 @@ namespace mcrt {
         // TODO: something wrong still with cam pos + ray dir
         float3 camPos = float3{ camera.position.x, camera.position.y, camera.position.z };
         float3 rayDirection = float3{ rayDir.x, rayDir.y, rayDir.z };
-
-        if (optixLaunchParams.frameID == 0 && ix == 0 && iy == 0)
-        {
-            printf("X:%f", camera.direction.x);
-            printf("Y:%f", camera.direction.y);
-            printf("Z:%f", camera.direction.z);
-            printf("\n\n");
-        }
 
         optixTrace(optixLaunchParams.traversable,
             camPos,

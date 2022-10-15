@@ -2,14 +2,9 @@
 
 #include "CUDABuffer.hpp"
 #include "LaunchParams.hpp"
+#include "camera.hpp"
 
 namespace mcrt {
-
-	struct Camera {
-		glm::vec3 eye;
-		glm::vec3 target;
-		glm::vec3 up;
-	};
 
 	// Simple indexed triangle mesh container
 	struct TriangleMesh {
@@ -27,7 +22,7 @@ namespace mcrt {
 	public:
 		/*! Constructor : performs setup, including initializing OptiX, creation of module
 		 pipelines, programs, SBT etc. */
-		Renderer(const TriangleMesh& model);
+		Renderer(const TriangleMesh& model, const Camera& camera);
 
 		void render();
 
@@ -36,8 +31,8 @@ namespace mcrt {
 		// Download rendered color buffer from device
 		void downloadPixels(uint32_t h_pixels[]);
 
-		// Set camera to render from
-		void setCamera(const Camera& camera);
+		// Update camera to render from
+		void updateCamera(const Camera& camera);
 
 	protected:
 		// ------------------

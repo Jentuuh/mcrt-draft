@@ -62,25 +62,25 @@ namespace mcrt {
 			// set frame.vz
 			if (interest == origin)
 			{
-				glm::column(frame, 2, glm::vec3{ 0.0f,0.0f,1.0f });
+				frame = glm::column(frame, 2, glm::vec3{ 0.0f,0.0f,1.0f });
 			}
 			else {
-				glm::column(frame, 2, -glm::normalize(interest - origin));
+				frame = glm::column(frame, 2, -glm::normalize(interest - origin));
 			}
 
 			// set frame.vx
-			glm::column(frame, 0, glm::cross(up, glm::column(frame, 2)));
+			frame = glm::column(frame, 0, glm::cross(up, glm::column(frame, 2)));
 
 			if (glm::dot(glm::column(frame, 0), glm::column(frame, 0)) < 1e-8f)
 			{
-				glm::column(frame, 0, glm::vec3{0.0f, 1.0f, 0.0f});
+				frame = glm::column(frame, 0, glm::vec3{0.0f, 1.0f, 0.0f});
 			}
 			else {
-				glm::column(frame, 0, glm::normalize(glm::column(frame, 0)));
+				frame = glm::column(frame, 0, glm::normalize(glm::column(frame, 0)));
 			}
 
 			// set frame.vy
-			glm::column(frame, 1, glm::normalize(glm::cross(glm::column(frame, 2), glm::column(frame, 0))));
+			frame = glm::column(frame, 1, glm::normalize(glm::cross(glm::column(frame, 2), glm::column(frame, 0))));
 
 			poiDistance = glm::length(interest - origin);
 			forceUpFrame();
@@ -92,8 +92,8 @@ namespace mcrt {
 			// Looking along upvector, not much we can do...
 			if(fabsf(glm::dot(glm::column(frame,2), upVector)) < 1e-6f) return;
 			
-			glm::column(frame, 0, glm::normalize(glm::cross(upVector, glm::column(frame, 2))));
-			glm::column(frame, 1, glm::normalize(glm::cross(glm::column(frame, 2), glm::column(frame, 0))));
+			frame = glm::column(frame, 0, glm::normalize(glm::cross(upVector, glm::column(frame, 2))));
+			frame = glm::column(frame, 1, glm::normalize(glm::cross(glm::column(frame, 2), glm::column(frame, 0))));
 			modified = true;
 		}
 
