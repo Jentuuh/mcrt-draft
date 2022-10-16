@@ -14,7 +14,8 @@ namespace mcrt {
 		std::vector<glm::ivec3>& indices() { return sceneIndices; };
 		glm::vec3 maxCoord() { return sceneMax; };
 		glm::vec3 minCoord() { return sceneMin; };
-
+		int numObjects() { return gameObjects.size(); };
+		std::vector<GameObject>& getGameObjects() { return gameObjects; };
 
 
 	private:

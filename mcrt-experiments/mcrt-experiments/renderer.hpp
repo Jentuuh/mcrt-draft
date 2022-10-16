@@ -23,7 +23,7 @@ namespace mcrt {
 	public:
 		/*! Constructor : performs setup, including initializing OptiX, creation of module
 		 pipelines, programs, SBT etc. */
-		Renderer(Scene& model, const Camera& camera);
+		Renderer(Scene& scene, const Camera& camera);
 
 		void render();
 
@@ -67,7 +67,7 @@ namespace mcrt {
 		void buildSBT();
 
 		// Build acceleration structure for our mesh
-		OptixTraversableHandle buildAccel(Scene& model);
+		OptixTraversableHandle buildAccel(Scene& scene);
 
 	protected:
 		// CUDA device context + stream that OptiX pipeline will run on,
@@ -106,11 +106,12 @@ namespace mcrt {
 
 		Camera renderCamera;
 
-		// Model we are tracing rays against
-		const TriangleMesh model;
-		// Device-side buffers
-		CUDABuffer vertexBuffer;	
-		CUDABuffer indexBuffer;
+		// Scene we are tracing rays against
+		Scene& scene;
+
+		// Device-side buffers (one buffer per input mesh!)
+		std::vector<CUDABuffer> vertexBuffers;	
+		std::vector<CUDABuffer> indexBuffers;
 		CUDABuffer accelerationStructBuffer;
 	};
 }

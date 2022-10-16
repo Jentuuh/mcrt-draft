@@ -35,7 +35,7 @@ namespace mcrt {
         __align__(OPTIX_SBT_RECORD_ALIGNMENT) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
         // just a dummy value - later examples will use more interesting
         // data here
-        int objectID;
+        MeshSBTData data;
     };
 
     void TriangleMesh::addCube(const glm::vec3& center, const glm::vec3& size)
@@ -75,7 +75,7 @@ namespace mcrt {
                                                         indices[3 * i + 2]));
     }
 
-    Renderer::Renderer(Scene& model, const Camera& camera): renderCamera{camera}
+    Renderer::Renderer(Scene& scene, const Camera& camera): renderCamera{camera}, scene{scene}
     {
         initOptix();
         updateCamera(camera);
@@ -94,7 +94,7 @@ namespace mcrt {
         std::cout << "Creating hitgroup programs..." << std::endl;
         createHitGroupPrograms();
 
-        launchParams.traversable = buildAccel(model);
+        launchParams.traversable = buildAccel(scene);
 
         std::cout << "Setting up OptiX pipeline..." << std::endl;
         createPipeline();
@@ -109,46 +109,60 @@ namespace mcrt {
         std::cout << "MCRT renderer fully set up." << std::endl;
     }
 
-    OptixTraversableHandle Renderer::buildAccel(Scene& model)
+    OptixTraversableHandle Renderer::buildAccel(Scene& scene)
     {
-        // Upload model to the device: the builder
-        vertexBuffer.alloc_and_upload(model.vertices());
-        indexBuffer.alloc_and_upload(model.indices());
+        vertexBuffers.resize(scene.numObjects());
+        indexBuffers.resize(scene.numObjects());
+
+        //// Upload model to the device: the builder
+        //vertexBuffer.alloc_and_upload(scene.vertices());
+        //indexBuffer.alloc_and_upload(scene.indices());
 
         OptixTraversableHandle asHandle{ 0 };
 
         // ==================================================================
         // Triangle inputs
         // ==================================================================
-        OptixBuildInput triangleInput = {};
-        triangleInput.type
-            = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
+        std::vector<OptixBuildInput> triangleInput(scene.numObjects());
+        std::vector<CUdeviceptr> d_vertices(scene.numObjects());
+        std::vector<CUdeviceptr> d_indices(scene.numObjects());
+        std::vector<uint32_t> triangleInputFlags(scene.numObjects());
 
-        // Create local variables, because we need a *pointer* to the
-        // device pointers
-        CUdeviceptr d_vertices = vertexBuffer.d_pointer();
-        CUdeviceptr d_indices = indexBuffer.d_pointer();
+        for (int meshID = 0; meshID < scene.numObjects(); meshID++) {
+            // upload the model to the device: the builder
+            std::shared_ptr<Model> model = scene.getGameObjects()[meshID].model;
+            vertexBuffers[meshID].alloc_and_upload(scene.getGameObjects()[meshID].getWorldVertices());
+            indexBuffers[meshID].alloc_and_upload(model->indices);
 
-        triangleInput.triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
-        triangleInput.triangleArray.vertexStrideInBytes = sizeof(glm::vec3);
-        triangleInput.triangleArray.numVertices = (int)model.vertices().size();
-        triangleInput.triangleArray.vertexBuffers = &d_vertices;
+            triangleInput[meshID] = {};
+            triangleInput[meshID].type
+                = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
 
-        triangleInput.triangleArray.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
-        triangleInput.triangleArray.indexStrideInBytes = sizeof(glm::ivec3);
-        triangleInput.triangleArray.numIndexTriplets = (int)model.indices().size();
-        triangleInput.triangleArray.indexBuffer = d_indices;
+            // create local variables, because we need a *pointer* to the
+            // device pointers
+            d_vertices[meshID] = vertexBuffers[meshID].d_pointer();
+            d_indices[meshID] = indexBuffers[meshID].d_pointer();
 
-        uint32_t triangleInputFlags[1] = { 0 };
+            triangleInput[meshID].triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
+            triangleInput[meshID].triangleArray.vertexStrideInBytes = sizeof(glm::vec3);
+            triangleInput[meshID].triangleArray.numVertices = (int)model->vertices.size();
+            triangleInput[meshID].triangleArray.vertexBuffers = &d_vertices[meshID];
 
-        // In this example we have one SBT entry, and no per-primitive
-        // materials:
-        triangleInput.triangleArray.flags = triangleInputFlags;
-        triangleInput.triangleArray.numSbtRecords = 1;
-        triangleInput.triangleArray.sbtIndexOffsetBuffer = 0;
-        triangleInput.triangleArray.sbtIndexOffsetSizeInBytes = 0;
-        triangleInput.triangleArray.sbtIndexOffsetStrideInBytes = 0;
+            triangleInput[meshID].triangleArray.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
+            triangleInput[meshID].triangleArray.indexStrideInBytes = sizeof(glm::ivec3);
+            triangleInput[meshID].triangleArray.numIndexTriplets = (int)model->indices.size();
+            triangleInput[meshID].triangleArray.indexBuffer = d_indices[meshID];
 
+            triangleInputFlags[meshID] = 0;
+
+            // in this example we have one SBT entry, and no per-primitive
+            // materials:
+            triangleInput[meshID].triangleArray.flags = &triangleInputFlags[meshID];
+            triangleInput[meshID].triangleArray.numSbtRecords = 1;
+            triangleInput[meshID].triangleArray.sbtIndexOffsetBuffer = 0;
+            triangleInput[meshID].triangleArray.sbtIndexOffsetSizeInBytes = 0;
+            triangleInput[meshID].triangleArray.sbtIndexOffsetStrideInBytes = 0;
+        }
         // ==================================================================
         // BLAS setup
         // ==================================================================
@@ -164,13 +178,13 @@ namespace mcrt {
         OPTIX_CHECK(optixAccelComputeMemoryUsage
         (optixContext,
             &accelOptions,
-            &triangleInput,
-            1,  // num_build_inputs
+            triangleInput.data(),
+            scene.numObjects(),  // num_build_inputs
             &blasBufferSizes
         ));
 
         // ==================================================================
-        // Prepare compaction
+        // prepare compaction
         // ==================================================================
 
         CUDABuffer compactedSizeBuffer;
@@ -181,22 +195,20 @@ namespace mcrt {
         emitDesc.result = compactedSizeBuffer.d_pointer();
 
         // ==================================================================
-        // Execute build (main stage)
+        // execute build (main stage)
         // ==================================================================
-       
-        // Remember from pbrt that we can calculate the max. size of an AS tree beforehand
+
         CUDABuffer tempBuffer;
         tempBuffer.alloc(blasBufferSizes.tempSizeInBytes);
 
         CUDABuffer outputBuffer;
         outputBuffer.alloc(blasBufferSizes.outputSizeInBytes);
 
-
         OPTIX_CHECK(optixAccelBuild(optixContext,
             /* stream */0,
             &accelOptions,
-            &triangleInput,
-            1,
+            triangleInput.data(),
+            scene.numObjects(),
             tempBuffer.d_pointer(),
             tempBuffer.sizeInBytes,
 
@@ -490,13 +502,14 @@ namespace mcrt {
         // Build hitgroup records
         // ----------------------------------------
         // TODO: FOR NOW THIS IS JUST A DUMMY VARIABLE, CHANGE THIS!!!
-        int numObjects = 1;
+        int numObjects = scene.numObjects();
         std::vector<HitgroupRecord> hitgroupRecords;
         for (int i = 0; i < numObjects; i++) {
             int objectType = 0;
             HitgroupRecord rec;
             OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[objectType], &rec));
-            rec.objectID = i;
+            rec.data.objectType = i;
+            rec.data.vertex = (glm::vec3)vertexBuffers[i].d_pointer();
             hitgroupRecords.push_back(rec);
         }
         // Upload records to device

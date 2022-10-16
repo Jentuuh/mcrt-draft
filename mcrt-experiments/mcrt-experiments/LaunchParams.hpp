@@ -4,10 +4,15 @@
 #include "glm/glm.hpp"
 
 namespace mcrt {
+	struct MeshSBTData {
+		glm::vec3 vertex;
+		int objectType;
+	};
 
 	struct LaunchParams
 	{
 		int frameID;
+
 		struct {
 			uint32_t* colorBuffer;
 			glm::ivec2 size;

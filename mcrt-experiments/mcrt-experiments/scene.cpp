@@ -13,7 +13,7 @@ namespace mcrt {
 	{
 
 		GameObject newObj = GameObject{ Transform{position, rotation, scale}, model };
-		//gameObjects.push_back(newObj);
+		gameObjects.push_back(newObj);
 
 		std::vector<glm::vec3> newVertices = newObj.getWorldVertices();
 

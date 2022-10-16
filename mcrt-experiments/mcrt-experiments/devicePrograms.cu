@@ -55,15 +55,19 @@ namespace mcrt {
 
     extern "C" __global__ void __closesthit__radiance()
     { 
-        //printf("Hit!");
-        const int   primID = optixGetPrimitiveIndex();
+        const MeshSBTData& sbtData
+            = *(const MeshSBTData*)optixGetSbtDataPointer();        
+        
+        const int primID = optixGetPrimitiveIndex();
         glm::vec3& prd = *(glm::vec3*)getPRD<glm::vec3>();
-        if (primID > 10)
+        const int objectType = sbtData.objectType;
+
+        if (objectType > 0)
         {
             prd = glm::vec3{ 1.0f, 0.0f, 0.0f };
         }
         else {
-            prd = glm::vec3{ 0.0f, 1.0f, 0.0f };
+            prd = glm::vec3{ 0.0f, 0.0f, 1.0f };
         }
     }
 
@@ -119,7 +123,6 @@ namespace mcrt {
             + (screen.x - 0.5f) * camera.horizontal
             + (screen.y - 0.5f) * camera.vertical);
 
-        // TODO: something wrong still with cam pos + ray dir
         float3 camPos = float3{ camera.position.x, camera.position.y, camera.position.z };
         float3 rayDirection = float3{ rayDir.x, rayDir.y, rayDir.z };
 
