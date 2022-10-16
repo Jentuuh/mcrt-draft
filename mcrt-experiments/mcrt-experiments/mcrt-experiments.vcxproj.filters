@@ -16,6 +16,12 @@
     <Filter Include="Header Files\Utils">
       <UniqueIdentifier>{991f718f-3318-4e24-85fa-5bcf35dce399}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\GPU">
+      <UniqueIdentifier>{d6088ee6-5fbf-495f-bed2-612a193e2058}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\GPU">
+      <UniqueIdentifier>{d2d7743e-5a87-4e48-b642-de6bf21d71a3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -24,21 +30,30 @@
     <ClCompile Include="renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="devicePrograms_embedded.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="GLFWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="app.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="scene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="devicePrograms_embedded.c">
+      <Filter>Source Files\GPU</Filter>
+    </ClCompile>
+    <ClCompile Include="game_object.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="model.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="renderer.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="LaunchParams.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="CUDABuffer.hpp">
@@ -53,10 +68,25 @@
     <ClInclude Include="camera.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="app.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="scene.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LaunchParams.hpp">
+      <Filter>Header Files\GPU</Filter>
+    </ClInclude>
+    <ClInclude Include="game_object.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="model.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="devicePrograms.cu">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\GPU</Filter>
     </None>
   </ItemGroup>
 </Project>

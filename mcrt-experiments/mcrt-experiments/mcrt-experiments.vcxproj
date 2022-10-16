@@ -133,19 +133,27 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="app.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="devicePrograms_embedded.c" />
+    <ClCompile Include="game_object.cpp" />
     <ClCompile Include="GLFWindow.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="model.cpp" />
     <ClCompile Include="renderer.cpp" />
+    <ClCompile Include="scene.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="app.hpp" />
     <ClInclude Include="camera.hpp" />
     <ClInclude Include="CUDABuffer.hpp" />
+    <ClInclude Include="game_object.hpp" />
     <ClInclude Include="GLFWindow.hpp" />
     <ClInclude Include="LaunchParams.hpp" />
+    <ClInclude Include="model.hpp" />
     <ClInclude Include="renderer.hpp" />
     <ClInclude Include="optix7.hpp" />
+    <ClInclude Include="scene.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="devicePrograms.cu" />

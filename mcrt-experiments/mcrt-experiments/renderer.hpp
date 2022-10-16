@@ -3,6 +3,7 @@
 #include "CUDABuffer.hpp"
 #include "LaunchParams.hpp"
 #include "camera.hpp"
+#include "scene.hpp"
 
 namespace mcrt {
 
@@ -22,7 +23,7 @@ namespace mcrt {
 	public:
 		/*! Constructor : performs setup, including initializing OptiX, creation of module
 		 pipelines, programs, SBT etc. */
-		Renderer(const TriangleMesh& model, const Camera& camera);
+		Renderer(Scene& model, const Camera& camera);
 
 		void render();
 
@@ -66,7 +67,7 @@ namespace mcrt {
 		void buildSBT();
 
 		// Build acceleration structure for our mesh
-		OptixTraversableHandle buildAccel(const TriangleMesh& model);
+		OptixTraversableHandle buildAccel(Scene& model);
 
 	protected:
 		// CUDA device context + stream that OptiX pipeline will run on,

@@ -52,7 +52,6 @@ namespace mcrt {
     void TriangleMesh::addUnitCube(const glm::mat4x4& xfm)
     {
         int firstVertexID = (int)vertex.size();
-        glm::vec3 newVertex = (xfm * glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
         vertex.push_back(xfm * glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f });
         vertex.push_back(xfm * glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
         vertex.push_back(xfm * glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
@@ -76,7 +75,7 @@ namespace mcrt {
                                                         indices[3 * i + 2]));
     }
 
-    Renderer::Renderer(const TriangleMesh& model, const Camera& camera): renderCamera{camera}
+    Renderer::Renderer(Scene& model, const Camera& camera): renderCamera{camera}
     {
         initOptix();
         updateCamera(camera);
@@ -110,11 +109,11 @@ namespace mcrt {
         std::cout << "MCRT renderer fully set up." << std::endl;
     }
 
-    OptixTraversableHandle Renderer::buildAccel(const TriangleMesh& model)
+    OptixTraversableHandle Renderer::buildAccel(Scene& model)
     {
         // Upload model to the device: the builder
-        vertexBuffer.alloc_and_upload(model.vertex);
-        indexBuffer.alloc_and_upload(model.index);
+        vertexBuffer.alloc_and_upload(model.vertices());
+        indexBuffer.alloc_and_upload(model.indices());
 
         OptixTraversableHandle asHandle{ 0 };
 
@@ -132,12 +131,12 @@ namespace mcrt {
 
         triangleInput.triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
         triangleInput.triangleArray.vertexStrideInBytes = sizeof(glm::vec3);
-        triangleInput.triangleArray.numVertices = (int)model.vertex.size();
+        triangleInput.triangleArray.numVertices = (int)model.vertices().size();
         triangleInput.triangleArray.vertexBuffers = &d_vertices;
 
         triangleInput.triangleArray.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
         triangleInput.triangleArray.indexStrideInBytes = sizeof(glm::ivec3);
-        triangleInput.triangleArray.numIndexTriplets = (int)model.index.size();
+        triangleInput.triangleArray.numIndexTriplets = (int)model.indices().size();
         triangleInput.triangleArray.indexBuffer = d_indices;
 
         uint32_t triangleInputFlags[1] = { 0 };
