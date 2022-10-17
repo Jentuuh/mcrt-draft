@@ -11,7 +11,6 @@ namespace mcrt {
 
 		void loadModel();
 
-
 		std::vector<glm::vec3> vertices;
 		std::vector<glm::ivec3> indices;
 	};

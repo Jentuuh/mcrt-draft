@@ -16,10 +16,23 @@ namespace mcrt {
 		object2World = transformation();
 	}
 
+	void Transform::translate(glm::vec3 p_translation)
+	{
+		translation += p_translation;
+		object2World = transformation();
+	}
+
 	void Transform::updateRotation(glm::vec3 newRot)
 	{
 		rotation = newRot;
 		object2World = transformation();
+	}
+
+	void Transform::applySceneRescale(glm::vec3 p_scale)
+	{
+		glm::mat4x4 scaleM = glm::scale(glm::mat4x4(1.0f), p_scale);
+
+		object2World = scaleM * object2World;
 	}
 
 	void Transform::updateScale(glm::vec3 newScale)

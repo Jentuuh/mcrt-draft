@@ -22,6 +22,12 @@
     <Filter Include="Header Files\GPU">
       <UniqueIdentifier>{d2d7743e-5a87-4e48-b642-de6bf21d71a3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Radiance Grid">
+      <UniqueIdentifier>{5b143e39-f518-4912-b957-0962dc597350}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Radiance Grid">
+      <UniqueIdentifier>{3d0098f8-1cf6-45bf-b51a-94e21685e2e9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -52,7 +58,10 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="radiance_cell.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Radiance Grid</Filter>
+    </ClCompile>
+    <ClCompile Include="radiance_grid.cpp">
+      <Filter>Source Files\Radiance Grid</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -87,7 +96,10 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="radiance_cell.hpp">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Radiance Grid</Filter>
+    </ClInclude>
+    <ClInclude Include="radiance_grid.hpp">
+      <Filter>Header Files\Radiance Grid</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

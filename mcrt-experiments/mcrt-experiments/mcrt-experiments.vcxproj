@@ -141,6 +141,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="model.cpp" />
     <ClCompile Include="radiance_cell.cpp" />
+    <ClCompile Include="radiance_grid.cpp" />
     <ClCompile Include="renderer.cpp" />
     <ClCompile Include="scene.cpp" />
   </ItemGroup>
@@ -153,6 +154,7 @@
     <ClInclude Include="LaunchParams.hpp" />
     <ClInclude Include="model.hpp" />
     <ClInclude Include="radiance_cell.hpp" />
+    <ClInclude Include="radiance_grid.hpp" />
     <ClInclude Include="renderer.hpp" />
     <ClInclude Include="optix7.hpp" />
     <ClInclude Include="scene.hpp" />

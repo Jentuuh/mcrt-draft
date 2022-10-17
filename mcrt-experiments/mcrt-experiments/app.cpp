@@ -42,7 +42,8 @@ namespace mcrt {
 		scene.addGameObject(glm::vec3{ -0.5f,-0.5f,-0.5f }, glm::vec3{ 0.0f,0.0f,0.0f }, glm::vec3{ 1.0f, 1.0f, 1.0f }, cubeModel);
 		scene.addGameObject(glm::vec3{ -5.0f,-1.5f, -5.0f }, glm::vec3{ 0.0f,0.0f,0.0f }, glm::vec3{ 10.0f, 0.1f, 10.0f }, cubeModel);
 
-		std::cout << "Loaded scene: " << scene.vertices().size() << " vertices. Scene Max: " << glm::to_string(scene.maxCoord()) << " Scene Min: " << glm::to_string(scene.minCoord()) << std::endl;
+		std::cout << "Loaded scene: " << scene.amountVertices() << " vertices. Scene Max: " << glm::to_string(scene.maxCoord()) << " Scene Min: " << glm::to_string(scene.minCoord()) << std::endl;
+		scene.normalize();
 	}
 
 }

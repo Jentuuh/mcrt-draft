@@ -8,7 +8,9 @@ namespace mcrt {
 		Transform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale);
 
 		void updatePosition(glm::vec3 newPos);
+		void translate(glm::vec3 p_translation);
 		void updateRotation(glm::vec3 newRot);
+		void applySceneRescale(glm::vec3 p_scale);
 		void updateScale(glm::vec3 newScale);
 		glm::mat4x4 transformation();
 
@@ -24,6 +26,7 @@ namespace mcrt {
 		GameObject(Transform transform, std::shared_ptr<Model> model);
 
 		std::vector<glm::vec3> getWorldVertices();
+		int amountVertices() { return model->vertices.size(); };
 
 		std::shared_ptr<Model> model;
 		Transform worldTransform;
