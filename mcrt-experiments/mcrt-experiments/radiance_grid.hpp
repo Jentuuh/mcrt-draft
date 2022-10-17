@@ -5,8 +5,6 @@
 
 #include <vector>
 
-
-
 namespace mcrt {
 	class RadianceGrid
 	{

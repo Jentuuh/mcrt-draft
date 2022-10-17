@@ -17,7 +17,7 @@ namespace mcrt {
 			{
 				for (int x = 0; x < resolution.x; x++)
 				{
-					//grid.push_back(RadianceCell{});
+					grid.push_back(RadianceCell{ glm::ivec3{x,y,z}, cellSize });
 				}
 			}
 		}
