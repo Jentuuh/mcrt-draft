@@ -120,7 +120,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.5.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\include;$(SolutionDir)\3rdparty\glm;$(SolutionDir)\3rdparty\stb;$(SolutionDir)\3rdparty\glfw-3.3.8\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.5.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\include;$(SolutionDir)\3rdparty\glm;$(SolutionDir)\3rdparty\stb;$(SolutionDir)\3rdparty\glfw-3.3.8\include;$(SolutionDir)\3rdparty\tinyobjloader;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -151,6 +151,7 @@
     <ClInclude Include="CUDABuffer.hpp" />
     <ClInclude Include="game_object.hpp" />
     <ClInclude Include="GLFWindow.hpp" />
+    <ClInclude Include="helpers.hpp" />
     <ClInclude Include="LaunchParams.hpp" />
     <ClInclude Include="model.hpp" />
     <ClInclude Include="radiance_cell.hpp" />

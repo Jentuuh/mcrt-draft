@@ -38,42 +38,6 @@ namespace mcrt {
         MeshSBTData data;
     };
 
-    void TriangleMesh::addCube(const glm::vec3& center, const glm::vec3& size)
-    {
-        glm::mat4x4 xfm = glm::mat4x4(1.0f);
-        xfm = glm::column(xfm, 3, glm::vec4{ center - 0.5f * size, 1.0f });
-        xfm = glm::column(xfm, 0, glm::vec4{ size.x, 0.f, 0.f, 0.0f });
-        xfm = glm::column(xfm, 1, glm::vec4{ 0.0f, size.y, 0.f, 0.0f });
-        xfm = glm::column(xfm, 2, glm::vec4{ 0.0f, 0.0f, size.z, 0.0f });
-
-        addUnitCube(xfm);
-    }
-
-    void TriangleMesh::addUnitCube(const glm::mat4x4& xfm)
-    {
-        int firstVertexID = (int)vertex.size();
-        vertex.push_back(xfm * glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f });
-        vertex.push_back(xfm * glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
-        vertex.push_back(xfm * glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
-        vertex.push_back(xfm * glm::vec4{ 1.0f, 1.0f, 0.0f, 1.0f });
-        vertex.push_back(xfm * glm::vec4{ 0.0f, 0.0f, 1.0f, 1.0f });
-        vertex.push_back(xfm * glm::vec4{ 1.0f, 0.0f, 1.0f, 1.0f });
-        vertex.push_back(xfm * glm::vec4{ 0.0f, 1.0f, 1.0f, 1.0f });
-        vertex.push_back(xfm * glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
-
-        int indices[] = { 0,1,3, 2,3,0,
-                         5,7,6, 5,6,4,
-                         0,4,5, 0,5,1,
-                         2,3,7, 2,7,6,
-                         1,5,7, 1,7,3,
-                         4,0,2, 4,2,6
-                        };
-
-        for (int i = 0; i < 12; i++)
-            index.push_back(firstVertexID + glm::ivec3(indices[3 * i + 0],
-                                                        indices[3 * i + 1],
-                                                        indices[3 * i + 2]));
-    }
 
     Renderer::Renderer(Scene& scene, const Camera& camera): renderCamera{camera}, scene{scene}
     {
@@ -111,28 +75,27 @@ namespace mcrt {
 
     OptixTraversableHandle Renderer::buildAccel(Scene& scene)
     {
-        vertexBuffers.resize(scene.numObjects());
-        indexBuffers.resize(scene.numObjects());
+        int bufferSize = scene.numObjects() + (scene.grid.resolution.x * scene.grid.resolution.y * scene.grid.resolution.z);
+        std::cout << "Buffer size " << bufferSize << std::endl;
 
-        //// Upload model to the device: the builder
-        //vertexBuffer.alloc_and_upload(scene.vertices());
-        //indexBuffer.alloc_and_upload(scene.indices());
+        vertexBuffers.resize(bufferSize);
+        indexBuffers.resize(bufferSize);
 
         OptixTraversableHandle asHandle{ 0 };
 
         // ==================================================================
         // Triangle inputs
         // ==================================================================
-        std::vector<OptixBuildInput> triangleInput(scene.numObjects());
-        std::vector<CUdeviceptr> d_vertices(scene.numObjects());
-        std::vector<CUdeviceptr> d_indices(scene.numObjects());
-        std::vector<uint32_t> triangleInputFlags(scene.numObjects());
+        std::vector<OptixBuildInput> triangleInput(bufferSize);
+        std::vector<CUdeviceptr> d_vertices(bufferSize);
+        std::vector<CUdeviceptr> d_indices(bufferSize);
+        std::vector<uint32_t> triangleInputFlags(bufferSize);
 
         for (int meshID = 0; meshID < scene.numObjects(); meshID++) {
             // upload the model to the device: the builder
             std::shared_ptr<Model> model = scene.getGameObjects()[meshID].model;
             vertexBuffers[meshID].alloc_and_upload(scene.getGameObjects()[meshID].getWorldVertices());
-            indexBuffers[meshID].alloc_and_upload(model->indices);
+            indexBuffers[meshID].alloc_and_upload(model->mesh->indices);
 
             triangleInput[meshID] = {};
             triangleInput[meshID].type
@@ -145,12 +108,12 @@ namespace mcrt {
 
             triangleInput[meshID].triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
             triangleInput[meshID].triangleArray.vertexStrideInBytes = sizeof(glm::vec3);
-            triangleInput[meshID].triangleArray.numVertices = (int)model->vertices.size();
+            triangleInput[meshID].triangleArray.numVertices = (int)model->mesh->vertices.size();
             triangleInput[meshID].triangleArray.vertexBuffers = &d_vertices[meshID];
 
             triangleInput[meshID].triangleArray.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
             triangleInput[meshID].triangleArray.indexStrideInBytes = sizeof(glm::ivec3);
-            triangleInput[meshID].triangleArray.numIndexTriplets = (int)model->indices.size();
+            triangleInput[meshID].triangleArray.numIndexTriplets = (int)model->mesh->indices.size();
             triangleInput[meshID].triangleArray.indexBuffer = d_indices[meshID];
 
             triangleInputFlags[meshID] = 0;
@@ -163,6 +126,47 @@ namespace mcrt {
             triangleInput[meshID].triangleArray.sbtIndexOffsetSizeInBytes = 0;
             triangleInput[meshID].triangleArray.sbtIndexOffsetStrideInBytes = 0;
         }
+
+        // We also do this setup for the radiance grid 
+        // TODO: THIS NEEDS TO BE MOVED LATER TO ANOTHER PIPELINE!!!
+        for (int i = scene.getGameObjects().size(); i < bufferSize; i++)
+        {
+            std::vector<glm::vec3> verts = scene.grid.getCell(i - scene.getGameObjects().size()).getVertices();
+            std::vector<glm::ivec3> inds = scene.grid.getCell(i - scene.getGameObjects().size()).getIndices();
+
+            vertexBuffers[i].alloc_and_upload(verts);
+            indexBuffers[i].alloc_and_upload(inds);
+
+            triangleInput[i] = {};
+            triangleInput[i].type
+                = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
+
+            // create local variables, because we need a *pointer* to the
+            // device pointers
+            d_vertices[i] = vertexBuffers[i].d_pointer();
+            d_indices[i] = indexBuffers[i].d_pointer();
+
+            triangleInput[i].triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
+            triangleInput[i].triangleArray.vertexStrideInBytes = sizeof(glm::vec3);
+            triangleInput[i].triangleArray.numVertices = (int)verts.size();
+            triangleInput[i].triangleArray.vertexBuffers = &d_vertices[i];
+
+            triangleInput[i].triangleArray.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
+            triangleInput[i].triangleArray.indexStrideInBytes = sizeof(glm::ivec3);
+            triangleInput[i].triangleArray.numIndexTriplets = (int)inds.size();
+            triangleInput[i].triangleArray.indexBuffer = d_indices[i];
+
+            triangleInputFlags[i] = 0;
+
+            // in this example we have one SBT entry, and no per-primitive
+            // materials:
+            triangleInput[i].triangleArray.flags = &triangleInputFlags[i];
+            triangleInput[i].triangleArray.numSbtRecords = 1;
+            triangleInput[i].triangleArray.sbtIndexOffsetBuffer = 0;
+            triangleInput[i].triangleArray.sbtIndexOffsetSizeInBytes = 0;
+            triangleInput[i].triangleArray.sbtIndexOffsetStrideInBytes = 0;
+        }
+       
         // ==================================================================
         // BLAS setup
         // ==================================================================
@@ -179,7 +183,7 @@ namespace mcrt {
         (optixContext,
             &accelOptions,
             triangleInput.data(),
-            scene.numObjects(),  // num_build_inputs
+            bufferSize,  // num_build_inputs
             &blasBufferSizes
         ));
 
@@ -208,7 +212,7 @@ namespace mcrt {
             /* stream */0,
             &accelOptions,
             triangleInput.data(),
-            scene.numObjects(),
+            bufferSize,
             tempBuffer.d_pointer(),
             tempBuffer.sizeInBytes,
 
@@ -501,17 +505,33 @@ namespace mcrt {
         // ----------------------------------------
         // Build hitgroup records
         // ----------------------------------------
-        // TODO: FOR NOW THIS IS JUST A DUMMY VARIABLE, CHANGE THIS!!!
         int numObjects = scene.numObjects();
         std::vector<HitgroupRecord> hitgroupRecords;
         for (int i = 0; i < numObjects; i++) {
             int objectType = 0;
             HitgroupRecord rec;
             OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[objectType], &rec));
-            rec.data.objectType = i;
-            rec.data.vertex = (glm::vec3)vertexBuffers[i].d_pointer();
+            rec.data.objectType = 0;
+            rec.data.color = scene.getGameObjects()[i].model->mesh->diffuse;
+            rec.data.vertex = (glm::vec3*)vertexBuffers[i].d_pointer();
+            rec.data.index = (glm::ivec3*)indexBuffers[i].d_pointer();
             hitgroupRecords.push_back(rec);
         }
+
+        // Record for the radiance grid
+        // TODO: THIS NEEDS TO BE MOVED TO ANOTHER PIPELINE LATER!!
+        int gridSize = scene.grid.resolution.x * scene.grid.resolution.y * scene.grid.resolution.z;
+        for (int i = 0; i < gridSize; i++) {
+            int objectType = 0;
+            HitgroupRecord rec;
+            OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[objectType], &rec));
+            rec.data.objectType = 1;
+            rec.data.vertex = (glm::vec3*)vertexBuffers[numObjects + i].d_pointer();
+            rec.data.index = (glm::ivec3*)indexBuffers[numObjects + i].d_pointer();
+            rec.data.color = glm::vec3{ 0.0f, 1.0f, 0.0f };
+            hitgroupRecords.push_back(rec);
+        }
+
         // Upload records to device
         hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);
         // Maintain a pointer to the device memory

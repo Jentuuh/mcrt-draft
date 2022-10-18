@@ -9,12 +9,16 @@ namespace mcrt {
 	class RadianceGrid
 	{
 	public:
-		RadianceGrid(float cellSize);
+		RadianceGrid();
+		void init(float cellSize);
 
 		RadianceCell& getCell(glm::ivec3 coord);
+		RadianceCell& getCell(int index) { return grid[index]; };
+		std::vector<glm::vec3>& getVertices();
+		std::vector<glm::ivec3>& getIndices();
 
-	private:
 		glm::ivec3 resolution;
+	private:
 		std::vector<RadianceCell> grid;
 	};
 }

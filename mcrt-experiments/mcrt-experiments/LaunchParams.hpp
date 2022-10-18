@@ -5,7 +5,10 @@
 
 namespace mcrt {
 	struct MeshSBTData {
-		glm::vec3 vertex;
+		glm::vec3 color;
+		glm::vec3 *vertex;
+		glm::ivec3* index;
+
 		int objectType;
 	};
 

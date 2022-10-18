@@ -1,23 +1,26 @@
 #include "model.hpp"
+#include <iostream>
+
 
 namespace mcrt {
 
 	Model::Model()
 	{
-        loadModel();
+        mesh = std::make_shared<TriangleMesh>();
+        //loadModel();
 	}
+
 
 	void Model::loadModel()
 	{
-        int firstVertexID = (int)vertices.size();
-        vertices.push_back(glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f });
-        vertices.push_back(glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
-        vertices.push_back(glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
-        vertices.push_back(glm::vec4{ 1.0f, 1.0f, 0.0f, 1.0f });
-        vertices.push_back(glm::vec4{ 0.0f, 0.0f, 1.0f, 1.0f });
-        vertices.push_back(glm::vec4{ 1.0f, 0.0f, 1.0f, 1.0f });
-        vertices.push_back(glm::vec4{ 0.0f, 1.0f, 1.0f, 1.0f });
-        vertices.push_back(glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
+        mesh->vertices.push_back(glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f });
+        mesh->vertices.push_back(glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
+        mesh->vertices.push_back(glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+        mesh->vertices.push_back(glm::vec4{ 1.0f, 1.0f, 0.0f, 1.0f });
+        mesh->vertices.push_back(glm::vec4{ 0.0f, 0.0f, 1.0f, 1.0f });
+        mesh->vertices.push_back(glm::vec4{ 1.0f, 0.0f, 1.0f, 1.0f });
+        mesh->vertices.push_back(glm::vec4{ 0.0f, 1.0f, 1.0f, 1.0f });
+        mesh->vertices.push_back(glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f });
 
         int indicesCube[] = { 0,1,3, 2,3,0,
                          5,7,6, 5,6,4,
@@ -28,8 +31,12 @@ namespace mcrt {
         };
 
         for (int i = 0; i < 12; i++)
-            indices.push_back(firstVertexID + glm::ivec3(indicesCube[3 * i + 0],
+            mesh->indices.push_back(glm::ivec3(indicesCube[3 * i + 0],
                 indicesCube[3 * i + 1],
                 indicesCube[3 * i + 2]));
+
 	}
+
+    
+
 }

@@ -59,16 +59,21 @@ namespace mcrt {
             = *(const MeshSBTData*)optixGetSbtDataPointer();        
         
         const int primID = optixGetPrimitiveIndex();
-        glm::vec3& prd = *(glm::vec3*)getPRD<glm::vec3>();
         const int objectType = sbtData.objectType;
 
-        if (objectType > 0)
-        {
-            prd = glm::vec3{ 1.0f, 0.0f, 0.0f };
-        }
-        else {
-            prd = glm::vec3{ 0.0f, 0.0f, 1.0f };
-        }
+        // compute normal:
+        const glm::ivec3 index = sbtData.index[primID];
+        const glm::vec3& A = sbtData.vertex[index.x];
+        const glm::vec3& B = sbtData.vertex[index.y];
+        const glm::vec3& C = sbtData.vertex[index.z];
+        const glm::vec3 Ng = normalize(cross(B - A, C - A));
+
+        float3 rayDirf3 = optixGetWorldRayDirection();
+        const glm::vec3 rayDir = { rayDirf3.x, rayDirf3.y, rayDirf3.z };
+        const float cosDN = 0.2f + .8f * fabsf(dot(rayDir, Ng));
+
+        glm::vec3& prd = *(glm::vec3*)getPRD<glm::vec3>();
+        prd = cosDN * sbtData.color;
     }
 
     extern "C" __global__ void __anyhit__radiance()

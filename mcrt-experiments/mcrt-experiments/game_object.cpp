@@ -65,7 +65,7 @@ namespace mcrt {
 	std::vector<glm::vec3> GameObject::getWorldVertices()
 	{
 		std::vector<glm::vec3> worldVertices;
-		for (auto& v : model->vertices)
+		for (auto& v : model->mesh->vertices)
 		{
 			worldVertices.push_back(worldTransform.object2World * glm::vec4{ v, 1.0f });
 		}

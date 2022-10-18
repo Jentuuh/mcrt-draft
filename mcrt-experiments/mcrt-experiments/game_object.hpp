@@ -26,7 +26,7 @@ namespace mcrt {
 		GameObject(Transform transform, std::shared_ptr<Model> model);
 
 		std::vector<glm::vec3> getWorldVertices();
-		int amountVertices() { return model->vertices.size(); };
+		int amountVertices() { return model->mesh->vertices.size(); };
 
 		std::shared_ptr<Model> model;
 		Transform worldTransform;

@@ -101,6 +101,9 @@
     <ClInclude Include="radiance_grid.hpp">
       <Filter>Header Files\Radiance Grid</Filter>
     </ClInclude>
+    <ClInclude Include="helpers.hpp">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="devicePrograms.cu">

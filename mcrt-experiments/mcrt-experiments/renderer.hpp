@@ -7,18 +7,6 @@
 
 namespace mcrt {
 
-	// Simple indexed triangle mesh container
-	struct TriangleMesh {
-
-		// Add unit cube, subject to given cfm matrix, to the triangle mesh
-		void addUnitCube(const glm::mat4x4& xfm);
-		// Add aligned cube given its front-lower-left corner + size
-		void addCube(const glm::vec3& center, const glm::vec3& size);
-
-		std::vector<glm::vec3> vertex;
-		std::vector<glm::ivec3> index;
-	};
-
 	class Renderer {
 	public:
 		/*! Constructor : performs setup, including initializing OptiX, creation of module

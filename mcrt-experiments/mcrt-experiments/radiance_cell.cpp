@@ -1,9 +1,13 @@
 #include "radiance_cell.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtx/string_cast.hpp"
+#include <iostream>
 
 namespace mcrt {
-	RadianceCell::RadianceCell(glm::ivec3 coord, float scale) 
+	RadianceCell::RadianceCell(glm::ivec3 coord, glm::ivec3 res, float scale)
 	{
+        int order = (coord.y * res.x) + (coord.z * res.x * res.y) + coord.x;
+
         glm::mat4 scaleM = glm::scale(glm::mat4(1.0f), glm::vec3{ scale, scale, scale });
         glm::mat4 transM = glm::translate(glm::mat4(1.0f), glm::vec3{ scale * coord.x, scale * coord.y, scale * coord.z });
 
