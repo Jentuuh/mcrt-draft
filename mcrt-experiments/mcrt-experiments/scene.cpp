@@ -5,6 +5,9 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb/stb_image.h"
+
 #include <set>
 #include <limits>
 #include <iostream>
@@ -142,10 +145,10 @@ namespace mcrt {
 
     void Scene::loadModelFromOBJ(const std::string& fileName)
     {
-        const std::string mtlDir
+        const std::string modelDir
             = fileName.substr(0, fileName.rfind('/') + 1);
 
-        std::cout << "Loading OBJ file from: " << mtlDir << std::endl;
+        std::cout << "Loading OBJ file from: " << modelDir << std::endl;
 
         tinyobj::attrib_t attributes;
         std::vector<tinyobj::shape_t> shapes;
@@ -159,16 +162,18 @@ namespace mcrt {
                 &err,
                 &err,
                 fileName.c_str(),
-                mtlDir.c_str(),
+                modelDir.c_str(),
                 /* triangulate */true);
         if (!readOK) {
-            throw std::runtime_error("Could not read OBJ model from " + fileName + ":" + mtlDir + " : " + err);
+            throw std::runtime_error("Could not read OBJ model from " + fileName + ":" + modelDir + " : " + err);
         }
 
         if (materials.empty())
             throw std::runtime_error("could not parse materials ...");
 
         std::cout << "Done loading obj file - found " << shapes.size() << " shapes with " << materials.size() << " materials" << std::endl;
+        std::map<std::string, int> knownTextures;
+
         for (int shapeID = 0; shapeID < (int)shapes.size(); shapeID++) {
             tinyobj::shape_t& shape = shapes[shapeID];
 
@@ -194,6 +199,9 @@ namespace mcrt {
                     mesh->indices.push_back(idx);
                     mesh->diffuse = (const glm::vec3&)materials[materialID].diffuse;
                     mesh->diffuse = generateRandomColor();
+                    mesh->diffuseTextureID = loadTexture(knownTextures,
+                        materials[materialID].diffuse_texname,
+                        modelDir);
                 }
 
                 if (mesh->vertices.empty())
@@ -210,6 +218,53 @@ namespace mcrt {
 
         std::cout << "Succesfully loaded in scene model. Resulted in " << gameObjects.size() << " game objects." << std::endl;
     }
+
+    int Scene::loadTexture(std::map<std::string, int>&knownTextures, const std::string & inFileName, const std::string & modelPath)
+    {
+        if (inFileName == "")
+            return -1;
+
+        if (knownTextures.find(inFileName) != knownTextures.end())
+            return knownTextures[inFileName];
+
+        std::string fileName = inFileName;
+        // first, fix backspaces:
+        for (auto& c : fileName)
+            if (c == '\\') c = '/';
+        fileName = modelPath + "/" + fileName;
+
+        glm::ivec2 res;
+        int   comp;
+        unsigned char* image = stbi_load(fileName.c_str(),
+            &res.x, &res.y, &comp, STBI_rgb_alpha);
+        int textureID = -1;
+        if (image) {
+            textureID = (int)textures.size();
+            std::shared_ptr<Texture> texture = std::make_shared<Texture>();
+            texture->resolution = res;
+            texture->pixel = (uint32_t*)image;
+
+            /* iw - actually, it seems that stbi loads the pictures
+               mirrored along the y axis - mirror them here */
+            for (int y = 0; y < res.y / 2; y++) {
+                uint32_t* line_y = texture->pixel + y * res.x;
+                uint32_t* mirrored_y = texture->pixel + (res.y - 1 - y) * res.x;
+                int mirror_y = res.y - 1 - y;
+                for (int x = 0; x < res.x; x++) {
+                    std::swap(line_y[x], mirrored_y[x]);
+                }
+            }
+
+            textures.push_back(texture);
+        }
+        else {
+            std::cout << "Could not load texture from " << fileName << "!" << std::endl;
+        }
+
+        knownTextures[inFileName] = textureID;
+        return textureID;
+    }
+
 
 
 }

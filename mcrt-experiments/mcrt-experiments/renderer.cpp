@@ -63,6 +63,8 @@ namespace mcrt {
         std::cout << "Setting up OptiX pipeline..." << std::endl;
         createPipeline();
 
+        createTextures();
+
         std::cout << "Building SBT..." << std::endl;
         buildSBT();
 
@@ -80,6 +82,8 @@ namespace mcrt {
 
         vertexBuffers.resize(bufferSize);
         indexBuffers.resize(bufferSize);
+        normalBuffers.resize(bufferSize);
+        texcoordBuffers.resize(bufferSize);
 
         OptixTraversableHandle asHandle{ 0 };
 
@@ -94,8 +98,13 @@ namespace mcrt {
         for (int meshID = 0; meshID < scene.numObjects(); meshID++) {
             // upload the model to the device: the builder
             std::shared_ptr<Model> model = scene.getGameObjects()[meshID].model;
+            std::shared_ptr<TriangleMesh> mesh = model->mesh;
             vertexBuffers[meshID].alloc_and_upload(scene.getGameObjects()[meshID].getWorldVertices());
-            indexBuffers[meshID].alloc_and_upload(model->mesh->indices);
+            indexBuffers[meshID].alloc_and_upload(mesh->indices);
+            if (!mesh->normals.empty())
+                normalBuffers[meshID].alloc_and_upload(mesh->normals);
+            if (!mesh->texCoords.empty())
+                texcoordBuffers[meshID].alloc_and_upload(mesh->texCoords);
 
             triangleInput[meshID] = {};
             triangleInput[meshID].type
@@ -248,6 +257,60 @@ namespace mcrt {
         compactedSizeBuffer.free();
 
         return asHandle;
+    }
+
+    void Renderer::createTextures()
+    {
+        int numTextures = (int)scene.getTextures().size();
+
+        textureArrays.resize(numTextures);
+        textureObjects.resize(numTextures);
+
+        for (int textureID = 0; textureID < numTextures; textureID++) {
+            auto texture = scene.getTextures()[textureID];
+
+            cudaResourceDesc res_desc = {};
+
+            cudaChannelFormatDesc channel_desc;
+            int32_t width = texture->resolution.x;
+            int32_t height = texture->resolution.y;
+            int32_t numComponents = 4;
+            int32_t pitch = width * numComponents * sizeof(uint8_t);
+            channel_desc = cudaCreateChannelDesc<uchar4>();
+
+            cudaArray_t& pixelArray = textureArrays[textureID];
+            CUDA_CHECK(MallocArray(&pixelArray,
+                &channel_desc,
+                width, height));
+
+            CUDA_CHECK(Memcpy2DToArray(pixelArray,
+                /* offset */0, 0,
+                texture->pixel,
+                pitch, pitch, height,
+                cudaMemcpyHostToDevice));
+
+            res_desc.resType = cudaResourceTypeArray;
+            res_desc.res.array.array = pixelArray;
+
+            cudaTextureDesc tex_desc = {};
+            tex_desc.addressMode[0] = cudaAddressModeWrap;
+            tex_desc.addressMode[1] = cudaAddressModeWrap;
+            tex_desc.filterMode = cudaFilterModeLinear;
+            tex_desc.readMode = cudaReadModeNormalizedFloat;
+            tex_desc.normalizedCoords = 1;
+            tex_desc.maxAnisotropy = 1;
+            tex_desc.maxMipmapLevelClamp = 99;
+            tex_desc.minMipmapLevelClamp = 0;
+            tex_desc.mipmapFilterMode = cudaFilterModePoint;
+            tex_desc.borderColor[0] = 1.0f;
+            tex_desc.sRGB = 0;
+
+            // Create texture object
+            cudaTextureObject_t cuda_tex = 0;
+            CUDA_CHECK(CreateTextureObject(&cuda_tex, &res_desc, &tex_desc, nullptr));
+            textureObjects[textureID] = cuda_tex;
+        }
+
     }
 
 
@@ -508,13 +571,25 @@ namespace mcrt {
         int numObjects = scene.numObjects();
         std::vector<HitgroupRecord> hitgroupRecords;
         for (int i = 0; i < numObjects; i++) {
+            auto mesh = scene.getGameObjects()[i].model->mesh;
+
             int objectType = 0;
             HitgroupRecord rec;
             OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[objectType], &rec));
+            rec.data.color = mesh->diffuse;
+            if (mesh->diffuseTextureID >= 0) {
+                rec.data.hasTexture = true;
+                rec.data.texture = textureObjects[mesh->diffuseTextureID];
+            }
+            else {
+                rec.data.hasTexture = false;
+            }
+
             rec.data.objectType = 0;
-            rec.data.color = scene.getGameObjects()[i].model->mesh->diffuse;
             rec.data.vertex = (glm::vec3*)vertexBuffers[i].d_pointer();
             rec.data.index = (glm::ivec3*)indexBuffers[i].d_pointer();
+            rec.data.normal = (glm::vec3*)normalBuffers[i].d_pointer();
+            rec.data.texcoord = (glm::vec2*)texcoordBuffers[i].d_pointer();
             hitgroupRecords.push_back(rec);
         }
 

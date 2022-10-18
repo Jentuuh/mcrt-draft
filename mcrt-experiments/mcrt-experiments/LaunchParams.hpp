@@ -7,7 +7,12 @@ namespace mcrt {
 	struct MeshSBTData {
 		glm::vec3 color;
 		glm::vec3 *vertex;
+		glm::vec3* normal;
+		glm::vec2* texcoord;
 		glm::ivec3* index;
+
+		bool hasTexture;
+		cudaTextureObject_t texture;
 
 		int objectType;
 	};

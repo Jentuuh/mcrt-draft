@@ -15,6 +15,7 @@ namespace mcrt {
 
 		// material data
 		glm::vec3 diffuse;
+		int diffuseTextureID{ -1 };
 	};
 
 	class Model

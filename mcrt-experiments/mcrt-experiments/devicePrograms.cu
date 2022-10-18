@@ -56,24 +56,61 @@ namespace mcrt {
     extern "C" __global__ void __closesthit__radiance()
     { 
         const MeshSBTData& sbtData
-            = *(const MeshSBTData*)optixGetSbtDataPointer();        
-        
-        const int primID = optixGetPrimitiveIndex();
-        const int objectType = sbtData.objectType;
+            = *(const MeshSBTData*)optixGetSbtDataPointer(); 
 
-        // compute normal:
+        // ------------------------------------------------------------------
+        // gather some basic hit information
+        // ------------------------------------------------------------------
+        const int   primID = optixGetPrimitiveIndex();
         const glm::ivec3 index = sbtData.index[primID];
-        const glm::vec3& A = sbtData.vertex[index.x];
-        const glm::vec3& B = sbtData.vertex[index.y];
-        const glm::vec3& C = sbtData.vertex[index.z];
-        const glm::vec3 Ng = normalize(cross(B - A, C - A));
+        const float u = optixGetTriangleBarycentrics().x;
+        const float v = optixGetTriangleBarycentrics().y;
 
+        // ------------------------------------------------------------------
+        // compute normal, using either shading normal (if avail), or
+        // geometry normal (fallback)
+        // ------------------------------------------------------------------
+        glm::vec3 N;
+        if (sbtData.normal) {
+            N = (1.f - u - v) * sbtData.normal[index.x]
+                + u * sbtData.normal[index.y]
+                + v * sbtData.normal[index.z];
+        }
+        else {
+            const glm::vec3& A = sbtData.vertex[index.x];
+            const glm::vec3& B = sbtData.vertex[index.y];
+            const glm::vec3& C = sbtData.vertex[index.z];
+            N = normalize(cross(B - A, C - A));
+        }
+        N = normalize(N);
+
+        // ------------------------------------------------------------------
+        // compute diffuse material color, including diffuse texture, if
+        // available
+        // ------------------------------------------------------------------
+        glm::vec3 diffuseColor = sbtData.color;
+        if (sbtData.hasTexture && sbtData.texcoord) {
+            // Barycentric tex coords
+            const glm::vec2 tc
+                = (1.f - u - v) * sbtData.texcoord[index.x]
+                + u * sbtData.texcoord[index.y]
+                + v * sbtData.texcoord[index.z];
+
+            float4 fromTexf4 = tex2D<float4>(sbtData.texture, tc.x, tc.y);
+            glm::vec4 fromTexture = glm::vec4{ fromTexf4.x,fromTexf4.y,fromTexf4.z,fromTexf4.w };
+
+            diffuseColor = (glm::vec3)fromTexture;
+        }
+
+        // ------------------------------------------------------------------
+        // perform some simple "NdotD" shading
+        // ------------------------------------------------------------------
         float3 rayDirf3 = optixGetWorldRayDirection();
         const glm::vec3 rayDir = { rayDirf3.x, rayDirf3.y, rayDirf3.z };
-        const float cosDN = 0.2f + .8f * fabsf(dot(rayDir, Ng));
+        const float cosDN = 0.2f + .8f * fabsf(dot(rayDir, N));
 
         glm::vec3& prd = *(glm::vec3*)getPRD<glm::vec3>();
-        prd = cosDN * sbtData.color;
+        prd = cosDN * diffuseColor;
     }
 
     extern "C" __global__ void __anyhit__radiance()

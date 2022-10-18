@@ -57,6 +57,9 @@ namespace mcrt {
 		// Build acceleration structure for our mesh
 		OptixTraversableHandle buildAccel(Scene& scene);
 
+		// Upload textures and create CUDA texture objects for them
+		void createTextures();
+
 	protected:
 		// CUDA device context + stream that OptiX pipeline will run on,
 		// and device properties of the device
@@ -100,6 +103,12 @@ namespace mcrt {
 		// Device-side buffers (one buffer per input mesh!)
 		std::vector<CUDABuffer> vertexBuffers;	
 		std::vector<CUDABuffer> indexBuffers;
+		std::vector<CUDABuffer> normalBuffers;
+		std::vector<CUDABuffer> texcoordBuffers;
+
 		CUDABuffer accelerationStructBuffer;
+
+		std::vector<cudaArray_t>         textureArrays;
+		std::vector<cudaTextureObject_t> textureObjects;
 	};
 }
