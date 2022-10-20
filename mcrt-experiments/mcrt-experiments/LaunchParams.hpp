@@ -23,7 +23,7 @@ namespace mcrt {
 
 	struct LaunchParams
 	{
-		int frameID;
+		int frameID = 0;
 
 		struct {
 			uint32_t* colorBuffer;

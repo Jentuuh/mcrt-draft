@@ -4,6 +4,7 @@
 #include "LaunchParams.hpp"
 #include "camera.hpp"
 #include "scene.hpp"
+#include "default_pipeline.hpp"
 
 namespace mcrt {
 
@@ -34,28 +35,8 @@ namespace mcrt {
 		// Creation + configuration of OptiX device context
 		void createContext();
 
-		/*! creates the module that contains all the programs we are going
-		  to use. in this simple example, we use a single module from a
-		  single .cu file, using a single embedded ptx string */
-		void createModule();
-
-		// Setup for raygen programs(s) that we'll use
-		void createRaygenPrograms();
-
-		// Setup for miss programs(s) that we'll use
-		void createMissPrograms();
-
-		// Setup for hitgroup programs(s) that we'll use
-		void createHitGroupPrograms();
-
-		// Assembles full pipeline of all programs
-		void createPipeline();
-
-		// Construction of shader binding table
-		void buildSBT();
-
-		// Build acceleration structure for our mesh
-		OptixTraversableHandle buildAccel(Scene& scene);
+		// Fill geometryBuffers with scene geometry
+		void fillGeometryBuffers();
 
 		// Upload textures and create CUDA texture objects for them
 		void createTextures();
@@ -70,28 +51,7 @@ namespace mcrt {
 		// OptiX context that pipeline will run in
 		OptixDeviceContext	optixContext;
 
-		// Pipeline 
-		OptixPipeline				pipeline;
-		OptixPipelineCompileOptions	pipelineCompileOptions = {};
-		OptixPipelineLinkOptions	pipelineLinkOptions = {};
-
-		// Module containing device programs
-		OptixModule					module;
-		OptixModuleCompileOptions	moduleCompileOptions = {};
-
-		// Vectors of all program(group)s, and SBT built around them
-		std::vector<OptixProgramGroup> raygenPGs;
-		CUDABuffer raygenRecordsBuffer;
-		std::vector<OptixProgramGroup> missPGs;
-		CUDABuffer missRecordsBuffer;
-		std::vector<OptixProgramGroup> hitgroupPGs;
-		CUDABuffer hitgroupRecordsBuffer;
-		OptixShaderBindingTable sbt = {};
-
-		// Launch params (accessible from each program) on host, 
-		// and buffer to store them on device
-		LaunchParams launchParams;
-		CUDABuffer   launchParamsBuffer;
+		std::unique_ptr<DefaultPipeline> tutorialPipeline;
 
 		CUDABuffer colorBuffer;	// Framebuffer we will write to
 
@@ -105,8 +65,6 @@ namespace mcrt {
 		std::vector<CUDABuffer> indexBuffers;
 		std::vector<CUDABuffer> normalBuffers;
 		std::vector<CUDABuffer> texcoordBuffers;
-
-		CUDABuffer accelerationStructBuffer;
 
 		std::vector<cudaArray_t>         textureArrays;
 		std::vector<cudaTextureObject_t> textureObjects;
