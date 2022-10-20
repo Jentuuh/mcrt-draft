@@ -4,6 +4,10 @@
 #include "glm/glm.hpp"
 
 namespace mcrt {
+
+	enum { RADIANCE_RAY_TYPE = 0, SHADOW_RAY_TYPE, RAY_TYPE_COUNT };
+
+
 	struct MeshSBTData {
 		glm::vec3 color;
 		glm::vec3 *vertex;

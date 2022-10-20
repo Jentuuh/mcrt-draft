@@ -15,10 +15,6 @@ namespace mcrt {
     // optixLaunch)
     extern "C" __constant__ LaunchParams optixLaunchParams;
 
-
-    // for this simple example, we have a single ray type
-    enum { SURFACE_RAY_TYPE = 0, RAY_TYPE_COUNT };
-
     static __forceinline__ __device__
         void* unpackPointer(uint32_t i0, uint32_t i1)
     {
@@ -53,6 +49,11 @@ namespace mcrt {
     // one group of them to set up the SBT)
     //------------------------------------------------------------------------------
 
+    extern "C" __global__ void __closesthit__shadow()
+    {
+        /* not going to be used ... */
+    }
+
     extern "C" __global__ void __closesthit__radiance()
     { 
         const MeshSBTData& sbtData
@@ -70,19 +71,34 @@ namespace mcrt {
         // compute normal, using either shading normal (if avail), or
         // geometry normal (fallback)
         // ------------------------------------------------------------------
-        glm::vec3 N;
+        glm::vec3 Ng;   
+        const glm::vec3& A = sbtData.vertex[index.x];
+        const glm::vec3& B = sbtData.vertex[index.y];
+        const glm::vec3& C = sbtData.vertex[index.z];
+        Ng = cross(B - A, C - A);
+
+        glm::vec3 Ns;
         if (sbtData.normal) {
-            N = (1.f - u - v) * sbtData.normal[index.x]
+            Ns = (1.f - u - v) * sbtData.normal[index.x]
                 + u * sbtData.normal[index.y]
                 + v * sbtData.normal[index.z];
         }
         else {
-            const glm::vec3& A = sbtData.vertex[index.x];
-            const glm::vec3& B = sbtData.vertex[index.y];
-            const glm::vec3& C = sbtData.vertex[index.z];
-            N = normalize(cross(B - A, C - A));
+            Ns = Ng;
         }
-        N = normalize(N);
+
+        // ------------------------------------------------------------------
+        // face-forward and normalize normals
+        // ------------------------------------------------------------------
+        float3 rayDirf3 = optixGetWorldRayDirection();
+        const glm::vec3 rayDir = { rayDirf3.x, rayDirf3.y, rayDirf3.z };
+
+        if (dot(rayDir, Ng) > 0.f) Ng = -Ng;
+        Ng = normalize(Ng);
+
+        if (dot(Ng, Ns) < 0.f)
+            Ns -= 2.f * dot(Ng, Ns) * Ng;
+        Ns = normalize(Ns);
 
         // ------------------------------------------------------------------
         // compute diffuse material color, including diffuse texture, if
@@ -103,18 +119,65 @@ namespace mcrt {
         }
 
         // ------------------------------------------------------------------
-        // perform some simple "NdotD" shading
+        // compute shadow
         // ------------------------------------------------------------------
-        float3 rayDirf3 = optixGetWorldRayDirection();
-        const glm::vec3 rayDir = { rayDirf3.x, rayDirf3.y, rayDirf3.z };
-        const float cosDN = 0.2f + .8f * fabsf(dot(rayDir, N));
+        const glm::vec3 surfPos
+            = (1.f - u - v) * sbtData.vertex[index.x]
+            + u * sbtData.vertex[index.y]
+            + v * sbtData.vertex[index.z];
+
+        // Hardcoded light position
+        const glm::vec3 lightPos(0.5f, 0.95f, 0.5f);
+        const glm::vec3 lightDir = lightPos - surfPos;
+
+        // trace shadow ray:
+        glm::vec3 lightVisibility = glm::vec3{ 0.0f, 0.0f, 0.0f };
+        // the values we store the PRD pointer in:
+        uint32_t u0, u1;
+        packPointer(&lightVisibility, u0, u1);
+
+        glm::vec3 rayOrigin = surfPos + 1e-3f * Ng;
+        float3 rayOrigin3f = { rayOrigin.x, rayOrigin.y, rayOrigin.z };
+        float3 lightDir3f = {lightDir.x, lightDir.y, lightDir.z};
+
+        // RECURSIVE CALL!
+        optixTrace(optixLaunchParams.traversable,
+            rayOrigin3f,
+            lightDir3f,
+            1e-3f,      // tmin
+            1.f - 1e-3f,  // tmax
+            0.0f,       // rayTime
+            OptixVisibilityMask(255),
+            // For shadow rays: skip any/closest hit shaders and terminate on first
+            // intersection with anything. The miss shader is used to mark if the
+            // light was visible.
+            OPTIX_RAY_FLAG_DISABLE_ANYHIT
+            | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT
+            | OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT,
+            SHADOW_RAY_TYPE,            // SBT offset
+            RAY_TYPE_COUNT,             // SBT stride
+            SHADOW_RAY_TYPE,            // missSBTIndex 
+            u0, u1);
+
+        // ------------------------------------------------------------------
+        // final shading: a bit of ambient, a bit of directional ambient,
+        // and directional component based on shadowing
+        // ------------------------------------------------------------------
+        const float cosDN
+            = 0.1f
+            + .8f * fabsf(dot(rayDir, Ns));
 
         glm::vec3& prd = *(glm::vec3*)getPRD<glm::vec3>();
-        prd = cosDN * diffuseColor;
+        prd = (.1f + (.2f + .8f * lightVisibility) * cosDN) * diffuseColor;
+        //prd = (.8f * lightVisibility) * diffuseColor;
+
     }
 
     extern "C" __global__ void __anyhit__radiance()
     { /*! for this simple example, this will remain empty */
+    }
+    extern "C" __global__ void __anyhit__shadow()
+    { /*! not going to be used */
     }
 
 
@@ -130,6 +193,13 @@ namespace mcrt {
     {
         glm::vec3& prd = *(glm::vec3*)getPRD<glm::vec3>();
         prd = glm::vec3{ 1.0f, 1.0f, 1.0f };
+    }
+
+    extern "C" __global__ void __miss__shadow()
+    {
+        // we didn't hit anything, so the light is visible
+        glm::vec3& prd = *(glm::vec3*)getPRD<glm::vec3>();
+        prd = glm::vec3(1.f);
     }
 
     //------------------------------------------------------------------------------
@@ -176,9 +246,9 @@ namespace mcrt {
             0.0f,   // rayTime
             OptixVisibilityMask(255),
             OPTIX_RAY_FLAG_DISABLE_ANYHIT,//OPTIX_RAY_FLAG_NONE,
-            SURFACE_RAY_TYPE,             // SBT offset
+            RADIANCE_RAY_TYPE,            // SBT offset
             RAY_TYPE_COUNT,               // SBT stride
-            SURFACE_RAY_TYPE,             // missSBTIndex 
+            RADIANCE_RAY_TYPE,             // missSBTIndex 
             u0, u1);
 
         const int r = int(255.99f * pixelColorPRD.x);

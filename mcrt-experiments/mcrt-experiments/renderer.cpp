@@ -427,23 +427,46 @@ namespace mcrt {
     // Setup for miss program(s)
     void Renderer::createMissPrograms()
     {        
-        // Single miss program for now
-        missPGs.resize(1);
+        missPGs.resize(RAY_TYPE_COUNT);
+
+
+        char log[2048];
+        size_t sizeof_log = sizeof(log);
 
         OptixProgramGroupOptions pgOptions = {};
         OptixProgramGroupDesc pgDesc = {};
         pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
         pgDesc.miss.module = module;
+
+        // ------------------------------------------------------------------
+        // radiance rays
+        // ------------------------------------------------------------------
         pgDesc.miss.entryFunctionName = "__miss__radiance";
 
-        char log[2048];
-        size_t sizeof_log = sizeof(log);
         OPTIX_CHECK(optixProgramGroupCreate(optixContext,
             &pgDesc,
             1,
             &pgOptions,
             log, &sizeof_log,
-            &missPGs[0]
+            &missPGs[RADIANCE_RAY_TYPE]
+        ));
+
+        if (sizeof_log > 1)
+        {
+            std::cout << log << std::endl;
+        }
+
+        // ------------------------------------------------------------------
+        // shadow rays
+        // ------------------------------------------------------------------
+        pgDesc.miss.entryFunctionName = "__miss__shadow";
+
+        OPTIX_CHECK(optixProgramGroupCreate(optixContext,
+            &pgDesc,
+            1,
+            &pgOptions,
+            log, &sizeof_log,
+            &missPGs[SHADOW_RAY_TYPE]
         ));
 
         if (sizeof_log > 1)
@@ -456,24 +479,47 @@ namespace mcrt {
     void Renderer::createHitGroupPrograms()
     {
         // Single hitgroup program for now
-        hitgroupPGs.resize(1);
+        hitgroupPGs.resize(RAY_TYPE_COUNT);
 
-        OptixProgramGroupOptions pgOptions = {};
-        OptixProgramGroupDesc pgDesc = {};
-        pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
-        pgDesc.hitgroup.moduleCH = module;
-        pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__radiance";
-        pgDesc.hitgroup.moduleAH = module;
-        pgDesc.hitgroup.entryFunctionNameAH = "__anyhit__radiance";
-    
         char log[2048];
         size_t sizeof_log = sizeof(log);
+
+        OptixProgramGroupOptions pgOptions = {};
+        OptixProgramGroupDesc    pgDesc = {};
+        pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
+        pgDesc.hitgroup.moduleCH = module;
+        pgDesc.hitgroup.moduleAH = module;
+    
+        pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__radiance";
+        pgDesc.hitgroup.entryFunctionNameAH = "__anyhit__radiance";
+
         OPTIX_CHECK(optixProgramGroupCreate(optixContext,
             &pgDesc,
             1,
             &pgOptions,
             log, &sizeof_log,
-            &hitgroupPGs[0]
+            &hitgroupPGs[RADIANCE_RAY_TYPE]
+        ));
+
+        if (sizeof_log > 1)
+        {
+            std::cout << log << std::endl;
+        }
+
+        // -------------------------------------------------------
+        // shadow rays: technically we don't need this hit group,
+        // since we just use the miss shader to check if we were not
+        // in shadow
+        // -------------------------------------------------------
+        pgDesc.hitgroup.entryFunctionNameCH = "__closesthit__shadow";
+        pgDesc.hitgroup.entryFunctionNameAH = "__anyhit__shadow";
+
+        OPTIX_CHECK(optixProgramGroupCreate(optixContext,
+            &pgDesc,
+            1,
+            &pgOptions,
+            log, &sizeof_log,
+            &hitgroupPGs[SHADOW_RAY_TYPE]
         ));
 
         if (sizeof_log > 1)
@@ -571,26 +617,29 @@ namespace mcrt {
         int numObjects = scene.numObjects();
         std::vector<HitgroupRecord> hitgroupRecords;
         for (int i = 0; i < numObjects; i++) {
-            auto mesh = scene.getGameObjects()[i].model->mesh;
+            for (int rayID = 0; rayID < RAY_TYPE_COUNT; rayID++) {
 
-            int objectType = 0;
-            HitgroupRecord rec;
-            OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[objectType], &rec));
-            rec.data.color = mesh->diffuse;
-            if (mesh->diffuseTextureID >= 0) {
-                rec.data.hasTexture = true;
-                rec.data.texture = textureObjects[mesh->diffuseTextureID];
-            }
-            else {
-                rec.data.hasTexture = false;
-            }
+                auto mesh = scene.getGameObjects()[i].model->mesh;
 
-            rec.data.objectType = 0;
-            rec.data.vertex = (glm::vec3*)vertexBuffers[i].d_pointer();
-            rec.data.index = (glm::ivec3*)indexBuffers[i].d_pointer();
-            rec.data.normal = (glm::vec3*)normalBuffers[i].d_pointer();
-            rec.data.texcoord = (glm::vec2*)texcoordBuffers[i].d_pointer();
-            hitgroupRecords.push_back(rec);
+                int objectType = 0;
+                HitgroupRecord rec;
+                OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[rayID], &rec));
+                rec.data.color = mesh->diffuse;
+                if (mesh->diffuseTextureID >= 0) {
+                    rec.data.hasTexture = true;
+                    rec.data.texture = textureObjects[mesh->diffuseTextureID];
+                }
+                else {
+                    rec.data.hasTexture = false;
+                }
+
+                rec.data.objectType = 0;
+                rec.data.vertex = (glm::vec3*)vertexBuffers[i].d_pointer();
+                rec.data.index = (glm::ivec3*)indexBuffers[i].d_pointer();
+                rec.data.normal = (glm::vec3*)normalBuffers[i].d_pointer();
+                rec.data.texcoord = (glm::vec2*)texcoordBuffers[i].d_pointer();
+                hitgroupRecords.push_back(rec);
+            }
         }
 
         // Record for the radiance grid
