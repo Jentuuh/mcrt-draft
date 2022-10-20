@@ -135,6 +135,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="app.cpp" />
+    <ClCompile Include="area_light.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="default_pipeline.cpp" />
     <ClCompile Include="devicePrograms_embedded.c" />
@@ -150,6 +151,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.hpp" />
+    <ClInclude Include="area_light.hpp" />
     <ClInclude Include="camera.hpp" />
     <ClInclude Include="CUDABuffer.hpp" />
     <ClInclude Include="default_pipeline.hpp" />
