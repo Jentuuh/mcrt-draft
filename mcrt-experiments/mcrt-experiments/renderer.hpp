@@ -5,6 +5,7 @@
 #include "camera.hpp"
 #include "scene.hpp"
 #include "default_pipeline.hpp"
+#include "direct_light_pipeline.hpp"
 
 namespace mcrt {
 
@@ -23,6 +24,11 @@ namespace mcrt {
 
 		// Update camera to render from
 		void updateCamera(const Camera& camera);
+
+	private:
+		void writeToImage(std::string fileName, int resX, int resY, void* data);
+		void initDirectLightingTexture(int size);
+		void calculateDirectLighting();
 
 	protected:
 		// ------------------
@@ -52,8 +58,11 @@ namespace mcrt {
 		OptixDeviceContext	optixContext;
 
 		std::unique_ptr<DefaultPipeline> tutorialPipeline;
+		std::unique_ptr<DirectLightPipeline> directLightPipeline;
+
 
 		CUDABuffer colorBuffer;	// Framebuffer we will write to
+		CUDABuffer directLightingTexture;	// Texture in which we store the direct lighting
 
 		Camera renderCamera;
 

@@ -17,17 +17,13 @@ namespace mcrt {
 	public:
 		McrtPipeline(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene);
 
-		void uploadLaunchParams();
+		virtual void uploadLaunchParams() = 0;
 
 		OptixPipeline				pipeline;
 
 		// SBT
 		OptixShaderBindingTable sbt = {};
 
-		// Launch params (accessible from each program) on host, 
-		// and buffer to store them on device
-		LaunchParams launchParams;
-		CUDABuffer   launchParamsBuffer;
 
 	private:
 		virtual void buildModule(OptixDeviceContext& context) = 0;

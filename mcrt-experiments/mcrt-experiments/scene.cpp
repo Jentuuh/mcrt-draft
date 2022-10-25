@@ -50,6 +50,17 @@ namespace mcrt {
 		return amountVertices;
 	}
 
+    std::vector<LightData> Scene::getLightsData()
+    {
+        std::vector<LightData> lightsData;
+        for (auto& l : lights)
+        {
+            lightsData.push_back(l.lightProps);
+        }
+        return lightsData;
+    }
+
+
 	void Scene::addGameObject(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale, std::shared_ptr<Model> model)
 	{
 
@@ -103,6 +114,12 @@ namespace mcrt {
 		}
 
 	}
+
+    void Scene::loadLights()
+    {
+        // LightData{origin, du, dv, normal, power, width, height}
+        lights.push_back(AreaLight{ false, LightData{{0.4f,0.98f,0.4f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, -1.0f, 0.0f}, {0.8f, 0.8f, 0.8f}, 0.2f, 0.2f} });
+    }
 
 
     /*! find vertex with given position, normal, texcoord, and return

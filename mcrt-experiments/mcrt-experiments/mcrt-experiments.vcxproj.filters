@@ -78,6 +78,9 @@
     <ClCompile Include="area_light.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="direct_light_pipeline.cpp">
+      <Filter>Source Files\Pipelines</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="renderer.hpp">
@@ -128,9 +131,15 @@
     <ClInclude Include="area_light.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="direct_light_pipeline.hpp">
+      <Filter>Header Files\Pipelines</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="devicePrograms.cu">
+      <Filter>Source Files\GPU</Filter>
+    </None>
+    <None Include="directLightingShaders.cu">
       <Filter>Source Files\GPU</Filter>
     </None>
   </ItemGroup>

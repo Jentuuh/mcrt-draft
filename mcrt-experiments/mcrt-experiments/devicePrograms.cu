@@ -13,7 +13,7 @@ namespace mcrt {
     // Launch parameters in constant memory, filled in by optix upon
     // optixLaunch (this gets filled in from the buffer we pass to
     // optixLaunch)
-    extern "C" __constant__ LaunchParams optixLaunchParams;
+    extern "C" __constant__ LaunchParamsTutorial optixLaunchParams;
 
     static __forceinline__ __device__
         void* unpackPointer(uint32_t i0, uint32_t i1)
@@ -207,10 +207,6 @@ namespace mcrt {
     //------------------------------------------------------------------------------
     extern "C" __global__ void __raygen__renderFrame()
     {
-        // ------------------------------------------------------------------
-        // for this example, produce a simple test pattern:
-        // ------------------------------------------------------------------
-
         // compute a test pattern based on pixel ID
         const int ix = optixGetLaunchIndex().x;
         const int iy = optixGetLaunchIndex().y;
@@ -248,7 +244,7 @@ namespace mcrt {
             OPTIX_RAY_FLAG_DISABLE_ANYHIT,//OPTIX_RAY_FLAG_NONE,
             RADIANCE_RAY_TYPE,            // SBT offset
             RAY_TYPE_COUNT,               // SBT stride
-            RADIANCE_RAY_TYPE,             // missSBTIndex 
+            RADIANCE_RAY_TYPE,            // missSBTIndex 
             u0, u1);
 
         const int r = int(255.99f * pixelColorPRD.x);

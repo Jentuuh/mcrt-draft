@@ -139,6 +139,7 @@
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="default_pipeline.cpp" />
     <ClCompile Include="devicePrograms_embedded.c" />
+    <ClCompile Include="direct_light_pipeline.cpp" />
     <ClCompile Include="game_object.cpp" />
     <ClCompile Include="GLFWindow.cpp" />
     <ClCompile Include="main.cpp" />
@@ -155,6 +156,7 @@
     <ClInclude Include="camera.hpp" />
     <ClInclude Include="CUDABuffer.hpp" />
     <ClInclude Include="default_pipeline.hpp" />
+    <ClInclude Include="direct_light_pipeline.hpp" />
     <ClInclude Include="game_object.hpp" />
     <ClInclude Include="GLFWindow.hpp" />
     <ClInclude Include="helpers.hpp" />
@@ -169,6 +171,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="devicePrograms.cu" />
+    <None Include="directLightingShaders.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

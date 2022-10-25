@@ -17,10 +17,9 @@ namespace mcrt {
 	public:
 		AreaLight(bool twoSided, LightData initData);
 
+		LightData lightProps;
 	private:
 		bool twoSided = false;
-
-		LightData lightProps;
 	};
 }
 

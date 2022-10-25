@@ -2,15 +2,13 @@
 #include "mcrt_pipeline.hpp"
 
 namespace mcrt {
-
-	class DefaultPipeline : public McrtPipeline
+	class DirectLightPipeline: public McrtPipeline
 	{
 	public:
-		DefaultPipeline(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scenez);
-
+		DirectLightPipeline(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene);
 		void uploadLaunchParams() override;
 
-		LaunchParamsTutorial launchParams;
+		LaunchParamsDirectLighting launchParams;
 		CUDABuffer   launchParamsBuffer;
 	private:
 		void buildModule(OptixDeviceContext& context) override;

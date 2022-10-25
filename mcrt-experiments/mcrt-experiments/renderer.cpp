@@ -8,6 +8,13 @@
 // std
 #include <iostream>
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb/stb_image_write.h"
+
+#define NUM_SAMPLES_LIGHT 40
+#define STRATIFIED_X_SIZE 5
+#define STRATIFIED_Y_SIZE 5
+
 namespace mcrt {
 
     Renderer::Renderer(Scene& scene, const Camera& camera): renderCamera{camera}, scene{scene}
@@ -26,11 +33,15 @@ namespace mcrt {
 
         std::cout << "Setting up pipeline..." << std::endl;
         GeometryBufferHandle geometryData = GeometryBufferHandle{ vertexBuffers, indexBuffers, normalBuffers, texcoordBuffers, textureObjects };
-        tutorialPipeline = std::make_unique<DefaultPipeline>( optixContext, geometryData, scene );
-
+        tutorialPipeline = std::make_unique<DefaultPipeline>( optixContext, geometryData, scene);
+        directLightPipeline = std::make_unique<DirectLightPipeline>(optixContext, geometryData, scene);
 
         std::cout << "Context, module, pipeline, etc, all set up." << std::endl;
         std::cout << "MCRT renderer fully set up." << std::endl;
+
+        // Direct lighting (preprocess)
+        initDirectLightingTexture(1024);
+        calculateDirectLighting();
     }
 
     void Renderer::fillGeometryBuffers()
@@ -161,8 +172,6 @@ namespace mcrt {
         // First resize needs to be done before rendering
         if (tutorialPipeline->launchParams.frame.size.x == 0) return;
 
-        //launchParamsBuffer.upload(&launchParams, 1);
-
         tutorialPipeline->uploadLaunchParams();
 
         // Launch render pipeline
@@ -178,7 +187,6 @@ namespace mcrt {
             1
         ));
 
-        tutorialPipeline->launchParams.frameID++;
 
         // TODO: implement double buffering!!!
         // sync - make sure the frame is rendered before we download and
@@ -196,7 +204,7 @@ namespace mcrt {
             tutorialPipeline->launchParams.camera.position = camera.position;
             tutorialPipeline->launchParams.camera.direction = normalize(camera.target - camera.position);
             const float cosFovy = 0.66f;
-            const float aspect = tutorialPipeline->launchParams.frame.size.x / float(tutorialPipeline->launchParams.frame.size.y);
+            const float aspect = float(tutorialPipeline->launchParams.frame.size.x) / float(tutorialPipeline->launchParams.frame.size.y);
             tutorialPipeline->launchParams.camera.horizontal
                 = cosFovy * aspect * normalize(cross(tutorialPipeline->launchParams.camera.direction,
                     camera.up));
@@ -205,6 +213,54 @@ namespace mcrt {
                     tutorialPipeline->launchParams.camera.direction));
         }
     }
+
+    void Renderer::writeToImage(std::string fileName, int resX, int resY, void* data)
+    {
+        stbi_write_png(fileName.c_str(), resX, resY, 4, data, resX * sizeof(uint32_t));
+    }
+
+
+
+    // Will allocate a `size * size` buffer on the GPU
+    void Renderer::initDirectLightingTexture(int size)
+    {
+        directLightingTexture.resize(size * size * sizeof(uint32_t));
+        directLightPipeline->launchParams.directLightingTexture.size = size;
+        directLightPipeline->launchParams.directLightingTexture.colorBuffer = (uint32_t*)directLightingTexture.d_pointer();
+    }
+
+
+    void Renderer::calculateDirectLighting()
+    {
+        // Get lights data from scene
+        directLightPipeline->launchParams.lights = scene.getLightsData().data();
+        directLightPipeline->launchParams.stratifyResX = STRATIFIED_X_SIZE;
+        directLightPipeline->launchParams.stratifyResY = STRATIFIED_Y_SIZE;
+        directLightPipeline->uploadLaunchParams();
+
+        // Launch direct lighting pipeline
+        OPTIX_CHECK(optixLaunch(
+            directLightPipeline->pipeline, stream,
+            directLightPipeline->launchParamsBuffer.d_pointer(),
+            directLightPipeline->launchParamsBuffer.sizeInBytes,
+            &directLightPipeline->sbt,
+            NUM_SAMPLES_LIGHT * scene.amountLights(),   // dimension X: the light we are currently sampling
+            STRATIFIED_X_SIZE,                          // dimension Y: the x-coordinate of our stratified sample grid cell (on the light)
+            STRATIFIED_Y_SIZE                           // dimension Z: the y-coordinate of our stratified sample grid cell (on the light)
+            // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
+        ));
+
+        CUDA_SYNC_CHECK();
+
+        // Download resulting texture from GPU
+        uint32_t* direct_lighting_result;
+        directLightingTexture.download(direct_lighting_result,
+            directLightPipeline->launchParams.directLightingTexture.size * directLightPipeline->launchParams.directLightingTexture.size);
+
+        // Write the result to an image (for debugging purposes)
+        writeToImage("direct_lighting_output.png", directLightPipeline->launchParams.directLightingTexture.size, directLightPipeline->launchParams.directLightingTexture.size, direct_lighting_result);
+    }
+
 
     void Renderer::resize(const glm::ivec2& newSize)
     {

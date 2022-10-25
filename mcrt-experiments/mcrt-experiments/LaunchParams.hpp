@@ -2,10 +2,33 @@
 
 #include "optix7.hpp"
 #include "glm/glm.hpp"
+#include "area_light.hpp"
+#include <vector>
 
 namespace mcrt {
 
 	enum { RADIANCE_RAY_TYPE = 0, SHADOW_RAY_TYPE, RAY_TYPE_COUNT };
+
+	struct MeshSBTDataDirectLighting {
+		glm::vec3* vertex;
+		glm::vec3* normal;
+		glm::vec2* texcoord;
+		glm::ivec3* index;
+	};
+
+
+	struct LaunchParamsDirectLighting {
+		struct {
+			uint32_t* colorBuffer;
+			int size;
+		} directLightingTexture;
+
+		LightData* lights;
+		int stratifyResX;
+		int stratifyResY;
+
+		OptixTraversableHandle traversable;
+	};
 
 
 	struct MeshSBTData {
@@ -21,7 +44,8 @@ namespace mcrt {
 		int objectType;
 	};
 
-	struct LaunchParams
+
+	struct LaunchParamsTutorial
 	{
 		int frameID = 0;
 
