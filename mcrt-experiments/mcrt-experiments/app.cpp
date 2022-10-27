@@ -1,7 +1,6 @@
 #include "app.hpp"
 #include "glm/gtx/string_cast.hpp"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb/stb_image_write.h"
+
 
 namespace mcrt {
 	App::App()
@@ -44,11 +43,15 @@ namespace mcrt {
 		//scene.addGameObject(glm::vec3{ -5.0f,-1.5f, -5.0f }, glm::vec3{ 0.0f,0.0f,0.0f }, glm::vec3{ 10.0f, 0.1f, 10.0f }, cubeModel);
 
 		//scene.loadModelFromOBJ("../models/sponza/sponza.obj");
-		scene.loadModelFromOBJ("../models/cornell/CornellBox-Original.obj");
-
+		scene.loadModelFromOBJ("../models/cornell/cornell.obj");
+		//for (auto& g : scene.getGameObjects())
+		//{
+		//	std::cout << "TEXCOORDS " << g.model->mesh->texCoords.size() << std::endl;
+		//}
 
 		std::cout << "Loaded scene: " << scene.amountVertices() << " vertices. Scene Max: " << glm::to_string(scene.maxCoord()) << " Scene Min: " << glm::to_string(scene.minCoord()) << std::endl;
 		scene.normalize();
+		scene.loadLights();
 		//scene.buildRadianceGrid(0.1f);
 	}
 

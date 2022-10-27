@@ -24,6 +24,7 @@ namespace mcrt {
 		} directLightingTexture;
 
 		LightData* lights;
+		int amountLights;
 		int stratifyResX;
 		int stratifyResY;
 

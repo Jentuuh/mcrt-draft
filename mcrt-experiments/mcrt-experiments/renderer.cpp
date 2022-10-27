@@ -40,7 +40,7 @@ namespace mcrt {
         std::cout << "MCRT renderer fully set up." << std::endl;
 
         // Direct lighting (preprocess)
-        initDirectLightingTexture(1024);
+        initDirectLightingTexture(512);
         calculateDirectLighting();
     }
 
@@ -224,7 +224,9 @@ namespace mcrt {
     // Will allocate a `size * size` buffer on the GPU
     void Renderer::initDirectLightingTexture(int size)
     {
-        directLightingTexture.resize(size * size * sizeof(uint32_t));
+        std::vector<uint32_t> zeros(size * size, 0);
+        //directLightingTexture.resize(size * size * sizeof(uint32_t));
+        directLightingTexture.alloc_and_upload(zeros);
         directLightPipeline->launchParams.directLightingTexture.size = size;
         directLightPipeline->launchParams.directLightingTexture.colorBuffer = (uint32_t*)directLightingTexture.d_pointer();
     }
@@ -233,7 +235,14 @@ namespace mcrt {
     void Renderer::calculateDirectLighting()
     {
         // Get lights data from scene
-        directLightPipeline->launchParams.lights = scene.getLightsData().data();
+        std::vector<LightData> lightData = scene.getLightsData();
+
+        // Allocate device space for the light data buffer, then upload the light data to the device
+        lightDataBuffer.resize(lightData.size() * sizeof(LightData));
+        lightDataBuffer.upload(lightData.data(), 1);
+
+        directLightPipeline->launchParams.amountLights = lightData.size();
+        directLightPipeline->launchParams.lights = (LightData*)lightDataBuffer.d_pointer();
         directLightPipeline->launchParams.stratifyResX = STRATIFIED_X_SIZE;
         directLightPipeline->launchParams.stratifyResY = STRATIFIED_Y_SIZE;
         directLightPipeline->uploadLaunchParams();
@@ -244,21 +253,21 @@ namespace mcrt {
             directLightPipeline->launchParamsBuffer.d_pointer(),
             directLightPipeline->launchParamsBuffer.sizeInBytes,
             &directLightPipeline->sbt,
-            NUM_SAMPLES_LIGHT * scene.amountLights(),   // dimension X: the light we are currently sampling
-            STRATIFIED_X_SIZE,                          // dimension Y: the x-coordinate of our stratified sample grid cell (on the light)
-            STRATIFIED_Y_SIZE                           // dimension Z: the y-coordinate of our stratified sample grid cell (on the light)
+            scene.amountLights(),   // dimension X: the light we are currently sampling
+            STRATIFIED_X_SIZE,      // dimension Y: the x-coordinate of our stratified sample grid cell (on the light)
+            STRATIFIED_Y_SIZE       // dimension Z: the y-coordinate of our stratified sample grid cell (on the light)
             // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
         ));
 
         CUDA_SYNC_CHECK();
 
         // Download resulting texture from GPU
-        uint32_t* direct_lighting_result;
-        directLightingTexture.download(direct_lighting_result,
+        std::vector<uint32_t> direct_lighting_result(directLightPipeline->launchParams.directLightingTexture.size * directLightPipeline->launchParams.directLightingTexture.size);
+        directLightingTexture.download(direct_lighting_result.data(),
             directLightPipeline->launchParams.directLightingTexture.size * directLightPipeline->launchParams.directLightingTexture.size);
 
         // Write the result to an image (for debugging purposes)
-        writeToImage("direct_lighting_output.png", directLightPipeline->launchParams.directLightingTexture.size, directLightPipeline->launchParams.directLightingTexture.size, direct_lighting_result);
+        writeToImage("direct_lighting_output.png", directLightPipeline->launchParams.directLightingTexture.size, directLightPipeline->launchParams.directLightingTexture.size, direct_lighting_result.data());
     }
 
 
@@ -284,4 +293,11 @@ namespace mcrt {
         colorBuffer.download(h_pixels,
             tutorialPipeline->launchParams.frame.size.x * tutorialPipeline->launchParams.frame.size.y);
     }
+
+    void Renderer::downloadDirectLighting(uint32_t h_pixels[])
+    {
+        directLightingTexture.download(h_pixels,
+            directLightPipeline->launchParams.directLightingTexture.size * directLightPipeline->launchParams.directLightingTexture.size);
+    }
+
 }

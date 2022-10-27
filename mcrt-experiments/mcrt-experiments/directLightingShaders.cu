@@ -1,14 +1,14 @@
 #pragma once
 
 #include <optix_device.h>
-#include "curand.h"
+#include "random.hpp"
 
 #include "LaunchParams.hpp"
 #include "glm/glm.hpp"
 #include "glm/gtx/transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
-#define NUM_SAMPLES_PER_STRATIFY_CELL 64
+#define NUM_SAMPLES_PER_STRATIFY_CELL 5000
 
 using namespace mcrt;
 
@@ -42,20 +42,20 @@ namespace mcrt {
 
     extern "C" __global__ void __closesthit__radiance__direct__lighting()
     {
-        const MeshSBTData& sbtData
-            = *(const MeshSBTData*)optixGetSbtDataPointer();
+        const MeshSBTDataDirectLighting& sbtData
+            = *(const MeshSBTDataDirectLighting*)optixGetSbtDataPointer();
 
         // ------------------------------------------------------------------
         // gather some basic hit information
         // ------------------------------------------------------------------
-        const int   primID = optixGetPrimitiveIndex();
+        const int primID = optixGetPrimitiveIndex();
         const glm::ivec3 index = sbtData.index[primID];
         const float u = optixGetTriangleBarycentrics().x;
         const float v = optixGetTriangleBarycentrics().y;
 
         // Barycentric tex coords
-        const glm::vec2 tc
-            = (1.f - u - v) * sbtData.texcoord[index.x]
+        const glm::vec2 tc =
+             (1.f - u - v) * sbtData.texcoord[index.x]
             + u * sbtData.texcoord[index.y]
             + v * sbtData.texcoord[index.z];
 
@@ -86,6 +86,9 @@ namespace mcrt {
         const int stratifyIndexX = optixGetLaunchIndex().y;
         const int stratifyIndexY = optixGetLaunchIndex().z;
 
+        unsigned int seed = tea<4>(stratifyIndexY * 5 + stratifyIndexX, lightIndex);
+
+
         // Look up the light properties for the light in question
         LightData lightProperties = optixLaunchParams.lights[lightIndex];
         float stratifyCellWidth = lightProperties.width / optixLaunchParams.stratifyResX;
@@ -105,11 +108,14 @@ namespace mcrt {
 
             // Randomize ray origins within a cell
             // TODO: MAKE THIS RANDOMIZED!!!
-            float cellXOffset = i / NUM_SAMPLES_PER_STRATIFY_CELL;
-            float cellYOffset = i / NUM_SAMPLES_PER_STRATIFY_CELL;
-            glm::vec3 rayOrigin = cellOrigin + (cellXOffset * stratifyCellWidth * lightProperties.du) + (cellYOffset * stratifyCellHeigth * lightProperties.dv);
+   /*         float cellXOffset = i / NUM_SAMPLES_PER_STRATIFY_CELL;
+            float cellYOffset = i / NUM_SAMPLES_PER_STRATIFY_CELL;*/
+            float2 cellOffset = float2{rnd(seed), rnd(seed)};
 
-            // Orthogonal lighting
+            //glm::vec3 rayOrigin = cellOrigin + (cellXOffset * stratifyCellWidth * lightProperties.du) + (cellYOffset * stratifyCellHeigth * lightProperties.dv);
+            glm::vec3 rayOrigin = cellOrigin + (cellOffset.x * stratifyCellWidth * lightProperties.du) + (cellOffset.y * stratifyCellHeigth * lightProperties.dv);
+
+            // Orthogonal lighting (for now)
             glm::vec3 rayDir = lightProperties.normal;
 
             float3 rayOrigin3f = float3{ rayOrigin.x, rayOrigin.y, rayOrigin.z };
@@ -134,7 +140,8 @@ namespace mcrt {
                 // Calculate light contribution
                 const int r = int(255.99f * lightProperties.power.x);
                 const int g = int(255.99f * lightProperties.power.y);
-                const int b = int(255.99f * lightProperties.power.z);
+                const int b = int(255.99f * lightProperties.power.z); 
+
 
                 // convert to 32-bit rgba value (we explicitly set alpha to 0xff
                 // to make stb_image_write happy ...
@@ -142,8 +149,8 @@ namespace mcrt {
                     | (r << 0) | (g << 8) | (b << 16);
 
                 // Write to color buffer
-                const uint32_t uvIndex = rayTexCoordPRD.x + rayTexCoordPRD.y * optixLaunchParams.directLightingTexture.size;
-                optixLaunchParams.directLightingTexture.colorBuffer[uvIndex] = rgba;
+                const uint32_t uvIndex = int(rayTexCoordPRD.x * optixLaunchParams.directLightingTexture.size) + int((rayTexCoordPRD.y * optixLaunchParams.directLightingTexture.size) * optixLaunchParams.directLightingTexture.size);
+                optixLaunchParams.directLightingTexture.colorBuffer[uvIndex] += rgba;
             }
         }
     }

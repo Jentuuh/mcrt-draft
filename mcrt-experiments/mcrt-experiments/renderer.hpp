@@ -21,6 +21,7 @@ namespace mcrt {
 
 		// Download rendered color buffer from device
 		void downloadPixels(uint32_t h_pixels[]);
+		void downloadDirectLighting(uint32_t h_pixels[]);
 
 		// Update camera to render from
 		void updateCamera(const Camera& camera);
@@ -62,7 +63,8 @@ namespace mcrt {
 
 
 		CUDABuffer colorBuffer;	// Framebuffer we will write to
-		CUDABuffer directLightingTexture;	// Texture in which we store the direct lighting
+		CUDABuffer directLightingTexture; // Texture in which we store the direct lighting
+		CUDABuffer lightDataBuffer;	// In this buffer we'll store our light source data
 
 		Camera renderCamera;
 
