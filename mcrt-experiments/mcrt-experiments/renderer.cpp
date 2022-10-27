@@ -40,7 +40,7 @@ namespace mcrt {
         std::cout << "MCRT renderer fully set up." << std::endl;
 
         // Direct lighting (preprocess)
-        initDirectLightingTexture(512);
+        initDirectLightingTexture(1024);
         calculateDirectLighting();
     }
 

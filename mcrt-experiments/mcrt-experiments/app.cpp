@@ -44,10 +44,6 @@ namespace mcrt {
 
 		//scene.loadModelFromOBJ("../models/sponza/sponza.obj");
 		scene.loadModelFromOBJ("../models/cornell/cornell.obj");
-		//for (auto& g : scene.getGameObjects())
-		//{
-		//	std::cout << "TEXCOORDS " << g.model->mesh->texCoords.size() << std::endl;
-		//}
 
 		std::cout << "Loaded scene: " << scene.amountVertices() << " vertices. Scene Max: " << glm::to_string(scene.maxCoord()) << " Scene Min: " << glm::to_string(scene.minCoord()) << std::endl;
 		scene.normalize();
