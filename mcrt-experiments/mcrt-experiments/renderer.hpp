@@ -1,5 +1,4 @@
 #pragma once
-
 #include "CUDABuffer.hpp"
 #include "LaunchParams.hpp"
 #include "camera.hpp"
@@ -30,6 +29,12 @@ namespace mcrt {
 		void writeToImage(std::string fileName, int resX, int resY, void* data);
 		void initDirectLightingTexture(int size);
 		void calculateDirectLighting();
+		void prepareUVIndexes();
+
+		// Helpers
+		float area(glm::vec2 a, glm::vec2 b, glm::vec2 c);
+		glm::vec3 UVto3D(glm::vec2 uv);
+
 
 	protected:
 		// ------------------
@@ -65,6 +70,7 @@ namespace mcrt {
 		CUDABuffer colorBuffer;	// Framebuffer we will write to
 		CUDABuffer directLightingTexture; // Texture in which we store the direct lighting
 		CUDABuffer lightDataBuffer;	// In this buffer we'll store our light source data
+		CUDABuffer UVWorldPositionDeviceBuffer; // In this buffer we'll store the world positions for each of our UV texels (starting from 0,0 --> 1,1), this means this array starts at the left bottom of the actual texture image
 
 		Camera renderCamera;
 

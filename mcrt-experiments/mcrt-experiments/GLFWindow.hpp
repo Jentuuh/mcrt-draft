@@ -353,7 +353,6 @@ namespace mcrt {
 		}
 	};
 
-
 	// ------------------------------------------------------------------
 	/*! camera manipulator with the following traits
 

@@ -3,7 +3,7 @@
 #include "radiance_grid.hpp"
 #include "area_light.hpp"
 
-#include "glm/glm.hpp"
+#include <glm/glm.hpp>
 
 #include <vector>
 #include <map>

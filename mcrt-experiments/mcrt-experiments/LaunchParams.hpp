@@ -19,6 +19,11 @@ namespace mcrt {
 
 	struct LaunchParamsDirectLighting {
 		struct {
+			glm::vec3* positionsBuffer;
+			int size;
+		} uvWorldPositions;
+
+		struct {
 			uint32_t* colorBuffer;
 			int size;
 		} directLightingTexture;

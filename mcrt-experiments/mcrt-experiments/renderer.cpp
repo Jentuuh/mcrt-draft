@@ -7,6 +7,7 @@
 
 // std
 #include <iostream>
+#include <cassert>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
@@ -41,7 +42,8 @@ namespace mcrt {
 
         // Direct lighting (preprocess)
         initDirectLightingTexture(1024);
-        calculateDirectLighting();
+        prepareUVIndexes();
+        //calculateDirectLighting();
     }
 
     void Renderer::fillGeometryBuffers()
@@ -269,6 +271,71 @@ namespace mcrt {
         // Write the result to an image (for debugging purposes)
         writeToImage("direct_lighting_output.png", directLightPipeline->launchParams.directLightingTexture.size, directLightPipeline->launchParams.directLightingTexture.size, direct_lighting_result.data());
     }
+
+    void Renderer::prepareUVIndexes()
+    {
+        const int texSize = directLightPipeline->launchParams.directLightingTexture.size;
+        assert( (texSize > 0) && "Direct lighting texture needs to be initialized before preparing UV indices!");
+        
+        std::vector<glm::vec3> UVWorldPositions(texSize * texSize, glm::vec3{-1000.0f, -1000.0f, -1000.0f});    // Scene is scaled within (0;1) so this should not form a problem
+
+        for (int i = 0; i < UVWorldPositions.size(); i++)
+        {
+            const float u = float(i % texSize) / float(texSize);
+            const float v = (float((i - (i % texSize))) / float(texSize)) / float(texSize);
+            glm::vec2 uv = glm::vec2{ u,v };
+            UVWorldPositions[i] = UVto3D(uv);
+        }
+
+        // Upload world positions to the GPU and pass a pointer to this memory into the launch params
+        UVWorldPositionDeviceBuffer.alloc_and_upload(UVWorldPositions);
+        directLightPipeline->launchParams.uvWorldPositions.size = texSize * texSize;
+        directLightPipeline->launchParams.uvWorldPositions.positionsBuffer = (glm::vec3*)UVWorldPositionDeviceBuffer.d_pointer();
+    }
+
+    float Renderer::area(glm::vec2 a, glm::vec2 b, glm::vec2 c)
+    {
+        // (w * h) / 2
+        glm::vec2 v1 = a - c;
+        glm::vec2 v2 = b - c;
+        return (v1.x * v2.y - v1.y * v2.x) / 2.0f;
+    }
+
+    glm::vec3 Renderer::UVto3D(glm::vec2 uv)
+    {
+        // Loop through all game objects in the scene
+        for (auto& g : scene.getGameObjects())
+        {
+            // Loop through all triangles
+            for (auto& triangle : g.model->mesh->indices)
+            {
+                // Get UV coordinates of triangle vertices
+                glm::vec2 uv1 = g.model->mesh->texCoords[triangle[0]];
+                glm::vec2 uv2 = g.model->mesh->texCoords[triangle[1]];
+                glm::vec2 uv3 = g.model->mesh->texCoords[triangle[2]];
+
+                // Barycentric interpolation to check whether our point is in the triangle
+                glm::vec2 f1 = uv1 - uv;
+                glm::vec2 f2 = uv2 - uv;
+                glm::vec2 f3 = uv3 - uv;
+
+                float a = area(uv1, uv2, uv3);
+                if (a == 0.0f) continue;
+
+                // Barycentric coordinates
+                float a1 = area(uv2, uv3, uv) / a; if (a1 < 0) continue;
+                float a2 = area(uv3, uv1, uv) / a; if (a2 < 0) continue;
+                float a3 = area(uv1, uv2, uv) / a; if (a3 < 0) continue;
+
+                //std::cout << "UV found!" << std::endl;
+                glm::vec3 uvPosition = a1 * g.model->mesh->vertices[triangle[0]] + a2 * g.model->mesh->vertices[triangle[1]] + a3 * g.model->mesh->vertices[triangle[2]];
+                uvPosition = g.worldTransform.object2World * glm::vec4{ uvPosition, 1.0f };
+                return uvPosition;
+            }
+        }
+        return glm::vec3{ -1000.0f, -1000.0f, -1000.0f };
+    }
+
 
 
     void Renderer::resize(const glm::ivec2& newSize)
