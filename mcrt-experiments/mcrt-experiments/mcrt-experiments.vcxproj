@@ -139,6 +139,7 @@
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="default_pipeline.cpp" />
     <ClCompile Include="devicePrograms_embedded.c" />
+    <ClCompile Include="directLightingShadersGathering_embedded.c" />
     <ClCompile Include="directLightingShaders_embedded.c" />
     <ClCompile Include="direct_light_pipeline.cpp" />
     <ClCompile Include="game_object.cpp" />
@@ -173,6 +174,7 @@
   <ItemGroup>
     <None Include="devicePrograms.cu" />
     <None Include="directLightingShaders.cu" />
+    <None Include="directLightingShadersGathering.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

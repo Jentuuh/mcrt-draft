@@ -12,9 +12,8 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
 
-#define NUM_SAMPLES_LIGHT 40
-#define STRATIFIED_X_SIZE 5
-#define STRATIFIED_Y_SIZE 5
+#define STRATIFIED_X_SIZE 20
+#define STRATIFIED_Y_SIZE 20
 
 namespace mcrt {
 
@@ -42,8 +41,8 @@ namespace mcrt {
 
         // Direct lighting (preprocess)
         initDirectLightingTexture(1024);
-        prepareUVIndexes();
-        //calculateDirectLighting();
+        prepareUVWorldPositions();
+        calculateDirectLighting();
     }
 
     void Renderer::fillGeometryBuffers()
@@ -221,12 +220,10 @@ namespace mcrt {
         stbi_write_png(fileName.c_str(), resX, resY, 4, data, resX * sizeof(uint32_t));
     }
 
-
-
     // Will allocate a `size * size` buffer on the GPU
     void Renderer::initDirectLightingTexture(int size)
     {
-        std::vector<uint32_t> zeros(size * size, 0);
+        std::vector<uint32_t> zeros(size * size, 0.0f);
         //directLightingTexture.resize(size * size * sizeof(uint32_t));
         directLightingTexture.alloc_and_upload(zeros);
         directLightPipeline->launchParams.directLightingTexture.size = size;
@@ -255,9 +252,9 @@ namespace mcrt {
             directLightPipeline->launchParamsBuffer.d_pointer(),
             directLightPipeline->launchParamsBuffer.sizeInBytes,
             &directLightPipeline->sbt,
-            scene.amountLights(),   // dimension X: the light we are currently sampling
-            STRATIFIED_X_SIZE,      // dimension Y: the x-coordinate of our stratified sample grid cell (on the light)
-            STRATIFIED_Y_SIZE       // dimension Z: the y-coordinate of our stratified sample grid cell (on the light)
+            directLightPipeline->launchParams.directLightingTexture.size,       // dimension X: x resolution of UV map
+            directLightPipeline->launchParams.directLightingTexture.size,       // dimension Y: y resolution of UV map
+            1                                                                   // dimension Z: 1
             // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
         ));
 
@@ -272,12 +269,12 @@ namespace mcrt {
         writeToImage("direct_lighting_output.png", directLightPipeline->launchParams.directLightingTexture.size, directLightPipeline->launchParams.directLightingTexture.size, direct_lighting_result.data());
     }
 
-    void Renderer::prepareUVIndexes()
+    void Renderer::prepareUVWorldPositions()
     {
         const int texSize = directLightPipeline->launchParams.directLightingTexture.size;
         assert( (texSize > 0) && "Direct lighting texture needs to be initialized before preparing UV indices!");
         
-        std::vector<glm::vec3> UVWorldPositions(texSize * texSize, glm::vec3{-1000.0f, -1000.0f, -1000.0f});    // Scene is scaled within (0;1) so this should not form a problem
+        std::vector<UVWorldData> UVWorldPositions(texSize * texSize, { glm::vec3{-1000.0f, -1000.0f, -1000.0f}, glm::vec3{-1000.0f, -1000.0f, -1000.0f} });    // Scene is scaled within (0;1) so this should not form a problem
 
         for (int i = 0; i < UVWorldPositions.size(); i++)
         {
@@ -290,7 +287,7 @@ namespace mcrt {
         // Upload world positions to the GPU and pass a pointer to this memory into the launch params
         UVWorldPositionDeviceBuffer.alloc_and_upload(UVWorldPositions);
         directLightPipeline->launchParams.uvWorldPositions.size = texSize * texSize;
-        directLightPipeline->launchParams.uvWorldPositions.positionsBuffer = (glm::vec3*)UVWorldPositionDeviceBuffer.d_pointer();
+        directLightPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
     }
 
     float Renderer::area(glm::vec2 a, glm::vec2 b, glm::vec2 c)
@@ -301,7 +298,7 @@ namespace mcrt {
         return (v1.x * v2.y - v1.y * v2.x) / 2.0f;
     }
 
-    glm::vec3 Renderer::UVto3D(glm::vec2 uv)
+    UVWorldData Renderer::UVto3D(glm::vec2 uv)
     {
         // Loop through all game objects in the scene
         for (auto& g : scene.getGameObjects())
@@ -329,11 +326,12 @@ namespace mcrt {
 
                 //std::cout << "UV found!" << std::endl;
                 glm::vec3 uvPosition = a1 * g.model->mesh->vertices[triangle[0]] + a2 * g.model->mesh->vertices[triangle[1]] + a3 * g.model->mesh->vertices[triangle[2]];
+                glm::vec3 uvNormal = glm::normalize(a1 * g.model->mesh->normals[triangle[0]] + a2 * g.model->mesh->normals[triangle[1]] + a3 * g.model->mesh->normals[triangle[2]]);
                 uvPosition = g.worldTransform.object2World * glm::vec4{ uvPosition, 1.0f };
-                return uvPosition;
+                return { uvPosition, uvNormal};
             }
         }
-        return glm::vec3{ -1000.0f, -1000.0f, -1000.0f };
+        return { glm::vec3{ -1000.0f, -1000.0f, -1000.0f }, glm::vec3{ -1000.0f, -1000.0f, -1000.0f } };
     }
 
 

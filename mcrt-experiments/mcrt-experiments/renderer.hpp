@@ -29,11 +29,11 @@ namespace mcrt {
 		void writeToImage(std::string fileName, int resX, int resY, void* data);
 		void initDirectLightingTexture(int size);
 		void calculateDirectLighting();
-		void prepareUVIndexes();
+		void prepareUVWorldPositions();
 
 		// Helpers
 		float area(glm::vec2 a, glm::vec2 b, glm::vec2 c);
-		glm::vec3 UVto3D(glm::vec2 uv);
+		UVWorldData UVto3D(glm::vec2 uv);
 
 
 	protected:

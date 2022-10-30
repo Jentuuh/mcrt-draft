@@ -2,7 +2,7 @@
 #include <iostream>
 
 namespace mcrt {
-    extern "C" char embedded_ptx_code_direct_lighting[];
+    extern "C" char embedded_ptx_code_direct_lighting_gathering[];
 
     // SBT record for a raygen program
     struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) RaygenRecordDirect
@@ -53,7 +53,7 @@ namespace mcrt {
         pipelineCompileOptions = {};
         pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_SINGLE_GAS;
         pipelineCompileOptions.usesMotionBlur = false;
-        pipelineCompileOptions.numPayloadValues = 2;
+        pipelineCompileOptions.numPayloadValues = 9;
         pipelineCompileOptions.numAttributeValues = 2;
         pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE;
         pipelineCompileOptions.pipelineLaunchParamsVariableName = "optixLaunchParams";
@@ -61,7 +61,7 @@ namespace mcrt {
         // Max # of ray bounces
         pipelineLinkOptions.maxTraceDepth = 2;
 
-        const std::string ptxCode = embedded_ptx_code_direct_lighting;
+        const std::string ptxCode = embedded_ptx_code_direct_lighting_gathering;
 
         char log[2048];
         size_t sizeof_log = sizeof(log);

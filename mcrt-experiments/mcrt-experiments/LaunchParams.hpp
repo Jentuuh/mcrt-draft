@@ -9,6 +9,12 @@ namespace mcrt {
 
 	enum { RADIANCE_RAY_TYPE = 0, SHADOW_RAY_TYPE, RAY_TYPE_COUNT };
 
+	struct DirectLightingPRD {
+		glm::vec3 lightSamplePos;
+		glm::vec3 rayOrigin;
+		glm::vec3 resultColor;
+	};
+
 	struct MeshSBTDataDirectLighting {
 		glm::vec3* vertex;
 		glm::vec3* normal;
@@ -16,10 +22,14 @@ namespace mcrt {
 		glm::ivec3* index;
 	};
 
+	struct UVWorldData {
+		glm::vec3 worldPosition;
+		glm::vec3 worldNormal;
+	};
 
 	struct LaunchParamsDirectLighting {
 		struct {
-			glm::vec3* positionsBuffer;
+			UVWorldData* UVDataBuffer;
 			int size;
 		} uvWorldPositions;
 

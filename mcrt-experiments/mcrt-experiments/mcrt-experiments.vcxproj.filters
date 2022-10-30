@@ -84,6 +84,9 @@
     <ClCompile Include="directLightingShaders_embedded.c">
       <Filter>Source Files\GPU</Filter>
     </ClCompile>
+    <ClCompile Include="directLightingShadersGathering_embedded.c">
+      <Filter>Source Files\GPU</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="renderer.hpp">
@@ -143,6 +146,9 @@
       <Filter>Source Files\GPU</Filter>
     </None>
     <None Include="directLightingShaders.cu">
+      <Filter>Source Files\GPU</Filter>
+    </None>
+    <None Include="directLightingShadersGathering.cu">
       <Filter>Source Files\GPU</Filter>
     </None>
   </ItemGroup>

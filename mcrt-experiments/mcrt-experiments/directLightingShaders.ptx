@@ -11,7 +11,7 @@
 .address_size 64
 
 	// .globl	__closesthit__radiance__direct__lighting
-.const .align 8 .b8 optixLaunchParams[48];
+.const .align 8 .b8 optixLaunchParams[64];
 
 .visible .entry __closesthit__radiance__direct__lighting()
 {
@@ -253,7 +253,7 @@
 	xor.b32  	%r115, %r114, %r113;
 	add.s32 	%r211, %r115, %r100;
 	.loc	1 99 35
-	ld.const.u64 	%rd6, [optixLaunchParams+16];
+	ld.const.u64 	%rd6, [optixLaunchParams+32];
 	cvta.to.global.u64 	%rd7, %rd6;
 	mul.wide.s32 	%rd8, %r50, 68;
 	add.s64 	%rd9, %rd7, %rd8;
@@ -261,14 +261,14 @@
 	ld.global.f32 	%f2, [%rd9+40];
 	ld.global.f32 	%f3, [%rd9+44];
 	.loc	1 100 33
-	ld.const.u32 	%r116, [optixLaunchParams+28];
+	ld.const.u32 	%r116, [optixLaunchParams+44];
 	cvt.rn.f32.s32 	%f27, %r116;
 	.loc	1 99 35
 	ld.global.f32 	%f28, [%rd9+60];
 	.loc	1 100 33
 	div.approx.ftz.f32 	%f4, %f28, %f27;
 	.loc	1 101 34
-	ld.const.u32 	%r117, [optixLaunchParams+32];
+	ld.const.u32 	%r117, [optixLaunchParams+48];
 	cvt.rn.f32.s32 	%f29, %r117;
 	.loc	1 99 35
 	ld.global.f32 	%f30, [%rd9+64];
@@ -308,7 +308,7 @@
 	shr.u64 	%rd10, %rd5, 32;
 	cvt.u32.u64 	%r2, %rd10;
 	cvt.u32.u64 	%r3, %rd5;
-	ld.const.u64 	%rd2, [optixLaunchParams+40];
+	ld.const.u64 	%rd2, [optixLaunchParams+56];
 	.loc	1 99 35
 	ld.global.f32 	%f41, [%rd9+48];
 	mul.ftz.f32 	%f15, %f41, 0f437FFD71;
@@ -316,9 +316,9 @@
 	mul.ftz.f32 	%f16, %f42, 0f437FFD71;
 	ld.global.f32 	%f43, [%rd9+56];
 	mul.ftz.f32 	%f17, %f43, 0f437FFD71;
-	ld.const.u32 	%r4, [optixLaunchParams+8];
+	ld.const.u32 	%r4, [optixLaunchParams+24];
 	cvt.rn.f32.s32 	%f18, %r4;
-	ld.const.u64 	%rd11, [optixLaunchParams];
+	ld.const.u64 	%rd11, [optixLaunchParams+16];
 	cvta.to.global.u64 	%rd3, %rd11;
 	mov.u32 	%r59, 0;
 	mov.u32 	%r208, %r59;
