@@ -12,8 +12,8 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
 
-#define STRATIFIED_X_SIZE 20
-#define STRATIFIED_Y_SIZE 20
+#define STRATIFIED_X_SIZE 5
+#define STRATIFIED_Y_SIZE 5
 
 namespace mcrt {
 
@@ -265,8 +265,22 @@ namespace mcrt {
         directLightingTexture.download(direct_lighting_result.data(),
             directLightPipeline->launchParams.directLightingTexture.size * directLightPipeline->launchParams.directLightingTexture.size);
 
+
+        // Flip Y coordinates, otherwise UV map is upside down
+        std::vector<uint32_t> result_reversed;
+    
+        for (int y = directLightPipeline->launchParams.directLightingTexture.size - 1; y >= 0; y--)
+        {
+            for (int x = 0; x < directLightPipeline->launchParams.directLightingTexture.size; x++)
+            {
+                result_reversed.push_back(direct_lighting_result[y * directLightPipeline->launchParams.directLightingTexture.size + x]);
+            }
+        }
+        
+
+        //std::reverse(direct_lighting_result.begin(), direct_lighting_result.end());
         // Write the result to an image (for debugging purposes)
-        writeToImage("direct_lighting_output.png", directLightPipeline->launchParams.directLightingTexture.size, directLightPipeline->launchParams.directLightingTexture.size, direct_lighting_result.data());
+        writeToImage("direct_lighting_output.png", directLightPipeline->launchParams.directLightingTexture.size, directLightPipeline->launchParams.directLightingTexture.size, result_reversed.data());
     }
 
     void Renderer::prepareUVWorldPositions()

@@ -9,8 +9,9 @@
 #include "glm/gtx/transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
-#define NUM_SAMPLES_PER_STRATIFY_CELL 300
+#define NUM_SAMPLES_PER_STRATIFY_CELL 150
 #define PI 3.14159265358979323846f
+#define EPSILON 0.0000000000002f
 
 using namespace mcrt;
 
@@ -100,7 +101,7 @@ namespace mcrt {
         float squaredDistOriginLight = (((prd.lightSamplePos.x - prd.rayOrigin.x) * (prd.lightSamplePos.x - prd.rayOrigin.x)) + ((prd.lightSamplePos.y - prd.rayOrigin.y) * (prd.lightSamplePos.y - prd.rayOrigin.y)) + ((prd.lightSamplePos.z - prd.rayOrigin.z) * (prd.lightSamplePos.z - prd.rayOrigin.z)));
         float squaredDistOriginIntersection = (((worldPos.x - prd.rayOrigin.x) * (worldPos.x - prd.rayOrigin.x)) + ((worldPos.y - prd.rayOrigin.y) * (worldPos.y - prd.rayOrigin.y)) + ((worldPos.z - prd.rayOrigin.z) * (worldPos.z - prd.rayOrigin.z)));
 
-        if (squaredDistOriginLight < squaredDistOriginIntersection)
+        if (squaredDistOriginLight < squaredDistOriginIntersection || squaredDistOriginIntersection < EPSILON)
         {
             //printf("Contribute!");
             prd.resultColor = { 1.0f, 1.0f, 1.0f };
@@ -204,31 +205,13 @@ namespace mcrt {
                             float intensity = 255.99f * cosContribution * prd.resultColor.x * lightProperties.power.x;
                             totalLightContribution += glm::vec3{ intensity, intensity, intensity };
                         }
-
-                        //if (cosContribution > 0.0f)
-                        //{
-                        //    // Calculate light contribution
-                        //    const int r = int(255.99f * cosContribution * prd.resultColor.x * lightProperties.power.x);
-                        //    const int g = int(255.99f * cosContribution * prd.resultColor.y * lightProperties.power.y);
-                        //    const int b = int(255.99f * cosContribution * prd.resultColor.z * lightProperties.power.z);
-
-                        //    // convert to 32-bit rgba value (we explicitly set alpha to 0xff
-                        //    // to make stb_image_write happy ...
-                        //    const uint32_t rgba = 0xff000000
-                        //        | (r << 0) | (g << 8) | (b << 16);
-
-                        //    int uvIndex = vIndex * optixLaunchParams.directLightingTexture.size + uIndex;
-                        //    if (optixLaunchParams.directLightingTexture.colorBuffer[uvIndex] + rgba < 0xffffffff)
-                        //    {
-                        //        atomicAdd(&optixLaunchParams.directLightingTexture.colorBuffer[uvIndex], rgba);
-                        //    }
-                        //}
                     }
                 }
             }
 
             // Average out the samples contributions
             totalLightContribution /= NUM_SAMPLES_PER_STRATIFY_CELL * optixLaunchParams.stratifyResX * optixLaunchParams.stratifyResY;
+            // totalLightContribution /= PI;
 
             const int r = int(totalLightContribution.x);
             const int g = int(totalLightContribution.y);
@@ -240,10 +223,7 @@ namespace mcrt {
                 | (r << 0) | (g << 8) | (b << 16);
 
             int uvIndex = vIndex * optixLaunchParams.directLightingTexture.size + uIndex;
-            if (optixLaunchParams.directLightingTexture.colorBuffer[uvIndex] + rgba < 0xffffffff)
-            {
-                atomicAdd(&optixLaunchParams.directLightingTexture.colorBuffer[uvIndex], rgba);
-            }
+            optixLaunchParams.directLightingTexture.colorBuffer[uvIndex] += rgba;
         }
     }
 }
