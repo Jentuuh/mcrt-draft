@@ -9,6 +9,15 @@ namespace mcrt {
 
 	enum { RADIANCE_RAY_TYPE = 0, SHADOW_RAY_TYPE, RAY_TYPE_COUNT };
 
+	struct LaunchParamsRadianceCellGather {
+
+		OptixTraversableHandle traversable;
+	};
+
+	struct MeshSBTDataRadianceCellGather {
+
+	};
+
 	struct DirectLightingPRD {
 		glm::vec3 lightSamplePos;
 		glm::vec3 rayOrigin;

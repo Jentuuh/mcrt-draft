@@ -28,7 +28,7 @@ namespace mcrt {
 		int numObjects() { return gameObjects.size(); };
 		int amountVertices();
 		int amountLights() { return lights.size(); };
-		std::vector<GameObject>& getGameObjects() { return gameObjects; };
+		std::vector<std::shared_ptr<GameObject>>& getGameObjects() { return gameObjects; };
 		std::vector<std::shared_ptr<Texture>>& getTextures() { return textures; };
 		std::vector<LightData> getLightsData();
 
@@ -42,7 +42,7 @@ namespace mcrt {
 
 		RadianceGrid grid;
 	private:
-		std::vector<GameObject> gameObjects;
+		std::vector<std::shared_ptr<GameObject>> gameObjects;
 		std::vector<std::shared_ptr<Texture>> textures;
 		std::vector<AreaLight> lights;
 

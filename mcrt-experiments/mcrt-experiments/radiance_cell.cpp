@@ -13,6 +13,10 @@ namespace mcrt {
 
         glm::mat4 transform = transM * scaleM;
 
+        // Min and max world coordinate of this cell
+        min = transform * glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f };
+        max = transform * glm::vec4{ 1.0f, 1.0f, 1.0f, 1.0f };
+
         // Transform the cell's vertices into the right position of the grid
         vertices.push_back(transform * glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f });
         vertices.push_back(transform * glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
@@ -46,4 +50,12 @@ namespace mcrt {
 	{
 		remove(objectsInside.begin(), objectsInside.end(), obj);
 	}
+
+    bool RadianceCell::contains(glm::vec3 coord)
+    {
+        //std::cout << coord.x << " " << coord.y << " " << coord.z << std::endl;
+        //std::cout << min.x << min.y << min.z << max.x << max.y << max.z << std::endl;
+        return coord.x > min.x && coord.x < max.x && coord.y > min.y && coord.y < max.y && coord.z > min.z && coord.z < max.z;
+    }
+
 }

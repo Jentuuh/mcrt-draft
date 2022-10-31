@@ -45,7 +45,7 @@ namespace mcrt {
 
 		for (auto& g : gameObjects)
 		{
-			amountVertices += g.amountVertices();
+			amountVertices += g->amountVertices();
 		}
 		return amountVertices;
 	}
@@ -64,11 +64,11 @@ namespace mcrt {
 	void Scene::addGameObject(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale, std::shared_ptr<Model> model)
 	{
 
-		GameObject newObj = GameObject{ Transform{position, rotation, scale}, model };
+		std::shared_ptr<GameObject> newObj = std::make_shared<GameObject>( Transform{position, rotation, scale}, model );
 		gameObjects.push_back(newObj);
 
 		// Record scene bounds (for normalization afterwards)
-		std::vector<glm::vec3> newVertices = newObj.getWorldVertices();
+		std::vector<glm::vec3> newVertices = newObj->getWorldVertices();
 		for (auto& v : newVertices)
 		{
 			if (v.x > sceneMax.x) sceneMax.x = v.x;
@@ -109,8 +109,8 @@ namespace mcrt {
 
 		for (auto& g : gameObjects)
 		{
-			g.worldTransform.translate(translation);
-			g.worldTransform.applySceneRescale(glm::vec3{ minScale, minScale, minScale });
+			g->worldTransform.translate(translation);
+			g->worldTransform.applySceneRescale(glm::vec3{ minScale, minScale, minScale });
 		}
 
 	}
@@ -141,6 +141,32 @@ namespace mcrt {
 
         int newID = mesh->vertices.size();
         knownVertices[idx] = newID;
+
+        // Update mesh's bounding box
+        if (vertex_array[idx.vertex_index].x < mesh->boundingBox.min.x)
+        {
+            mesh->boundingBox.min.x = vertex_array[idx.vertex_index].x;
+        }
+        if (vertex_array[idx.vertex_index].x > mesh->boundingBox.max.x)
+        {
+            mesh->boundingBox.max.x = vertex_array[idx.vertex_index].x;
+        }
+        if (vertex_array[idx.vertex_index].y < mesh->boundingBox.min.y)
+        {
+            mesh->boundingBox.min.y = vertex_array[idx.vertex_index].y;
+        }
+        if (vertex_array[idx.vertex_index].y > mesh->boundingBox.max.y)
+        {
+            mesh->boundingBox.max.y = vertex_array[idx.vertex_index].y;
+        }
+        if (vertex_array[idx.vertex_index].z < mesh->boundingBox.min.z)
+        {
+            mesh->boundingBox.min.z = vertex_array[idx.vertex_index].z;
+        }
+        if (vertex_array[idx.vertex_index].z > mesh->boundingBox.max.z)
+        {
+            mesh->boundingBox.max.z = vertex_array[idx.vertex_index].z;
+        }
 
         mesh->vertices.push_back(vertex_array[idx.vertex_index]);
         if (idx.normal_index >= 0) {

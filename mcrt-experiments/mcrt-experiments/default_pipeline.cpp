@@ -248,7 +248,7 @@ namespace mcrt {
         for (int i = 0; i < numObjects; i++) {
             for (int rayID = 0; rayID < RAY_TYPE_COUNT; rayID++) {
 
-                auto mesh = scene.getGameObjects()[i].model->mesh;
+                auto mesh = scene.getGameObjects()[i]->model->mesh;
 
                 int objectType = 0;
                 HitgroupRecord rec;
@@ -353,7 +353,7 @@ namespace mcrt {
 
         for (int meshID = 0; meshID < scene.numObjects(); meshID++) {
             // upload the model to the device: the builder
-            std::shared_ptr<Model> model = scene.getGameObjects()[meshID].model;
+            std::shared_ptr<Model> model = scene.getGameObjects()[meshID]->model;
             std::shared_ptr<TriangleMesh> mesh = model->mesh;
 
             triangleInput[meshID] = {};

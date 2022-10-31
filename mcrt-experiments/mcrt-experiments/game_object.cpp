@@ -71,4 +71,45 @@ namespace mcrt {
 		}
 		return worldVertices;
 	}
+
+	AABB GameObject::getWorldAABB()
+	{
+		AABB worldAABB;
+
+	/*	std::vector<glm::vec3> vertices = getWorldVertices();
+		for (auto& v : vertices)
+		{
+			if (v.x < worldAABB.min.x)
+			{
+				worldAABB.min.x = v.x;
+			}
+			if (v.x > worldAABB.max.x)
+			{
+				worldAABB.max.x = v.x;
+			}
+			if (v.y < worldAABB.min.y)
+			{
+				worldAABB.min.y = v.y;
+			}
+			if (v.y > worldAABB.max.y)
+			{
+				worldAABB.max.y = v.y;
+			}
+			if (v.z < worldAABB.min.z)
+			{
+				worldAABB.min.z = v.z;
+			}
+			if (v.z > worldAABB.max.z)
+			{
+				worldAABB.max.z = v.z;
+			}
+		}*/
+	
+
+		// Transform object space AABB to world space AABB
+		worldAABB.min = worldTransform.object2World * glm::vec4{ model->mesh->boundingBox.min, 1.0f };
+		worldAABB.max = worldTransform.object2World * glm::vec4{ model->mesh->boundingBox.max, 1.0f };
+		return worldAABB;
+	}
+
 }

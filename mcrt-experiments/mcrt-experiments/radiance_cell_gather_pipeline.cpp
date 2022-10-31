@@ -1,11 +1,12 @@
-#include "direct_light_pipeline.hpp"
+#include "radiance_cell_gather_pipeline.hpp"
 #include <iostream>
 
 namespace mcrt {
-    extern "C" char embedded_ptx_code_direct_lighting_gathering[];
+
+    // extern "C" char embedded_ptx_code_radiance_cell_gather[];
 
     // SBT record for a raygen program
-    struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) RaygenRecordDirect
+    struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) RaygenRecordRadianceCellGather
     {
         __align__(OPTIX_SBT_RECORD_ALIGNMENT) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
         // just a dummy value - later examples will use more interesting
@@ -14,7 +15,7 @@ namespace mcrt {
     };
 
     // SBT record for a miss program
-    struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) MissRecordDirect
+    struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) MissRecordRadianceCellGather
     {
         __align__(OPTIX_SBT_RECORD_ALIGNMENT) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
         // just a dummy value - later examples will use more interesting
@@ -23,28 +24,27 @@ namespace mcrt {
     };
 
     // SBT record for a hitgroup program
-    struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) HitgroupRecordDirect
+    struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) HitgroupRecordRadianceCellGather
     {
         __align__(OPTIX_SBT_RECORD_ALIGNMENT) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
         // just a dummy value - later examples will use more interesting
         // data here
-        MeshSBTDataDirectLighting data;
+        MeshSBTDataRadianceCellGather data;
     };
 
-	DirectLightPipeline::DirectLightPipeline(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene) : McrtPipeline(context, geometryBuffers, scene)
+	RadianceCellGatherPipeline::RadianceCellGatherPipeline(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene): McrtPipeline(context, geometryBuffers, scene)
 	{
-		init(context, geometryBuffers, scene);
+        init(context, geometryBuffers, scene);
         launchParams.traversable = buildAccelerationStructure(context, geometryBuffers, scene);
         launchParamsBuffer.alloc(sizeof(launchParams));
 	}
 
-    void DirectLightPipeline::uploadLaunchParams()
+    void RadianceCellGatherPipeline::uploadLaunchParams()
     {
         launchParamsBuffer.upload(&launchParams, 1);
     }
 
-
-    void DirectLightPipeline::buildModule(OptixDeviceContext& context)
+    void RadianceCellGatherPipeline::buildModule(OptixDeviceContext& context)
     {
         moduleCompileOptions.maxRegisterCount = 50;
         moduleCompileOptions.optLevel = OPTIX_COMPILE_OPTIMIZATION_DEFAULT;
@@ -53,7 +53,7 @@ namespace mcrt {
         pipelineCompileOptions = {};
         pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_SINGLE_GAS;
         pipelineCompileOptions.usesMotionBlur = false;
-        pipelineCompileOptions.numPayloadValues = 9;
+        pipelineCompileOptions.numPayloadValues = 2;
         pipelineCompileOptions.numAttributeValues = 2;
         pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE;
         pipelineCompileOptions.pipelineLaunchParamsVariableName = "optixLaunchParams";
@@ -61,7 +61,7 @@ namespace mcrt {
         // Max # of ray bounces
         pipelineLinkOptions.maxTraceDepth = 2;
 
-        const std::string ptxCode = embedded_ptx_code_direct_lighting_gathering;
+        const std::string ptxCode = ""; //embedded_ptx_code_radiance_cell_gather;
 
         char log[2048];
         size_t sizeof_log = sizeof(log);
@@ -79,7 +79,7 @@ namespace mcrt {
         }
     }
 
-    void DirectLightPipeline::buildDevicePrograms(OptixDeviceContext& context)
+    void RadianceCellGatherPipeline::buildDevicePrograms(OptixDeviceContext& context)
     {
         //---------------------------------------
         //  RAYGEN PROGRAMS
@@ -90,7 +90,7 @@ namespace mcrt {
         OptixProgramGroupDesc pgDescRaygen = {};
         pgDescRaygen.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
         pgDescRaygen.raygen.module = module;
-        pgDescRaygen.raygen.entryFunctionName = "__raygen__renderFrame__direct__lighting";
+        pgDescRaygen.raygen.entryFunctionName = "__raygen__renderFrame__radiance__cell__gather";
 
         // OptixProgramGroup raypg;
         char log[2048];
@@ -117,11 +117,7 @@ namespace mcrt {
         OptixProgramGroupDesc pgDescMiss = {};
         pgDescMiss.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
         pgDescMiss.miss.module = module;
-
-        // ------------------------------------------------------------------
-        // radiance rays
-        // ------------------------------------------------------------------
-        pgDescMiss.miss.entryFunctionName = "__miss__radiance__direct__lighting";
+        pgDescMiss.miss.entryFunctionName = "__miss__radiance__radiance__cell__gather";
 
         OPTIX_CHECK(optixProgramGroupCreate(context,
             &pgDescMiss,
@@ -139,7 +135,6 @@ namespace mcrt {
         //---------------------------------------
         //  HITGROUP PROGRAMS
         //---------------------------------------
-         // Single hitgroup program for now
         hitgroupPGs.resize(1);
 
         OptixProgramGroupOptions pgOptionsHitgroup = {};
@@ -148,8 +143,8 @@ namespace mcrt {
         pgDescHitgroup.hitgroup.moduleCH = module;
         pgDescHitgroup.hitgroup.moduleAH = module;
 
-        pgDescHitgroup.hitgroup.entryFunctionNameCH = "__closesthit__radiance__direct__lighting";
-        pgDescHitgroup.hitgroup.entryFunctionNameAH = "__anyhit__radiance__direct__lighting";
+        pgDescHitgroup.hitgroup.entryFunctionNameCH = "__closesthit__radiance__radiance__cell__gather";
+        pgDescHitgroup.hitgroup.entryFunctionNameAH = "__anyhit__radiance__radiance__cell__gather";
 
         OPTIX_CHECK(optixProgramGroupCreate(context,
             &pgDescHitgroup,
@@ -165,14 +160,14 @@ namespace mcrt {
         }
     }
 
-    void DirectLightPipeline::buildSBT(GeometryBufferHandle& geometryBuffers, Scene& scene)
+    void RadianceCellGatherPipeline::buildSBT(GeometryBufferHandle& geometryBuffers, Scene& scene)
     {
         // ----------------------------------------
         // Build raygen records
         // ----------------------------------------
-        std::vector<RaygenRecordDirect> raygenRecords;
+        std::vector<RaygenRecordRadianceCellGather> raygenRecords;
         for (int i = 0; i < raygenPGs.size(); i++) {
-            RaygenRecordDirect rec;
+            RaygenRecordRadianceCellGather rec;
             OPTIX_CHECK(optixSbtRecordPackHeader(raygenPGs[i], &rec));
             rec.data = nullptr; /* for now ... */
             raygenRecords.push_back(rec);
@@ -186,9 +181,9 @@ namespace mcrt {
         // ----------------------------------------
         // Build miss records
         // ----------------------------------------
-        std::vector<MissRecordDirect> missRecords;
+        std::vector<MissRecordRadianceCellGather> missRecords;
         for (int i = 0; i < missPGs.size(); i++) {
-            MissRecordDirect rec;
+            MissRecordRadianceCellGather rec;
             OPTIX_CHECK(optixSbtRecordPackHeader(missPGs[i], &rec));
             rec.data = nullptr; /* for now ... */
             missRecords.push_back(rec);
@@ -197,8 +192,7 @@ namespace mcrt {
         missRecordsBuffer.alloc_and_upload(missRecords);
         // Maintain a pointer to the device memory
         sbt.missRecordBase = missRecordsBuffer.d_pointer();
-
-        sbt.missRecordStrideInBytes = sizeof(MissRecordDirect);
+        sbt.missRecordStrideInBytes = sizeof(MissRecordRadianceCellGather);
         sbt.missRecordCount = (int)missRecords.size();
 
 
@@ -206,30 +200,32 @@ namespace mcrt {
         // Build hitgroup records
         // ----------------------------------------
         int numObjects = scene.numObjects();
-        std::vector<HitgroupRecordDirect> hitgroupRecords;
-        for (int i = 0; i < numObjects; i++) {
-            auto mesh = scene.getGameObjects()[i]->model->mesh;
+        std::vector<HitgroupRecordRadianceCellGather> hitgroupRecords;
 
-            HitgroupRecordDirect rec;
-            OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec));
+        // TODO: HIER MOET IK LOOPEN OVER DE CUBES DIE LICHT BEVATTEN
 
-            rec.data.vertex = (glm::vec3*)geometryBuffers.vertices[i].d_pointer();
-            rec.data.index = (glm::ivec3*)geometryBuffers.indices[i].d_pointer();
-            rec.data.normal = (glm::vec3*)geometryBuffers.normals[i].d_pointer();
-            rec.data.texcoord = (glm::vec2*)geometryBuffers.texCoords[i].d_pointer();
-            hitgroupRecords.push_back(rec);  
-        }
+        //for (int i = 0; i < numObjects; i++) {
+        //    auto mesh = scene.getGameObjects()[i].model->mesh;
+
+        //    HitgroupRecordRadianceCellGather rec;
+        //    OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec));
+
+        //    rec.data.vertex = (glm::vec3*)geometryBuffers.vertices[i].d_pointer();
+        //    rec.data.index = (glm::ivec3*)geometryBuffers.indices[i].d_pointer();
+        //    rec.data.normal = (glm::vec3*)geometryBuffers.normals[i].d_pointer();
+        //    rec.data.texcoord = (glm::vec2*)geometryBuffers.texCoords[i].d_pointer();
+        //    hitgroupRecords.push_back(rec);
+        //}
 
         // Upload records to device
         hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);
         // Maintain a pointer to the device memory
         sbt.hitgroupRecordBase = hitgroupRecordsBuffer.d_pointer();
-        sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecordDirect);
+        sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecordRadianceCellGather);
         sbt.hitgroupRecordCount = (int)hitgroupRecords.size();
     }
 
-
-    void DirectLightPipeline::buildPipeline(OptixDeviceContext& context)
+    void RadianceCellGatherPipeline::buildPipeline(OptixDeviceContext& context)
     {
         // Gather all program groups
         std::vector<OptixProgramGroup> programGroups;
@@ -272,8 +268,9 @@ namespace mcrt {
             1))
     }
 
-    OptixTraversableHandle DirectLightPipeline::buildAccelerationStructure(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene)
+    OptixTraversableHandle RadianceCellGatherPipeline::buildAccelerationStructure(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene)
     {
+        // TODO: MAAK DIT HET AANTAL RADIANCE CELLS DIE LICHT BEVATTEN!
         int bufferSize = scene.numObjects();
 
         OptixTraversableHandle asHandle{ 0 };

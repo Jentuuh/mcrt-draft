@@ -87,6 +87,9 @@
     <ClCompile Include="directLightingShadersGathering_embedded.c">
       <Filter>Source Files\GPU</Filter>
     </ClCompile>
+    <ClCompile Include="radiance_cell_gather_pipeline.cpp">
+      <Filter>Source Files\Pipelines</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="renderer.hpp">
@@ -138,6 +141,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="direct_light_pipeline.hpp">
+      <Filter>Header Files\Pipelines</Filter>
+    </ClInclude>
+    <ClInclude Include="radiance_cell_gather_pipeline.hpp">
       <Filter>Header Files\Pipelines</Filter>
     </ClInclude>
   </ItemGroup>

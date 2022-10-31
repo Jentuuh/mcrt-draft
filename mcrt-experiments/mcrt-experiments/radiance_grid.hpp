@@ -11,6 +11,7 @@ namespace mcrt {
 	public:
 		RadianceGrid();
 		void init(float cellSize);
+		void assignObjectsToCells(std::vector<std::shared_ptr<GameObject>>& objects);
 
 		RadianceCell& getCell(glm::ivec3 coord);
 		RadianceCell& getCell(int index) { return grid[index]; };
@@ -18,7 +19,9 @@ namespace mcrt {
 		std::vector<glm::ivec3>& getIndices();
 
 		glm::ivec3 resolution;
+
 	private:
+		float cellSize = 1.0f;
 		std::vector<RadianceCell> grid;
 	};
 }

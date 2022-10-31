@@ -57,9 +57,9 @@ namespace mcrt {
 
         for (int meshID = 0; meshID < scene.numObjects(); meshID++) {
             // upload the model to the device: the builder
-            std::shared_ptr<Model> model = scene.getGameObjects()[meshID].model;
+            std::shared_ptr<Model> model = scene.getGameObjects()[meshID]->model;
             std::shared_ptr<TriangleMesh> mesh = model->mesh;
-            vertexBuffers[meshID].alloc_and_upload(scene.getGameObjects()[meshID].getWorldVertices());
+            vertexBuffers[meshID].alloc_and_upload(scene.getGameObjects()[meshID]->getWorldVertices());
             indexBuffers[meshID].alloc_and_upload(mesh->indices);
             if (!mesh->normals.empty())
                 normalBuffers[meshID].alloc_and_upload(mesh->normals);
@@ -318,12 +318,12 @@ namespace mcrt {
         for (auto& g : scene.getGameObjects())
         {
             // Loop through all triangles
-            for (auto& triangle : g.model->mesh->indices)
+            for (auto& triangle : g->model->mesh->indices)
             {
                 // Get UV coordinates of triangle vertices
-                glm::vec2 uv1 = g.model->mesh->texCoords[triangle[0]];
-                glm::vec2 uv2 = g.model->mesh->texCoords[triangle[1]];
-                glm::vec2 uv3 = g.model->mesh->texCoords[triangle[2]];
+                glm::vec2 uv1 = g->model->mesh->texCoords[triangle[0]];
+                glm::vec2 uv2 = g->model->mesh->texCoords[triangle[1]];
+                glm::vec2 uv3 = g->model->mesh->texCoords[triangle[2]];
 
                 // Barycentric interpolation to check whether our point is in the triangle
                 glm::vec2 f1 = uv1 - uv;
@@ -339,9 +339,9 @@ namespace mcrt {
                 float a3 = area(uv1, uv2, uv) / a; if (a3 < 0) continue;
 
                 //std::cout << "UV found!" << std::endl;
-                glm::vec3 uvPosition = a1 * g.model->mesh->vertices[triangle[0]] + a2 * g.model->mesh->vertices[triangle[1]] + a3 * g.model->mesh->vertices[triangle[2]];
-                glm::vec3 uvNormal = glm::normalize(a1 * g.model->mesh->normals[triangle[0]] + a2 * g.model->mesh->normals[triangle[1]] + a3 * g.model->mesh->normals[triangle[2]]);
-                uvPosition = g.worldTransform.object2World * glm::vec4{ uvPosition, 1.0f };
+                glm::vec3 uvPosition = a1 * g->model->mesh->vertices[triangle[0]] + a2 * g->model->mesh->vertices[triangle[1]] + a3 * g->model->mesh->vertices[triangle[2]];
+                glm::vec3 uvNormal = glm::normalize(a1 * g->model->mesh->normals[triangle[0]] + a2 * g->model->mesh->normals[triangle[1]] + a3 * g->model->mesh->normals[triangle[2]]);
+                uvPosition = g->worldTransform.object2World * glm::vec4{ uvPosition, 1.0f };
                 return { uvPosition, uvNormal};
             }
         }
