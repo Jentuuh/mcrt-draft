@@ -81,6 +81,17 @@ namespace mcrt {
 		}
 	}
 
+    void Scene::voxelizeObjects()
+    {
+        for (auto g : gameObjects)
+        {
+            std::shared_ptr<Voxelizer> voxelizer = std::make_shared<Voxelizer>( 0.01f, g );
+            voxelizer->voxelize();
+            voxelizers.push_back(voxelizer);
+        }
+    }
+
+
 	void Scene::buildRadianceGrid(float cellSize)
 	{
 		grid.init(cellSize);
@@ -109,7 +120,7 @@ namespace mcrt {
 
 		for (auto& g : gameObjects)
 		{
-			g->worldTransform.translate(translation);
+			g->translate(translation);
 			g->worldTransform.applySceneRescale(glm::vec3{ minScale, minScale, minScale });
 		}
 

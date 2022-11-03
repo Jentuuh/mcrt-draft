@@ -90,6 +90,9 @@
     <ClCompile Include="radiance_cell_gather_pipeline.cpp">
       <Filter>Source Files\Pipelines</Filter>
     </ClCompile>
+    <ClCompile Include="voxelizer.cpp">
+      <Filter>Source Files\Radiance Grid</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="renderer.hpp">
@@ -145,6 +148,9 @@
     </ClInclude>
     <ClInclude Include="radiance_cell_gather_pipeline.hpp">
       <Filter>Header Files\Pipelines</Filter>
+    </ClInclude>
+    <ClInclude Include="voxelizer.hpp">
+      <Filter>Header Files\Radiance Grid</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

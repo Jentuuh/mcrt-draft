@@ -26,47 +26,47 @@ namespace mcrt {
 		}
 	}
 
-	void RadianceGrid::assignObjectsToCells(std::vector<std::shared_ptr<GameObject>>& objects)
+	void RadianceGrid::assignObjectsToCells(std::vector<std::shared_ptr<Voxelizer>>& voxelizers)
 	{
-		for (auto& g : objects)
+		for (auto v: voxelizers)
 		{
-			AABB objectWorldAABB = g->getWorldAABB();
-			std::cout << glm::to_string(objectWorldAABB.min) << glm::to_string(objectWorldAABB.max) << std::endl;
+			AABB objectWorldAABB = v->voxelizedObject->getWorldAABB();
+
 			// floor(minCoords / cellSize)
 			glm::ivec3 minRadianceCoords = { std::floorf(objectWorldAABB.min.x / cellSize), std::floorf(objectWorldAABB.min.y / cellSize), std::floorf(objectWorldAABB.min.z / cellSize) };
 			glm::ivec3 maxRadianceCoords = { std::floorf(objectWorldAABB.max.x / cellSize), std::floorf(objectWorldAABB.max.y / cellSize), std::floorf(objectWorldAABB.max.z / cellSize) };
-			std::cout << glm::to_string(minRadianceCoords) << glm::to_string(maxRadianceCoords) << std::endl;
-			//for (int x = minRadianceCoords.x; x < maxRadianceCoords.x; x++)
-			//{
-			//	for (int y = minRadianceCoords.y; y < maxRadianceCoords.y; y++)
-			//	{
-			//		for (int z = minRadianceCoords.z; z < maxRadianceCoords.z; z++)
-			//		{
-			//			RadianceCell& currentCell = getCell({ x,y,z });
-			//			for (auto& v : g->getWorldVertices())
-			//			{
-			//				// If the cell contains a vertex we can add the game object to this cell
-			//				if (currentCell.contains(v)) {
-			//					std::cout << "Youpie!" << std::endl;
-			//					currentCell.addObject(g);
-			//					break;
-			//				}
-			//			}
-			//		}
-			//	}
-			//}
-			for (auto& c : grid)
+			
+			// TODO: ALSO MAKE THE POSSIBILITY TO USE THE ACTUAL TRIANGLE INTERSECTIONS INSTEAD OF INTERSECTIONS WITH VOXELS (MORE COSTLY BUT MORE ACCURATE)
+
+			for (int x = minRadianceCoords.x; x < maxRadianceCoords.x; x++)
 			{
-				for (auto& v : g->getWorldVertices())
+				for (int y = minRadianceCoords.y; y < maxRadianceCoords.y; y++)
 				{
-					// If the cell contains a vertex we can add the game object to this cell
-					if (c.contains(v)) {
-						std::cout << "Youpie!" << std::endl;
-						c.addObject(g);
-						break;
+					for (int z = minRadianceCoords.z; z < maxRadianceCoords.z; z++)
+					{
+						RadianceCell& currentCell = getCell({ x,y,z });
+						for (auto& vox : v->resultVoxelGrid)
+						{
+							// If the cell intersects with the voxel proxy we can add the game object to this cell
+							if (currentCell.intersects(vox)) {
+								currentCell.addObject(v->voxelizedObject);
+							}
+						}
 					}
 				}
 			}
+
+			// (USE THE CODE ABOVE)
+			//for (auto& c : grid)
+			//{
+			//	for (auto& vox : v->resultVoxelGrid)
+			//	{
+			//		// If the cell intersects with the voxel proxy we can add the game object to this cell
+			//		if (c.intersects(vox)) {
+			//			c.addObject(v->voxelizedObject);
+			//		}
+			//	}
+			//}
 		}
 
 		// Print amount of objects for each cell

@@ -33,7 +33,6 @@ namespace mcrt {
 		Model();
 
 		void loadModel();
-
 		std::shared_ptr<TriangleMesh> mesh;
 	};
 }

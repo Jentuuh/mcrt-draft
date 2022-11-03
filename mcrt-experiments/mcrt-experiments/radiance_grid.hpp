@@ -1,5 +1,6 @@
 #pragma once
 #include "radiance_cell.hpp"
+#include "voxelizer.hpp"
 
 #include "glm/glm.hpp"
 
@@ -11,7 +12,7 @@ namespace mcrt {
 	public:
 		RadianceGrid();
 		void init(float cellSize);
-		void assignObjectsToCells(std::vector<std::shared_ptr<GameObject>>& objects);
+		void assignObjectsToCells(std::vector<std::shared_ptr<Voxelizer>>& voxelizers);
 
 		RadianceCell& getCell(glm::ivec3 coord);
 		RadianceCell& getCell(int index) { return grid[index]; };

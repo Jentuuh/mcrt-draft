@@ -13,6 +13,7 @@ namespace mcrt {
 		void applySceneRescale(glm::vec3 p_scale);
 		void updateScale(glm::vec3 newScale);
 		glm::mat4x4 transformation();
+		glm::mat4x4 transformationWithoutRotation();
 
 		glm::vec3 translation;
 		glm::vec3 rotation;
@@ -28,6 +29,13 @@ namespace mcrt {
 		std::vector<glm::vec3> getWorldVertices();
 		AABB getWorldAABB();
 		int amountVertices() { return model->mesh->vertices.size(); };
+
+		void setPosition(glm::vec3 position);
+		void translate(glm::vec3 translation);
+		void rotate(glm::vec3 rotation);
+		void scale(glm::vec3 scale);
+		void recalculateAABB();
+
 
 		std::shared_ptr<Model> model;
 		Transform worldTransform;

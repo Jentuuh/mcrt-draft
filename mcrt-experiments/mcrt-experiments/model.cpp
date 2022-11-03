@@ -36,7 +36,4 @@ namespace mcrt {
                 indicesCube[3 * i + 2]));
 
 	}
-
-    
-
 }

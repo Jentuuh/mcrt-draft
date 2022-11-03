@@ -37,19 +37,24 @@ namespace mcrt {
 
 	void App::loadScene()
 	{
-		//std::shared_ptr<Model> cubeModel = std::make_shared<Model>();
-		//cubeModel->loadModel();
-		//scene.addGameObject(glm::vec3{ -0.5f,-0.5f,-0.5f }, glm::vec3{ 0.0f,0.0f,0.0f }, glm::vec3{ 1.0f, 1.0f, 1.0f }, cubeModel);
-		//scene.addGameObject(glm::vec3{ -5.0f,-1.5f, -5.0f }, glm::vec3{ 0.0f,0.0f,0.0f }, glm::vec3{ 10.0f, 0.1f, 10.0f }, cubeModel);
-
 		//scene.loadModelFromOBJ("../models/sponza/sponza.obj");
 		scene.loadModelFromOBJ("../models/cornell/cornell.obj");
-
 		std::cout << "Loaded scene: " << scene.amountVertices() << " vertices. Scene Max: " << glm::to_string(scene.maxCoord()) << " Scene Min: " << glm::to_string(scene.minCoord()) << std::endl;
+		
+		// Normalize scene to be contained within [0;1] in each dimension
 		scene.normalize();
+
+		// Build proxy geometry
+		scene.voxelizeObjects();
+
+		// Create light sources
 		scene.loadLights();
+
+		// Build radiance grid that is contained within the scene
 		scene.buildRadianceGrid(0.1f);
-		scene.grid.assignObjectsToCells(scene.getGameObjects());
+
+		// For each radiance cell, check which objects are (partially) in it
+		scene.grid.assignObjectsToCells(scene.getVoxelizers());
 	}
 
 }

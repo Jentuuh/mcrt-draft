@@ -2,6 +2,7 @@
 #include "game_object.hpp"
 #include "radiance_grid.hpp"
 #include "area_light.hpp"
+#include "voxelizer.hpp"
 
 #include <glm/glm.hpp>
 
@@ -29,6 +30,7 @@ namespace mcrt {
 		int amountVertices();
 		int amountLights() { return lights.size(); };
 		std::vector<std::shared_ptr<GameObject>>& getGameObjects() { return gameObjects; };
+		std::vector<std::shared_ptr<Voxelizer>>& getVoxelizers() { return voxelizers; };
 		std::vector<std::shared_ptr<Texture>>& getTextures() { return textures; };
 		std::vector<LightData> getLightsData();
 
@@ -36,12 +38,14 @@ namespace mcrt {
 		void loadModelFromOBJ(const std::string& fileName);
 		int loadTexture(std::map<std::string, int>& knownTextures, const std::string& inFileName, const std::string& modelPath);
 
+		void voxelizeObjects();
 		void buildRadianceGrid(float cellSize);
 		void normalize();
 		void loadLights();
 
 		RadianceGrid grid;
 	private:
+		std::vector<std::shared_ptr<Voxelizer>> voxelizers;
 		std::vector<std::shared_ptr<GameObject>> gameObjects;
 		std::vector<std::shared_ptr<Texture>> textures;
 		std::vector<AreaLight> lights;

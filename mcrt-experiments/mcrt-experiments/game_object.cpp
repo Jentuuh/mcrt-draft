@@ -57,6 +57,18 @@ namespace mcrt {
 		return transM * rotationM * scaleM;
 	}
 
+	glm::mat4x4 Transform::transformationWithoutRotation()
+	{
+		glm::mat4x4 scaleM = glm::mat4x4(1.0f);
+		scaleM = glm::scale(scaleM, scale);
+
+		glm::mat4x4 transM = glm::mat4x4(1.0f);
+		transM = glm::translate(transM, translation);
+
+		return transM * scaleM;
+	}
+
+
 	GameObject::GameObject(Transform transform, std::shared_ptr<Model> model):worldTransform{transform}
 	{
 		this->model = model;
@@ -107,9 +119,70 @@ namespace mcrt {
 	
 
 		// Transform object space AABB to world space AABB
-		worldAABB.min = worldTransform.object2World * glm::vec4{ model->mesh->boundingBox.min, 1.0f };
-		worldAABB.max = worldTransform.object2World * glm::vec4{ model->mesh->boundingBox.max, 1.0f };
+		// Note that we don't apply rotation to an AABB!
+		worldAABB.min = worldTransform.transformationWithoutRotation() * glm::vec4{model->mesh->boundingBox.min, 1.0f};
+		worldAABB.max = worldTransform.transformationWithoutRotation() * glm::vec4{ model->mesh->boundingBox.max, 1.0f };
 		return worldAABB;
 	}
+
+	void GameObject::setPosition(glm::vec3 position)
+	{
+		worldTransform.updatePosition(position);
+	}
+
+
+	void GameObject::translate(glm::vec3 translation)
+	{
+		worldTransform.translate(translation);
+	}
+
+
+	void GameObject::rotate(glm::vec3 rotation)
+	{
+		worldTransform.updateRotation(rotation);
+		recalculateAABB();	// Note that this is necessary!
+	}
+
+	void GameObject::scale(glm::vec3 scale)
+	{
+		worldTransform.updateScale(scale);
+	}
+
+
+
+	void GameObject::recalculateAABB()
+	{
+		model->mesh->boundingBox.min = { 1.0f, 1.0f, 1.0f };
+		model->mesh->boundingBox.max = { 0.0f, 0.0f, 0.0f };
+
+		for (auto& v : getWorldVertices())
+		{
+			if (v.x < model->mesh->boundingBox.min.x)
+			{
+				model->mesh->boundingBox.min.x = v.x;
+			}
+			if (v.x > model->mesh->boundingBox.max.x)
+			{
+				model->mesh->boundingBox.max.x = v.x;
+			}
+			if (v.y < model->mesh->boundingBox.min.y)
+			{
+				model->mesh->boundingBox.min.y = v.y;
+			}
+			if (v.y > model->mesh->boundingBox.max.y)
+			{
+				model->mesh->boundingBox.max.y = v.y;
+			}
+			if (v.z < model->mesh->boundingBox.min.z)
+			{
+				model->mesh->boundingBox.min.z = v.z;
+			}
+			if (v.z > model->mesh->boundingBox.max.z)
+			{
+				model->mesh->boundingBox.max.z = v.z;
+			}
+		}
+	}
+
 
 }

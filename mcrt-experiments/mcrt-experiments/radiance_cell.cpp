@@ -43,13 +43,37 @@ namespace mcrt {
 
 	void RadianceCell::addObject(std::shared_ptr<GameObject> obj) 
 	{
-		objectsInside.push_back(obj);
+        // If the object is not in this cell already
+        if(std::find(objectsInside.begin(), objectsInside.end(), obj) == objectsInside.end())
+		    objectsInside.push_back(obj);
 	}
 
 	void RadianceCell::removeObject(std::shared_ptr<GameObject> obj)
 	{
 		remove(objectsInside.begin(), objectsInside.end(), obj);
 	}
+
+    bool RadianceCell::intersects(Voxel v)
+    {
+        // Cells/voxels with no volume
+        if (v.min.x == v.max.x || v.min.y == v.max.y || v.min.z == v.max.z || min.x == max.x || min.y == max.y || min.z == max.z)
+            return false;
+
+        // Do not overlap on x-axis
+        if (v.min.x > max.x || min.x > v.max.x)
+            return false;
+
+        // Do not overlap on y-axis
+        if (v.min.y > max.y || min.y > v.max.y)
+            return false;
+
+        // Do not overlap on z-axis
+        if (v.min.z > max.z || min.z > v.max.z)
+            return false;
+        
+        return true;
+    }
+
 
     bool RadianceCell::contains(glm::vec3 coord)
     {

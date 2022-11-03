@@ -152,6 +152,7 @@
     <ClCompile Include="radiance_grid.cpp" />
     <ClCompile Include="renderer.cpp" />
     <ClCompile Include="scene.cpp" />
+    <ClCompile Include="voxelizer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.hpp" />
@@ -172,6 +173,7 @@
     <ClInclude Include="renderer.hpp" />
     <ClInclude Include="optix7.hpp" />
     <ClInclude Include="scene.hpp" />
+    <ClInclude Include="voxelizer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="devicePrograms.cu" />

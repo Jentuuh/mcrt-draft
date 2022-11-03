@@ -1,5 +1,6 @@
 #pragma once
 #include "game_object.hpp"
+#include "voxelizer.hpp"
 
 #include <vector>
 
@@ -13,6 +14,7 @@ namespace mcrt {
 		void removeObject(std::shared_ptr<GameObject> obj);
 		int amountObjects() { return objectsInside.size(); };
 
+		bool intersects(Voxel v);
 		bool contains(glm::vec3 coord);
 
 		std::vector<glm::vec3>& getVertices() { return vertices; };
