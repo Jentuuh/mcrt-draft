@@ -293,6 +293,7 @@ namespace mcrt {
         for (int i = 0; i < UVWorldPositions.size(); i++)
         {
             const float u = float(i % texSize) / float(texSize);
+            // (i - i % texSize) / texSize gives us the row number, divided by texSize gives us the V coordinate 
             const float v = (float((i - (i % texSize))) / float(texSize)) / float(texSize);
             glm::vec2 uv = glm::vec2{ u,v };
             UVWorldPositions[i] = UVto3D(uv);
