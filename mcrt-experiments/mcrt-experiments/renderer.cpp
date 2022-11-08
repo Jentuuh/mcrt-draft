@@ -14,6 +14,7 @@
 
 #define STRATIFIED_X_SIZE 5
 #define STRATIFIED_Y_SIZE 5
+#define SPHERICAL_HARMONIC_BASIS_FUNCTIONS 9
 
 namespace mcrt {
 
@@ -33,8 +34,14 @@ namespace mcrt {
 
         std::cout << "Setting up pipeline..." << std::endl;
         GeometryBufferHandle geometryData = GeometryBufferHandle{ vertexBuffers, indexBuffers, normalBuffers, texcoordBuffers, textureObjects };
-        tutorialPipeline = std::make_unique<DefaultPipeline>( optixContext, geometryData, scene);
+
+        std::vector<CUDABuffer> emptyTexcoordBufferVec;
+        std::vector<cudaTextureObject_t> emptyTexBufferVec;
+        GeometryBufferHandle radianceCellGeometry = GeometryBufferHandle{ radianceGridVertexBuffers, radianceGridIndexBuffers, radianceGridNormalBuffers, emptyTexcoordBufferVec, emptyTexBufferVec};
+
+        tutorialPipeline = std::make_unique<DefaultPipeline>(optixContext, geometryData, scene);
         directLightPipeline = std::make_unique<DirectLightPipeline>(optixContext, geometryData, scene);
+        radianceCellGatherPipeline = std::make_unique<RadianceCellGatherPipeline>(optixContext, radianceCellGeometry, geometryData, scene); // For now we can use normal geometry instead of proxy
 
         std::cout << "Context, module, pipeline, etc, all set up." << std::endl;
         std::cout << "MCRT renderer fully set up." << std::endl;
@@ -43,13 +50,16 @@ namespace mcrt {
         initDirectLightingTexture(1024);
         prepareUVWorldPositions();
         calculateDirectLighting();
+        calculateRadianceCellGatherPass();
     }
 
     void Renderer::fillGeometryBuffers()
     {
+        // ======================
+        //    NORMAL GEOMETRY
+        // ======================
         int bufferSize = scene.numObjects();
 
-        std::cout << bufferSize << std::endl;
         vertexBuffers.resize(bufferSize);
         indexBuffers.resize(bufferSize);
         normalBuffers.resize(bufferSize);
@@ -65,6 +75,20 @@ namespace mcrt {
                 normalBuffers[meshID].alloc_and_upload(mesh->normals);
             if (!mesh->texCoords.empty())
                 texcoordBuffers[meshID].alloc_and_upload(mesh->texCoords);
+        }
+
+        // ============================
+        //    RADIANCE CELL GEOMETRY
+        // ============================
+        NonEmptyCells nonEmpties = scene.grid.getNonEmptyCells();
+        int numNonEmptyCells = nonEmpties.nonEmptyCells.size();
+
+        radianceGridVertexBuffers.resize(numNonEmptyCells);
+        radianceGridIndexBuffers.resize(numNonEmptyCells);
+
+        for (int cellID = 0; cellID < numNonEmptyCells; cellID++) {
+            radianceGridVertexBuffers[cellID].alloc_and_upload(nonEmpties.nonEmptyCells[cellID]->getVertices());
+            radianceGridIndexBuffers[cellID].alloc_and_upload(nonEmpties.nonEmptyCells[cellID]->getIndices());
         }
     }
 
@@ -282,6 +306,55 @@ namespace mcrt {
         // Write the result to an image (for debugging purposes)
         writeToImage("direct_lighting_output.png", directLightPipeline->launchParams.directLightingTexture.size, directLightPipeline->launchParams.directLightingTexture.size, result_reversed.data());
     }
+
+    void Renderer::calculateRadianceCellGatherPass()
+    {
+        const int texSize = directLightPipeline->launchParams.directLightingTexture.size;
+
+        // Initialize non-empty cell data on GPU
+        NonEmptyCells nonEmpties = scene.grid.getNonEmptyCells();
+        std::vector<glm::vec3> nonEmptyCellCenters;
+        for (auto& nonEmpty : nonEmpties.nonEmptyCells)
+        {
+            nonEmptyCellCenters.push_back(nonEmpty->getCenter());
+        }
+        nonEmptyCellDataBuffer.resize(nonEmptyCellCenters.size() * sizeof(glm::vec3));
+        nonEmptyCellDataBuffer.upload(nonEmptyCellCenters.data(), 1);
+        radianceCellGatherPipeline->launchParams.nonEmptyCells.centers = (glm::vec3*)nonEmptyCellDataBuffer.d_pointer();
+        radianceCellGatherPipeline->launchParams.nonEmptyCells.size = nonEmpties.nonEmptyCells.size();
+
+        // Initialize Light Source Texture data on GPU
+        // Take the direct lighting pass output as light source texture (for now), this should normally be the output from the previous pass in each iteration
+        radianceCellGatherPipeline->launchParams.lightSourceTexture.colorBuffer = (uint32_t*)directLightingTexture.d_pointer();
+        radianceCellGatherPipeline->launchParams.lightSourceTexture.size = texSize;
+
+        // Initialize SH data on GPU
+        std::vector<float> shCoefficients(nonEmptyCellCenters.size() * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS, 0.0f );
+        SHWeightsDataBuffer.resize(shCoefficients.size() * sizeof(float));
+        SHWeightsDataBuffer.upload(shCoefficients.data(), 1);
+        radianceCellGatherPipeline->launchParams.sphericalHarmonicsWeights.weights = (float*)SHWeightsDataBuffer.d_pointer();
+        radianceCellGatherPipeline->launchParams.sphericalHarmonicsWeights.size = SPHERICAL_HARMONIC_BASIS_FUNCTIONS * 8 * nonEmpties.nonEmptyCells.size(); // 8 SHs per cell, each 9 basis functions
+        
+        // Initialize UV World positions data on GPU
+        directLightPipeline->launchParams.uvWorldPositions.size = texSize * texSize;
+        radianceCellGatherPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+        
+        radianceCellGatherPipeline->uploadLaunchParams();
+
+        OPTIX_CHECK(optixLaunch(
+            radianceCellGatherPipeline->pipeline, stream,
+            radianceCellGatherPipeline->launchParamsBuffer.d_pointer(),
+            radianceCellGatherPipeline->launchParamsBuffer.sizeInBytes,
+            &radianceCellGatherPipeline->sbt,
+            radianceCellGatherPipeline->launchParams.lightSourceTexture.size,   // dimension X: x resolution of light source UV map
+            radianceCellGatherPipeline->launchParams.lightSourceTexture.size,   // dimension Y: y resolution of light source UV map
+            1                                                                   // dimension Z: 1
+            // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
+        ));
+
+        CUDA_SYNC_CHECK();
+    }   
+
 
     void Renderer::prepareUVWorldPositions()
     {

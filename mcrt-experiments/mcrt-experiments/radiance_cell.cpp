@@ -53,6 +53,20 @@ namespace mcrt {
 		remove(objectsInside.begin(), objectsInside.end(), obj);
 	}
 
+    std::vector<glm::vec3> RadianceCell::getNormals()
+    {
+        std::vector<glm::vec3> normals;
+        normals.push_back({ -1.0f, 0.0f, 0.0f });   // LEFT
+        normals.push_back({ 1.0f, 0.0f, 0.0f });    // RIGHT
+        normals.push_back({ 0.0f, 1.0f, 0.0f });    // UP
+        normals.push_back({ 0.0f, -1.0f, 0.0f });   // DOWN
+        normals.push_back({ 0.0f, 0.0f, -1.0f });   // FRONT
+        normals.push_back({ 0.0f, 0.0f, 1.0f });    // BACK
+
+        return normals;
+    }
+
+
     bool RadianceCell::intersects(Voxel v)
     {
         // Cells/voxels with no volume

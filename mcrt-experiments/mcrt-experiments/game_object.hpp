@@ -13,7 +13,6 @@ namespace mcrt {
 		void applySceneRescale(glm::vec3 p_scale);
 		void updateScale(glm::vec3 newScale);
 		glm::mat4x4 transformation();
-		glm::mat4x4 transformationWithoutRotation();
 
 		glm::vec3 translation;
 		glm::vec3 rotation;

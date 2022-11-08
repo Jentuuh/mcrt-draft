@@ -7,13 +7,20 @@
 #include <vector>
 
 namespace mcrt {
+	struct NonEmptyCells {
+		std::vector<std::shared_ptr<RadianceCell>> nonEmptyCells;
+		std::vector<int> nonEmptyCellIndices;
+	};
+
 	class RadianceGrid
 	{
 	public:
 		RadianceGrid();
 		void init(float cellSize);
 		void assignObjectsToCells(std::vector<std::shared_ptr<Voxelizer>>& voxelizers);
+		NonEmptyCells getNonEmptyCells();
 
+		int getCellIndex(std::shared_ptr<RadianceCell> cell);
 		RadianceCell& getCell(glm::ivec3 coord);
 		RadianceCell& getCell(int index) { return grid[index]; };
 		std::vector<glm::vec3>& getVertices();

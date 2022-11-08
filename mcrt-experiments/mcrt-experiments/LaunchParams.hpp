@@ -9,14 +9,63 @@ namespace mcrt {
 
 	enum { RADIANCE_RAY_TYPE = 0, SHADOW_RAY_TYPE, RAY_TYPE_COUNT };
 
+	/**
+	* ================
+	*	HELPER TYPES 
+	* ================
+	*/
+	struct PixelBuffer {
+		uint32_t* colorBuffer;
+		int size;
+	};
+
+
+	struct SHWeights {
+		float* weights;
+		int size;
+	};
+
+	struct UVWorldData {
+		glm::vec3 worldPosition;
+		glm::vec3 worldNormal;
+	};
+
+
+	/**
+	* ==================================
+	*	 RADIANCE CELL GATHER PASS
+	* ==================================
+	*/
 	struct LaunchParamsRadianceCellGather {
+		struct {
+			UVWorldData* UVDataBuffer;
+			int size;
+		} uvWorldPositions;
+
+		struct {
+			glm::vec3* centers;
+			int size;
+		} nonEmptyCells;
+
+		SHWeights sphericalHarmonicsWeights;	// Radiance cells thus need to get an index in their SBT data so we can index the weights array by that index!
+		PixelBuffer lightSourceTexture;
 
 		OptixTraversableHandle traversable;
 	};
 
 	struct MeshSBTDataRadianceCellGather {
+		glm::vec3* vertex;
+		glm::vec3* normal;
+		glm::ivec3* index;
 
+		int cellIndex;
 	};
+
+	/**
+	* ==============================
+	*	  DIRECT LIGHTING PASS
+	* ==============================
+	*/
 
 	struct DirectLightingPRD {
 		glm::vec3 lightSamplePos;
@@ -31,10 +80,6 @@ namespace mcrt {
 		glm::ivec3* index;
 	};
 
-	struct UVWorldData {
-		glm::vec3 worldPosition;
-		glm::vec3 worldNormal;
-	};
 
 	struct LaunchParamsDirectLighting {
 		struct {
@@ -42,10 +87,7 @@ namespace mcrt {
 			int size;
 		} uvWorldPositions;
 
-		struct {
-			uint32_t* colorBuffer;
-			int size;
-		} directLightingTexture;
+		PixelBuffer directLightingTexture;
 
 		LightData* lights;
 		int amountLights;
@@ -55,6 +97,12 @@ namespace mcrt {
 		OptixTraversableHandle traversable;
 	};
 
+
+	/**
+	* =======================
+	*	  TUTORIAL PASS
+	* =======================
+	*/
 
 	struct MeshSBTData {
 		glm::vec3 color;

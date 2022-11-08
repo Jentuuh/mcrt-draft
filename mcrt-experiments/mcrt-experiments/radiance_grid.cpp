@@ -28,10 +28,9 @@ namespace mcrt {
 
 	void RadianceGrid::assignObjectsToCells(std::vector<std::shared_ptr<Voxelizer>>& voxelizers)
 	{
-		for (auto v: voxelizers)
+ 		for (auto v: voxelizers)
 		{
 			AABB objectWorldAABB = v->voxelizedObject->getWorldAABB();
-
 			// floor(minCoords / cellSize)
 			glm::ivec3 minRadianceCoords = { std::floorf(objectWorldAABB.min.x / cellSize), std::floorf(objectWorldAABB.min.y / cellSize), std::floorf(objectWorldAABB.min.z / cellSize) };
 			glm::ivec3 maxRadianceCoords = { std::floorf(objectWorldAABB.max.x / cellSize), std::floorf(objectWorldAABB.max.y / cellSize), std::floorf(objectWorldAABB.max.z / cellSize) };
@@ -55,18 +54,6 @@ namespace mcrt {
 					}
 				}
 			}
-
-			// (USE THE CODE ABOVE)
-			//for (auto& c : grid)
-			//{
-			//	for (auto& vox : v->resultVoxelGrid)
-			//	{
-			//		// If the cell intersects with the voxel proxy we can add the game object to this cell
-			//		if (c.intersects(vox)) {
-			//			c.addObject(v->voxelizedObject);
-			//		}
-			//	}
-			//}
 		}
 
 		// Print amount of objects for each cell
@@ -78,11 +65,28 @@ namespace mcrt {
 		}
 	}
 
+	NonEmptyCells RadianceGrid::getNonEmptyCells()
+	{
+		NonEmptyCells returnStruct;
+
+		// Get all non empty cells
+		for (int i = 0; i < grid.size(); i++)
+		{
+			if (grid[i].amountObjects() > 0)
+			{
+				returnStruct.nonEmptyCellIndices.push_back(i);
+				returnStruct.nonEmptyCells.push_back(std::make_shared<RadianceCell>(grid[i]));
+			}
+		}
+
+		return returnStruct;
+	}
 
 
 	RadianceCell& RadianceGrid::getCell(glm::ivec3 coord)
 	{
-		return grid[(coord.y * resolution.x) + (coord.z * resolution.x * resolution.y) + coord.x];
+	/*	if((coord.y * resolution.x) + (coord.z * resolution.x * resolution.y) + coord.x < grid.size())*/
+			return grid[(coord.y * resolution.x) + (coord.z * resolution.x * resolution.y) + coord.x];
 	}
 
 	std::vector<glm::vec3>& RadianceGrid::getVertices()

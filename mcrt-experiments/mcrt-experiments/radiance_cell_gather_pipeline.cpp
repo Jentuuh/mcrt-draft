@@ -3,7 +3,7 @@
 
 namespace mcrt {
 
-    // extern "C" char embedded_ptx_code_radiance_cell_gather[];
+    extern "C" char embedded_ptx_code_radiance_cell_gathering[];
 
     // SBT record for a raygen program
     struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) RaygenRecordRadianceCellGather
@@ -32,10 +32,10 @@ namespace mcrt {
         MeshSBTDataRadianceCellGather data;
     };
 
-	RadianceCellGatherPipeline::RadianceCellGatherPipeline(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene): McrtPipeline(context, geometryBuffers, scene)
+	RadianceCellGatherPipeline::RadianceCellGatherPipeline(OptixDeviceContext& context, GeometryBufferHandle& radianceCellGeometry, GeometryBufferHandle& proxyGeometry, Scene& scene): McrtPipeline(context, radianceCellGeometry, scene)
 	{
-        init(context, geometryBuffers, scene);
-        launchParams.traversable = buildAccelerationStructure(context, geometryBuffers, scene);
+        initRadianceCellGather(context, radianceCellGeometry, proxyGeometry, scene);
+        launchParams.traversable = buildAccelerationStructureRadianceCellGather(context, radianceCellGeometry, proxyGeometry, scene);
         launchParamsBuffer.alloc(sizeof(launchParams));
 	}
 
@@ -43,6 +43,15 @@ namespace mcrt {
     {
         launchParamsBuffer.upload(&launchParams, 1);
     }
+
+    void RadianceCellGatherPipeline::initRadianceCellGather(OptixDeviceContext& context, GeometryBufferHandle& radianceCellGeometry, GeometryBufferHandle& proxyGeometry, Scene& scene)
+    {
+        buildModule(context);
+        buildDevicePrograms(context);
+        buildPipeline(context);
+        buildSBTRadianceCellGather(radianceCellGeometry, proxyGeometry, scene);
+    }
+
 
     void RadianceCellGatherPipeline::buildModule(OptixDeviceContext& context)
     {
@@ -61,7 +70,7 @@ namespace mcrt {
         // Max # of ray bounces
         pipelineLinkOptions.maxTraceDepth = 2;
 
-        const std::string ptxCode = ""; //embedded_ptx_code_radiance_cell_gather;
+        const std::string ptxCode = embedded_ptx_code_radiance_cell_gathering;
 
         char log[2048];
         size_t sizeof_log = sizeof(log);
@@ -90,7 +99,7 @@ namespace mcrt {
         OptixProgramGroupDesc pgDescRaygen = {};
         pgDescRaygen.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
         pgDescRaygen.raygen.module = module;
-        pgDescRaygen.raygen.entryFunctionName = "__raygen__renderFrame__radiance__cell__gather";
+        pgDescRaygen.raygen.entryFunctionName = "__raygen__renderFrame__cell__gathering";
 
         // OptixProgramGroup raypg;
         char log[2048];
@@ -117,7 +126,7 @@ namespace mcrt {
         OptixProgramGroupDesc pgDescMiss = {};
         pgDescMiss.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
         pgDescMiss.miss.module = module;
-        pgDescMiss.miss.entryFunctionName = "__miss__radiance__radiance__cell__gather";
+        pgDescMiss.miss.entryFunctionName = "__miss__radiance__cell__gathering";
 
         OPTIX_CHECK(optixProgramGroupCreate(context,
             &pgDescMiss,
@@ -143,8 +152,8 @@ namespace mcrt {
         pgDescHitgroup.hitgroup.moduleCH = module;
         pgDescHitgroup.hitgroup.moduleAH = module;
 
-        pgDescHitgroup.hitgroup.entryFunctionNameCH = "__closesthit__radiance__radiance__cell__gather";
-        pgDescHitgroup.hitgroup.entryFunctionNameAH = "__anyhit__radiance__radiance__cell__gather";
+        pgDescHitgroup.hitgroup.entryFunctionNameCH = "__closesthit__radiance__cell__gathering";
+        pgDescHitgroup.hitgroup.entryFunctionNameAH = "__anyhit__radiance__cell__gathering";
 
         OPTIX_CHECK(optixProgramGroupCreate(context,
             &pgDescHitgroup,
@@ -161,6 +170,11 @@ namespace mcrt {
     }
 
     void RadianceCellGatherPipeline::buildSBT(GeometryBufferHandle& geometryBuffers, Scene& scene)
+    {
+        // No implementation in this subclass, this class has its own version of buildSBT
+    }
+
+    void RadianceCellGatherPipeline::buildSBTRadianceCellGather(GeometryBufferHandle& radianceCellGeometry, GeometryBufferHandle& proxyGeometry, Scene& scene)
     {
         // ----------------------------------------
         // Build raygen records
@@ -199,23 +213,21 @@ namespace mcrt {
         // ----------------------------------------
         // Build hitgroup records
         // ----------------------------------------
-        int numObjects = scene.numObjects();
+        NonEmptyCells nonEmptyCells = scene.grid.getNonEmptyCells();
+        int numNonEmptyCells = nonEmptyCells.nonEmptyCells.size();
+
         std::vector<HitgroupRecordRadianceCellGather> hitgroupRecords;
 
-        // TODO: HIER MOET IK LOOPEN OVER DE CUBES DIE LICHT BEVATTEN
+        // TODO: HIER MOET IK LOOPEN OVER DE CUBES DIE OBJECTEN BEVATTEN
+        for (int i = 0; i < numNonEmptyCells; i++) {
 
-        //for (int i = 0; i < numObjects; i++) {
-        //    auto mesh = scene.getGameObjects()[i].model->mesh;
-
-        //    HitgroupRecordRadianceCellGather rec;
-        //    OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec));
-
-        //    rec.data.vertex = (glm::vec3*)geometryBuffers.vertices[i].d_pointer();
-        //    rec.data.index = (glm::ivec3*)geometryBuffers.indices[i].d_pointer();
-        //    rec.data.normal = (glm::vec3*)geometryBuffers.normals[i].d_pointer();
-        //    rec.data.texcoord = (glm::vec2*)geometryBuffers.texCoords[i].d_pointer();
-        //    hitgroupRecords.push_back(rec);
-        //}
+            HitgroupRecordRadianceCellGather rec;
+            OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec));
+            rec.data.cellIndex = i;
+            rec.data.vertex = (glm::vec3*)radianceCellGeometry.vertices[nonEmptyCells.nonEmptyCellIndices[i]].d_pointer();     // Kan ik deze niet ook 1 keer opslaan en ter plekke hier transformeren?
+            rec.data.index = (glm::ivec3*)radianceCellGeometry.indices[nonEmptyCells.nonEmptyCellIndices[i]].d_pointer();
+            hitgroupRecords.push_back(rec);
+        }
 
         // Upload records to device
         hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);
@@ -224,6 +236,7 @@ namespace mcrt {
         sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecordRadianceCellGather);
         sbt.hitgroupRecordCount = (int)hitgroupRecords.size();
     }
+
 
     void RadianceCellGatherPipeline::buildPipeline(OptixDeviceContext& context)
     {
@@ -270,41 +283,48 @@ namespace mcrt {
 
     OptixTraversableHandle RadianceCellGatherPipeline::buildAccelerationStructure(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene)
     {
+        // No implementation in this subclass, this class has its own version of buildAccelerationStructure
+        return NULL;
+    }
+
+    OptixTraversableHandle RadianceCellGatherPipeline::buildAccelerationStructureRadianceCellGather(OptixDeviceContext& context, GeometryBufferHandle& radianceCellGeometry, GeometryBufferHandle& proxyGeometry, Scene& scene)
+    {
         // TODO: MAAK DIT HET AANTAL RADIANCE CELLS DIE LICHT BEVATTEN!
-        int bufferSize = scene.numObjects();
+        NonEmptyCells nonEmptyCells = scene.grid.getNonEmptyCells();
+        int numNonEmptyCells = nonEmptyCells.nonEmptyCells.size();
 
         OptixTraversableHandle asHandle{ 0 };
 
         // ==================================================================
         // Triangle inputs
         // ==================================================================
-        std::vector<OptixBuildInput> triangleInput(bufferSize);
-        std::vector<CUdeviceptr> d_vertices(bufferSize);
-        std::vector<CUdeviceptr> d_indices(bufferSize);
-        std::vector<uint32_t> triangleInputFlags(bufferSize);
+        std::vector<OptixBuildInput> triangleInput(numNonEmptyCells);
+        std::vector<CUdeviceptr> d_vertices(numNonEmptyCells);
+        std::vector<CUdeviceptr> d_indices(numNonEmptyCells);
+        std::vector<uint32_t> triangleInputFlags(numNonEmptyCells);
 
-        for (int meshID = 0; meshID < scene.numObjects(); meshID++) {
+        int verticesSize = (int)nonEmptyCells.nonEmptyCells[0]->getVertices().size();
+        int indicesSize = (int)nonEmptyCells.nonEmptyCells[0]->getIndices().size();
+
+        for (int meshID = 0; meshID < numNonEmptyCells; meshID++) {
             // upload the model to the device: the builder
-            std::shared_ptr<Model> model = scene.getGameObjects()[meshID]->model;
-            std::shared_ptr<TriangleMesh> mesh = model->mesh;
-
             triangleInput[meshID] = {};
             triangleInput[meshID].type
                 = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
 
             // create local variables, because we need a *pointer* to the
             // device pointers
-            d_vertices[meshID] = geometryBuffers.vertices[meshID].d_pointer();
-            d_indices[meshID] = geometryBuffers.indices[meshID].d_pointer();
+            d_vertices[meshID] = radianceCellGeometry.vertices[meshID].d_pointer();
+            d_indices[meshID] = radianceCellGeometry.indices[meshID].d_pointer();
 
             triangleInput[meshID].triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
             triangleInput[meshID].triangleArray.vertexStrideInBytes = sizeof(glm::vec3);
-            triangleInput[meshID].triangleArray.numVertices = (int)model->mesh->vertices.size();
+            triangleInput[meshID].triangleArray.numVertices = verticesSize;
             triangleInput[meshID].triangleArray.vertexBuffers = &d_vertices[meshID];
 
             triangleInput[meshID].triangleArray.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
             triangleInput[meshID].triangleArray.indexStrideInBytes = sizeof(glm::ivec3);
-            triangleInput[meshID].triangleArray.numIndexTriplets = (int)model->mesh->indices.size();
+            triangleInput[meshID].triangleArray.numIndexTriplets = indicesSize;
             triangleInput[meshID].triangleArray.indexBuffer = d_indices[meshID];
 
             triangleInputFlags[meshID] = 0;
@@ -333,7 +353,7 @@ namespace mcrt {
         (context,
             &accelOptions,
             triangleInput.data(),
-            bufferSize,  // num_build_inputs
+            numNonEmptyCells,  // num_build_inputs
             &blasBufferSizes
         ));
 
@@ -362,7 +382,7 @@ namespace mcrt {
             /* stream */0,
             &accelOptions,
             triangleInput.data(),
-            bufferSize,
+            numNonEmptyCells,
             tempBuffer.d_pointer(),
             tempBuffer.sizeInBytes,
 
@@ -399,5 +419,4 @@ namespace mcrt {
 
         return asHandle;
     }
-
 }

@@ -93,6 +93,9 @@
     <ClCompile Include="voxelizer.cpp">
       <Filter>Source Files\Radiance Grid</Filter>
     </ClCompile>
+    <ClCompile Include="radianceCellGathering_embedded.c">
+      <Filter>Source Files\GPU</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="renderer.hpp">
@@ -161,6 +164,9 @@
       <Filter>Source Files\GPU</Filter>
     </None>
     <None Include="directLightingShadersGathering.cu">
+      <Filter>Source Files\GPU</Filter>
+    </None>
+    <None Include="radianceCellGathering.cu">
       <Filter>Source Files\GPU</Filter>
     </None>
   </ItemGroup>

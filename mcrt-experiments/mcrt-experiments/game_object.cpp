@@ -57,17 +57,6 @@ namespace mcrt {
 		return transM * rotationM * scaleM;
 	}
 
-	glm::mat4x4 Transform::transformationWithoutRotation()
-	{
-		glm::mat4x4 scaleM = glm::mat4x4(1.0f);
-		scaleM = glm::scale(scaleM, scale);
-
-		glm::mat4x4 transM = glm::mat4x4(1.0f);
-		transM = glm::translate(transM, translation);
-
-		return transM * scaleM;
-	}
-
 
 	GameObject::GameObject(Transform transform, std::shared_ptr<Model> model):worldTransform{transform}
 	{
@@ -86,9 +75,10 @@ namespace mcrt {
 
 	AABB GameObject::getWorldAABB()
 	{
+		// TODO: Precalculate this, and update when object is moved through space
 		AABB worldAABB;
 
-	/*	std::vector<glm::vec3> vertices = getWorldVertices();
+		std::vector<glm::vec3> vertices = getWorldVertices();
 		for (auto& v : vertices)
 		{
 			if (v.x < worldAABB.min.x)
@@ -115,13 +105,7 @@ namespace mcrt {
 			{
 				worldAABB.max.z = v.z;
 			}
-		}*/
-	
-
-		// Transform object space AABB to world space AABB
-		// Note that we don't apply rotation to an AABB!
-		worldAABB.min = worldTransform.transformationWithoutRotation() * glm::vec4{model->mesh->boundingBox.min, 1.0f};
-		worldAABB.max = worldTransform.transformationWithoutRotation() * glm::vec4{ model->mesh->boundingBox.max, 1.0f };
+		}
 		return worldAABB;
 	}
 
