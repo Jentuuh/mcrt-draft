@@ -60,7 +60,7 @@ namespace mcrt {
         moduleCompileOptions.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_NONE;
 
         pipelineCompileOptions = {};
-        pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_SINGLE_GAS;
+        pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY;
         pipelineCompileOptions.usesMotionBlur = false;
         pipelineCompileOptions.numPayloadValues = 2;
         pipelineCompileOptions.numAttributeValues = 2;

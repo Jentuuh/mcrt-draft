@@ -146,7 +146,7 @@ namespace mcrt {
             // Look up the light properties for the light in question
             LightData lightProperties = optixLaunchParams.lights[i];
             float stratifyCellWidth = lightProperties.width / optixLaunchParams.stratifyResX;
-            float stratifyCellHeigth = lightProperties.height / optixLaunchParams.stratifyResY;
+            float stratifyCellHeight = lightProperties.height / optixLaunchParams.stratifyResY;
 
 
             glm::vec3 totalLightContribution = { 0.0f, 0.0f, 0.0f };
@@ -155,14 +155,14 @@ namespace mcrt {
                 for (int stratifyIndexY = 0; stratifyIndexY < optixLaunchParams.stratifyResY; stratifyIndexY++)
                 {
                     // We start from the light origin, and calculate the origin of the current stratification cell based on the stratifyIndex of this thread
-                    glm::vec3 cellOrigin = lightProperties.origin + (stratifyIndexX * stratifyCellWidth * lightProperties.du) + (stratifyIndexY * stratifyCellHeigth * lightProperties.dv);
+                    glm::vec3 cellOrigin = lightProperties.origin + (stratifyIndexX * stratifyCellWidth * lightProperties.du) + (stratifyIndexY * stratifyCellHeight * lightProperties.dv);
 
                     // Send out a ray for each sample
                     for (int l = 0; l < NUM_SAMPLES_PER_STRATIFY_CELL; l++)
                     {
                         // Randomize ray origins within a cell
                         float2 cellOffset = float2{ rnd(seed), rnd(seed) };
-                        glm::vec3 rayDestination = cellOrigin + (cellOffset.x * stratifyCellWidth * lightProperties.du) + (cellOffset.y * stratifyCellHeigth * lightProperties.dv);
+                        glm::vec3 rayDestination = cellOrigin + (cellOffset.x * stratifyCellWidth * lightProperties.du) + (cellOffset.y * stratifyCellHeight * lightProperties.dv);
 
                         // Our ray direction is defined by the line between the texel and the light sample
                         glm::vec3 rayDir = rayDestination - UVWorldPos;

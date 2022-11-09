@@ -21,6 +21,7 @@ namespace mcrt {
 		NonEmptyCells getNonEmptyCells();
 
 		int getCellIndex(std::shared_ptr<RadianceCell> cell);
+		float getCellSize() { return cellSize; };
 		RadianceCell& getCell(glm::ivec3 coord);
 		RadianceCell& getCell(int index) { return grid[index]; };
 		std::vector<glm::vec3>& getVertices();

@@ -47,6 +47,10 @@ namespace mcrt {
 			int size;
 		} nonEmptyCells;
 
+		float cellSize;
+		int stratifyResX;
+		int stratifyResY;
+
 		SHWeights sphericalHarmonicsWeights;	// Radiance cells thus need to get an index in their SBT data so we can index the weights array by that index!
 		PixelBuffer lightSourceTexture;
 

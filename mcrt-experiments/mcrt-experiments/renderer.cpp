@@ -339,6 +339,13 @@ namespace mcrt {
         directLightPipeline->launchParams.uvWorldPositions.size = texSize * texSize;
         radianceCellGatherPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
         
+        // Initialize cell size in launch params
+        radianceCellGatherPipeline->launchParams.cellSize = scene.grid.getCellSize();
+
+        // Initialize stratify cell sizes in launch params
+        radianceCellGatherPipeline->launchParams.stratifyResX = STRATIFIED_X_SIZE;
+        radianceCellGatherPipeline->launchParams.stratifyResY = STRATIFIED_Y_SIZE;
+
         radianceCellGatherPipeline->uploadLaunchParams();
 
         OPTIX_CHECK(optixLaunch(
