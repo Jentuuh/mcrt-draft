@@ -34,6 +34,12 @@
     <Filter Include="Source Files\Pipelines">
       <UniqueIdentifier>{a53b12f3-a554-491e-b3ff-d15ae1fdef24}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Acceleration Structures">
+      <UniqueIdentifier>{65091781-cabb-407f-acae-a9988c659e48}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Acceleration Structures">
+      <UniqueIdentifier>{a5db96c5-eef1-4ba2-b449-1a359900cce1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -96,6 +102,12 @@
     <ClCompile Include="radianceCellGathering_embedded.c">
       <Filter>Source Files\GPU</Filter>
     </ClCompile>
+    <ClCompile Include="gas.cpp">
+      <Filter>Source Files\Acceleration Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="ias.cpp">
+      <Filter>Source Files\Acceleration Structures</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="renderer.hpp">
@@ -154,6 +166,12 @@
     </ClInclude>
     <ClInclude Include="voxelizer.hpp">
       <Filter>Header Files\Radiance Grid</Filter>
+    </ClInclude>
+    <ClInclude Include="gas.hpp">
+      <Filter>Header Files\Acceleration Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="ias.hpp">
+      <Filter>Header Files\Acceleration Structures</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

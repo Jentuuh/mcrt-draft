@@ -88,10 +88,14 @@ namespace mcrt {
 		std::vector<CUDABuffer> indexBuffers;
 		std::vector<CUDABuffer> normalBuffers;
 		std::vector<CUDABuffer> texcoordBuffers;
+		std::vector<int> amountVertices;
+		std::vector<int> amountIndices;
 
 		std::vector<CUDABuffer> radianceGridVertexBuffers;
 		std::vector<CUDABuffer> radianceGridIndexBuffers;
 		std::vector<CUDABuffer> radianceGridNormalBuffers;
+		std::vector<int> amountVerticesRadianceGrid;
+		std::vector<int> amountIndicesRadianceGrid;
 
 
 		std::vector<cudaArray_t>         textureArrays;

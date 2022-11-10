@@ -54,7 +54,8 @@ namespace mcrt {
 		SHWeights sphericalHarmonicsWeights;	// Radiance cells thus need to get an index in their SBT data so we can index the weights array by that index!
 		PixelBuffer lightSourceTexture;
 
-		OptixTraversableHandle traversable;
+		OptixTraversableHandle gasTraversables[2];
+		OptixTraversableHandle iasTraversable;
 	};
 
 	struct MeshSBTDataRadianceCellGather {

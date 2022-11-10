@@ -32,10 +32,23 @@ namespace mcrt {
         MeshSBTDataRadianceCellGather data;
     };
 
-	RadianceCellGatherPipeline::RadianceCellGatherPipeline(OptixDeviceContext& context, GeometryBufferHandle& radianceCellGeometry, GeometryBufferHandle& proxyGeometry, Scene& scene): McrtPipeline(context, radianceCellGeometry, scene)
-	{
+    RadianceCellGatherPipeline::RadianceCellGatherPipeline(OptixDeviceContext& context, GeometryBufferHandle& radianceCellGeometry, GeometryBufferHandle& proxyGeometry, Scene& scene) : McrtPipeline(context, radianceCellGeometry, scene)
+    {
         initRadianceCellGather(context, radianceCellGeometry, proxyGeometry, scene);
-        launchParams.traversable = buildAccelerationStructureRadianceCellGather(context, radianceCellGeometry, proxyGeometry, scene);
+
+        std::vector<GeometryBufferHandle&> geometries;
+        geometries.push_back(radianceCellGeometry);
+        geometries.push_back(proxyGeometry);
+        int numNonEmptyCells = scene.grid.getNonEmptyCells().nonEmptyCells.size();
+        int numSceneObjects = scene.numObjects();
+        std::vector<int> numsBuildInputs = { numNonEmptyCells, numSceneObjects };
+
+        // Build GASes
+        buildGASes(context, geometries, numsBuildInputs);
+
+        launchParams.gasTraversables[0] = GASes[0].traversableHandle();
+        launchParams.gasTraversables[1] = GASes[1].traversableHandle();
+        // TODO: ASSIGN IAS traversableHandle!!!
         launchParamsBuffer.alloc(sizeof(launchParams));
 	}
 
@@ -278,8 +291,11 @@ namespace mcrt {
             2 * 1024,
             /* [in] The maximum depth of a traversable graph
                passed to trace. */
-            1))
+            2))
     }
+
+
+
 
     OptixTraversableHandle RadianceCellGatherPipeline::buildAccelerationStructure(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene)
     {

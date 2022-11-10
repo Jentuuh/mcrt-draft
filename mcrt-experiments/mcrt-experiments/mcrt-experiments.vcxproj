@@ -143,7 +143,9 @@
     <ClCompile Include="directLightingShaders_embedded.c" />
     <ClCompile Include="direct_light_pipeline.cpp" />
     <ClCompile Include="game_object.cpp" />
+    <ClCompile Include="gas.cpp" />
     <ClCompile Include="GLFWindow.cpp" />
+    <ClCompile Include="ias.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mcrt_pipeline.cpp" />
     <ClCompile Include="model.cpp" />
@@ -163,8 +165,10 @@
     <ClInclude Include="default_pipeline.hpp" />
     <ClInclude Include="direct_light_pipeline.hpp" />
     <ClInclude Include="game_object.hpp" />
+    <ClInclude Include="gas.hpp" />
     <ClInclude Include="GLFWindow.hpp" />
     <ClInclude Include="helpers.hpp" />
+    <ClInclude Include="ias.hpp" />
     <ClInclude Include="LaunchParams.hpp" />
     <ClInclude Include="mcrt_pipeline.hpp" />
     <ClInclude Include="model.hpp" />

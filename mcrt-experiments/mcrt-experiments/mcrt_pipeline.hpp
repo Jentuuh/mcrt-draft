@@ -2,15 +2,10 @@
 #include "CUDABuffer.hpp"
 #include "LaunchParams.hpp"
 #include "scene.hpp"
+#include "gas.hpp"
 
 namespace mcrt {
-	struct GeometryBufferHandle {
-		std::vector<CUDABuffer>& vertices;
-		std::vector<CUDABuffer>& indices;
-		std::vector<CUDABuffer>& normals;
-		std::vector<CUDABuffer>& texCoords;
-		std::vector<cudaTextureObject_t> &textureObjects;
-	};
+
 
 	class McrtPipeline
 	{
@@ -30,10 +25,12 @@ namespace mcrt {
 		virtual void buildDevicePrograms(OptixDeviceContext& context) = 0;
 		virtual void buildSBT(GeometryBufferHandle& geometryBuffers, Scene& scene) = 0;
 		virtual void buildPipeline(OptixDeviceContext& context) = 0;
+
 		virtual OptixTraversableHandle buildAccelerationStructure(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene) = 0;
 
 	protected:
 		void init(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene);
+		void buildGASes(OptixDeviceContext& context, std::vector<GeometryBufferHandle&> geometries, std::vector<int> numsBuildInputs);
 
 		// Pipeline + properties
 		OptixPipelineCompileOptions	pipelineCompileOptions = {};
@@ -50,6 +47,9 @@ namespace mcrt {
 		CUDABuffer missRecordsBuffer;
 		std::vector<OptixProgramGroup> hitgroupPGs;
 		CUDABuffer hitgroupRecordsBuffer;
+
+		// GASes
+		std::vector<GAS> GASes;
 
 		// AS
 		CUDABuffer accelerationStructBuffer;

@@ -33,11 +33,11 @@ namespace mcrt {
         createTextures();
 
         std::cout << "Setting up pipeline..." << std::endl;
-        GeometryBufferHandle geometryData = GeometryBufferHandle{ vertexBuffers, indexBuffers, normalBuffers, texcoordBuffers, textureObjects };
+        GeometryBufferHandle geometryData = GeometryBufferHandle{ vertexBuffers, indexBuffers, normalBuffers, texcoordBuffers, textureObjects, amountVertices, amountIndices };
 
         std::vector<CUDABuffer> emptyTexcoordBufferVec;
         std::vector<cudaTextureObject_t> emptyTexBufferVec;
-        GeometryBufferHandle radianceCellGeometry = GeometryBufferHandle{ radianceGridVertexBuffers, radianceGridIndexBuffers, radianceGridNormalBuffers, emptyTexcoordBufferVec, emptyTexBufferVec};
+        GeometryBufferHandle radianceCellGeometry = GeometryBufferHandle{ radianceGridVertexBuffers, radianceGridIndexBuffers, radianceGridNormalBuffers, emptyTexcoordBufferVec, emptyTexBufferVec, amountVerticesRadianceGrid, amountIndicesRadianceGrid };
 
         tutorialPipeline = std::make_unique<DefaultPipeline>(optixContext, geometryData, scene);
         directLightPipeline = std::make_unique<DirectLightPipeline>(optixContext, geometryData, scene);
@@ -60,6 +60,8 @@ namespace mcrt {
         // ======================
         int bufferSize = scene.numObjects();
 
+        amountVertices.resize(bufferSize);
+        amountIndices.resize(bufferSize);
         vertexBuffers.resize(bufferSize);
         indexBuffers.resize(bufferSize);
         normalBuffers.resize(bufferSize);
@@ -70,7 +72,9 @@ namespace mcrt {
             std::shared_ptr<Model> model = scene.getGameObjects()[meshID]->model;
             std::shared_ptr<TriangleMesh> mesh = model->mesh;
             vertexBuffers[meshID].alloc_and_upload(scene.getGameObjects()[meshID]->getWorldVertices());
+            amountVertices[meshID] = mesh->vertices.size();
             indexBuffers[meshID].alloc_and_upload(mesh->indices);
+            amountIndices[meshID] = mesh->indices.size();
             if (!mesh->normals.empty())
                 normalBuffers[meshID].alloc_and_upload(mesh->normals);
             if (!mesh->texCoords.empty())
@@ -85,10 +89,14 @@ namespace mcrt {
 
         radianceGridVertexBuffers.resize(numNonEmptyCells);
         radianceGridIndexBuffers.resize(numNonEmptyCells);
+        amountVerticesRadianceGrid.resize(numNonEmptyCells);
+        amountIndicesRadianceGrid.resize(numNonEmptyCells);
 
         for (int cellID = 0; cellID < numNonEmptyCells; cellID++) {
             radianceGridVertexBuffers[cellID].alloc_and_upload(nonEmpties.nonEmptyCells[cellID]->getVertices());
             radianceGridIndexBuffers[cellID].alloc_and_upload(nonEmpties.nonEmptyCells[cellID]->getIndices());
+            amountVerticesRadianceGrid[cellID] = nonEmpties.nonEmptyCells[cellID]->getVertices().size();
+            amountIndicesRadianceGrid[cellID] = nonEmpties.nonEmptyCells[cellID]->getIndices().size();
         }
     }
 
