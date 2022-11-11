@@ -36,7 +36,7 @@ namespace mcrt {
     {
         initRadianceCellGather(context, radianceCellGeometry, proxyGeometry, scene);
 
-        std::vector<GeometryBufferHandle&> geometries;
+        std::vector<GeometryBufferHandle> geometries;
         geometries.push_back(radianceCellGeometry);
         geometries.push_back(proxyGeometry);
         int numNonEmptyCells = scene.grid.getNonEmptyCells().nonEmptyCells.size();

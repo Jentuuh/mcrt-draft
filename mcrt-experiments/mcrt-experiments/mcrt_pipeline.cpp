@@ -14,7 +14,7 @@ namespace mcrt {
 	}
 
 
-	void McrtPipeline::buildGASes(OptixDeviceContext& context, std::vector<GeometryBufferHandle&> geometries, std::vector<int> numsBuildInputs)
+	void McrtPipeline::buildGASes(OptixDeviceContext& context, std::vector<GeometryBufferHandle> geometries, std::vector<int> numsBuildInputs)
 	{
 		assert(geometries.size() == numsBuildInputs.size() && "buildGASes: The size of `geometries` should be equal to the size of `numsBuildInputs`!");
 
