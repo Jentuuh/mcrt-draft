@@ -1,6 +1,5 @@
 #include "gas.hpp"
 
-
 namespace mcrt {
 	GAS::GAS(OptixDeviceContext& context, GeometryBufferHandle& geometry, int numBuildInputs): numBuildInputs{numBuildInputs}
 	{

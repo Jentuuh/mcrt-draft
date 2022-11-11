@@ -1,8 +1,7 @@
 #include "ias.hpp"
-#include <glm/gtc/type_ptr.hpp>
 
 namespace mcrt {
-	IAS::IAS(OptixDeviceContext& context, std::vector<glm::mat4> transforms, std::vector<GAS> gases, int numRayTypes)
+	IAS::IAS(OptixDeviceContext& context, std::vector<glm::mat4> transforms, std::vector<GAS> gases, int numRayTypes, std::vector<int> gasIndices)
 	{
 		// Initialize OptixInstances
 		std::vector<OptixInstance> instances;
@@ -11,8 +10,8 @@ namespace mcrt {
 		int sbtOffset = 0;
 		for (int i = 0; i < transforms.size(); i++)
 		{
-			int gasNumBuildInputs = gases[i].getNumBuildInputs();
-			sbtOffset = sbtOffset + i * numRayTypes * gasNumBuildInputs;	// Assuming that each GAS only has 1 SBT record per build input!
+			int gasNumBuildInputs = gases[gasIndices[i]].getNumBuildInputs();
+			sbtOffset = sbtOffset + numRayTypes * gasNumBuildInputs;	// Assuming that each GAS only has 1 SBT record per build input!
 			
 			OptixInstance instance = {};
 			memcpy(instance.transform, glm::value_ptr(transforms[i]), 12 * sizeof(float));
@@ -20,7 +19,7 @@ namespace mcrt {
 			instance.sbtOffset = sbtOffset;
 			instance.visibilityMask = 255;
 			instance.flags = flags;
-			instance.traversableHandle = gases[i].traversableHandle();
+			instance.traversableHandle = gases[gasIndices[i]].traversableHandle();
 
 			instances.push_back(instance);
 		}

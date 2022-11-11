@@ -2,7 +2,7 @@
 #include "CUDABuffer.hpp"
 #include "LaunchParams.hpp"
 #include "scene.hpp"
-#include "gas.hpp"
+#include "ias.hpp"
 
 namespace mcrt {
 
@@ -31,6 +31,7 @@ namespace mcrt {
 	protected:
 		void init(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene);
 		void buildGASes(OptixDeviceContext& context, std::vector<GeometryBufferHandle&> geometries, std::vector<int> numsBuildInputs);
+		void buildIAS(OptixDeviceContext& context, std::vector<glm::mat4> transforms, std::vector<GAS> gases, int numRayTypes, std::vector<int> gasIndices);
 
 		// Pipeline + properties
 		OptixPipelineCompileOptions	pipelineCompileOptions = {};
@@ -50,6 +51,8 @@ namespace mcrt {
 
 		// GASes
 		std::vector<GAS> GASes;
+		// IAS
+		std::shared_ptr<IAS> ias;
 
 		// AS
 		CUDABuffer accelerationStructBuffer;

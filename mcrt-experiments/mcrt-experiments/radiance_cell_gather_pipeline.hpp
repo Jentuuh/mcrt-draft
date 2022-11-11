@@ -19,7 +19,6 @@ namespace mcrt {
 		void buildSBTRadianceCellGather(GeometryBufferHandle& radianceCellGeometry, GeometryBufferHandle& proxyGeometry, Scene& scene);
 		void buildPipeline(OptixDeviceContext& context) override;
 		OptixTraversableHandle buildAccelerationStructure(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene) override;
-		OptixTraversableHandle buildAccelerationStructureRadianceCellGather(OptixDeviceContext& context, GeometryBufferHandle& radianceCellGeometry, GeometryBufferHandle& proxyGeometry, Scene& scene);
 	};
 }
 

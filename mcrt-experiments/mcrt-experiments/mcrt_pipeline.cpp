@@ -24,6 +24,10 @@ namespace mcrt {
 		}
 	}
 
+	void McrtPipeline::buildIAS(OptixDeviceContext& context, std::vector<glm::mat4> transforms, std::vector<GAS> gases, int numRayTypes, std::vector<int> gasIndices)
+	{
+		ias = std::make_shared<IAS>( context, transforms, gases, numRayTypes, gasIndices );
+	}
 
 	void McrtPipeline::uploadLaunchParams()
 	{

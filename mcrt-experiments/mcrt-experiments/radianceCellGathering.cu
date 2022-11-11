@@ -42,13 +42,22 @@ namespace mcrt {
     }
 
 
-    extern "C" __global__ void __closesthit__radiance__cell__gathering()
+    extern "C" __global__ void __closesthit__radiance__cell__gathering__scene()
     {
     }
 
-    extern "C" __global__ void __anyhit__radiance__cell__gathering() {
+    extern "C" __global__ void __anyhit__radiance__cell__gathering__scene() {
         // Do nothing
-        //printf("Hit!HEHEE");
+        printf("Hit scene!");
+    }
+
+    extern "C" __global__ void __closesthit__radiance__cell__gathering__grid()
+    {
+    }
+
+    extern "C" __global__ void __anyhit__radiance__cell__gathering__grid() {
+        // Do nothing
+        printf("Hit grid!");
     }
 
     extern "C" __global__ void __miss__radiance__cell__gathering()
@@ -139,7 +148,7 @@ namespace mcrt {
                                     float3 rayOrigin3f = float3{ UVWorldPos.x, UVWorldPos.y, UVWorldPos.z };
                                     float3 rayDir3f = float3{ lightToCellDir.x, lightToCellDir.y, lightToCellDir.z };
 
-                                    optixTrace(optixLaunchParams.traversable,
+                                    optixTrace(optixLaunchParams.iasTraversable,
                                         rayOrigin3f,
                                         rayDir3f,
                                         0.f,    // tmin
