@@ -44,6 +44,7 @@ namespace mcrt {
 
     extern "C" __global__ void __closesthit__radiance__cell__gathering__scene()
     {
+        printf("Closest hit scene!");
     }
 
     extern "C" __global__ void __anyhit__radiance__cell__gathering__scene() {
@@ -53,6 +54,7 @@ namespace mcrt {
 
     extern "C" __global__ void __closesthit__radiance__cell__gathering__grid()
     {
+        printf("Closest hit grid!");
     }
 
     extern "C" __global__ void __anyhit__radiance__cell__gathering__grid() {
@@ -62,7 +64,6 @@ namespace mcrt {
 
     extern "C" __global__ void __miss__radiance__cell__gathering()
     {
-
     }
 
     extern "C" __global__ void __raygen__renderFrame__cell__gathering()

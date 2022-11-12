@@ -93,7 +93,6 @@ namespace mcrt {
 
 		std::vector<CUDABuffer> radianceGridVertexBuffers;
 		std::vector<CUDABuffer> radianceGridIndexBuffers;
-		std::vector<CUDABuffer> radianceGridNormalBuffers;
 		std::vector<int> amountVerticesRadianceGrid;
 		std::vector<int> amountIndicesRadianceGrid;
 

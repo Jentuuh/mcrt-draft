@@ -5,17 +5,24 @@ namespace mcrt {
 	{
 		// Initialize OptixInstances
 		std::vector<OptixInstance> instances;
-		unsigned flags = OPTIX_INSTANCE_FLAG_DISABLE_ANYHIT;
+		unsigned flags = OPTIX_INSTANCE_FLAG_NONE;
 
-		int sbtOffset = 0;
+		unsigned int sbtOffset = 0;
 		for (int i = 0; i < transforms.size(); i++)
 		{
-			int gasNumBuildInputs = gases[gasIndices[i]].getNumBuildInputs();
-			sbtOffset = sbtOffset + numRayTypes * gasNumBuildInputs;	// Assuming that each GAS only has 1 SBT record per build input!
+			// If i == 0 the SBT offset needs to be 0
+			int prevGasNumBuildInputs = 0;
+			if (i > 0) {
+				// We take the amount of build inputs of the previous GAS to decide our SBT offset
+				prevGasNumBuildInputs = gases[gasIndices[i - 1]].getNumBuildInputs();
+			}
+
+			sbtOffset = sbtOffset + numRayTypes * prevGasNumBuildInputs;	// Assuming that each GAS only has 1 SBT record per build input!
 			
 			OptixInstance instance = {};
 			memcpy(instance.transform, glm::value_ptr(transforms[i]), 12 * sizeof(float));
 			instance.instanceId = i;
+			std::cout << sbtOffset << std::endl;
 			instance.sbtOffset = sbtOffset;
 			instance.visibilityMask = 255;
 			instance.flags = flags;

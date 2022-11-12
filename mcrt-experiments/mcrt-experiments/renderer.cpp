@@ -35,9 +35,10 @@ namespace mcrt {
         std::cout << "Setting up pipeline..." << std::endl;
         GeometryBufferHandle geometryData = GeometryBufferHandle{ vertexBuffers, indexBuffers, normalBuffers, texcoordBuffers, textureObjects, amountVertices, amountIndices };
 
+        std::vector<CUDABuffer> emptyNormalsVec;
         std::vector<CUDABuffer> emptyTexcoordBufferVec;
         std::vector<cudaTextureObject_t> emptyTexBufferVec;
-        GeometryBufferHandle radianceCellGeometry = GeometryBufferHandle{ radianceGridVertexBuffers, radianceGridIndexBuffers, radianceGridNormalBuffers, emptyTexcoordBufferVec, emptyTexBufferVec, amountVerticesRadianceGrid, amountIndicesRadianceGrid };
+        GeometryBufferHandle radianceCellGeometry = GeometryBufferHandle{ radianceGridVertexBuffers, radianceGridIndexBuffers, emptyNormalsVec, emptyTexcoordBufferVec, emptyTexBufferVec, amountVerticesRadianceGrid, amountIndicesRadianceGrid };
 
         tutorialPipeline = std::make_unique<DefaultPipeline>(optixContext, geometryData, scene);
         directLightPipeline = std::make_unique<DirectLightPipeline>(optixContext, geometryData, scene);
