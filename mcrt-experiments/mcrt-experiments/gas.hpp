@@ -17,7 +17,7 @@ namespace mcrt {
 	class GAS
 	{
 	public:
-		GAS(OptixDeviceContext& context, GeometryBufferHandle& geometry, int numBuildInputs);
+		GAS(OptixDeviceContext& context, GeometryBufferHandle& geometry, int numBuildInputs, bool disableAnyHit);
 
 		OptixTraversableHandle traversableHandle() { return gasTraversableHandle; };
 		int getNumBuildInputs() { return numBuildInputs; };

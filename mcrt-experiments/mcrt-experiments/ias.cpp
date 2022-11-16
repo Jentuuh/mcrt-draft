@@ -22,7 +22,6 @@ namespace mcrt {
 			OptixInstance instance = {};
 			memcpy(instance.transform, glm::value_ptr(transforms[i]), 12 * sizeof(float));
 			instance.instanceId = i;
-			std::cout << sbtOffset << std::endl;
 			instance.sbtOffset = sbtOffset;
 			instance.visibilityMask = 255;
 			instance.flags = flags;

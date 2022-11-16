@@ -14,13 +14,13 @@ namespace mcrt {
 	}
 
 
-	void McrtPipeline::buildGASes(OptixDeviceContext& context, std::vector<GeometryBufferHandle> geometries, std::vector<int> numsBuildInputs)
+	void McrtPipeline::buildGASes(OptixDeviceContext& context, std::vector<GeometryBufferHandle> geometries, std::vector<int> numsBuildInputs, std::vector<bool> disableAnyHit)
 	{
 		assert(geometries.size() == numsBuildInputs.size() && "buildGASes: The size of `geometries` should be equal to the size of `numsBuildInputs`!");
 
 		for (int i = 0; i < geometries.size(); i++)
 		{
-			GASes.push_back(GAS{ context, geometries[i], numsBuildInputs[i] });
+			GASes.push_back(GAS{ context, geometries[i], numsBuildInputs[i], disableAnyHit[i]});
 		}
 	}
 

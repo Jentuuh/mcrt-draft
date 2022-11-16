@@ -36,6 +36,20 @@ namespace mcrt {
 	*	 RADIANCE CELL GATHER PASS
 	* ==================================
 	*/
+
+	struct RadianceCellGatherPRD {
+		float distanceToClosestProxyIntersection;
+		glm::vec3 rayOrigin;
+	};
+
+	struct MeshSBTDataRadianceCellGather {
+		glm::vec3* vertex;
+		glm::vec3* normal;
+		glm::ivec3* index;
+
+		int cellIndex;
+	};
+
 	struct LaunchParamsRadianceCellGather {
 		struct {
 			UVWorldData* UVDataBuffer;
@@ -58,13 +72,6 @@ namespace mcrt {
 		OptixTraversableHandle iasTraversable;
 	};
 
-	struct MeshSBTDataRadianceCellGather {
-		glm::vec3* vertex;
-		glm::vec3* normal;
-		glm::ivec3* index;
-
-		int cellIndex;
-	};
 
 	/**
 	* ==============================

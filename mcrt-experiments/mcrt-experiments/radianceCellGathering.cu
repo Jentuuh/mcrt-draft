@@ -33,18 +33,49 @@ namespace mcrt {
         i1 = uptr & 0x00000000ffffffff;
     }
 
-    template<typename T>
-    static __forceinline__ __device__ T* getPRD()
+    static __forceinline__ __device__ RadianceCellGatherPRD loadRadianceCellGatherPRD()
     {
-        const uint32_t u0 = optixGetPayload_0();
-        const uint32_t u1 = optixGetPayload_1();
-        return reinterpret_cast<T*>(unpackPointer(u0, u1));
+        RadianceCellGatherPRD prd = {};
+
+        prd.distanceToClosestProxyIntersection = __uint_as_float(optixGetPayload_0());
+        prd.rayOrigin.x = __uint_as_float(optixGetPayload_1());
+        prd.rayOrigin.y = __uint_as_float(optixGetPayload_2());
+        prd.rayOrigin.z = __uint_as_float(optixGetPayload_3());
+
+        return prd;
+    }
+
+    static __forceinline__ __device__ void storeRadianceCellGatherPRD(RadianceCellGatherPRD prd)
+    {
+        optixSetPayload_0(__float_as_uint(prd.distanceToClosestProxyIntersection));
+        optixSetPayload_1(__float_as_uint(prd.rayOrigin.x));
+        optixSetPayload_2(__float_as_uint(prd.rayOrigin.y));
+        optixSetPayload_3(__float_as_uint(prd.rayOrigin.z));
     }
 
 
     extern "C" __global__ void __closesthit__radiance__cell__gathering__scene()
     {
-        printf("Closest hit scene!");
+        //printf("Closest hit scene!");
+
+        const MeshSBTDataRadianceCellGather& sbtData
+            = *(const MeshSBTDataRadianceCellGather*)optixGetSbtDataPointer();
+
+        const int   primID = optixGetPrimitiveIndex();
+        const glm::ivec3 index = sbtData.index[primID];
+        const float u = optixGetTriangleBarycentrics().x;
+        const float v = optixGetTriangleBarycentrics().y;
+
+        const glm::vec3 intersectionWorldPos =
+            (1.f - u - v) * sbtData.vertex[index.x]
+            + u * sbtData.vertex[index.y]
+            + v * sbtData.vertex[index.z];
+
+        RadianceCellGatherPRD prd = loadRadianceCellGatherPRD();
+        float distanceToProxyIntersect = (((intersectionWorldPos.x - prd.rayOrigin.x) * (intersectionWorldPos.x - prd.rayOrigin.x)) + ((intersectionWorldPos.y - prd.rayOrigin.y) * (intersectionWorldPos.y - prd.rayOrigin.y)) + ((intersectionWorldPos.z - prd.rayOrigin.z) * (intersectionWorldPos.z - prd.rayOrigin.z)));
+
+        prd.distanceToClosestProxyIntersection = distanceToProxyIntersect;
+        storeRadianceCellGatherPRD(prd);
     }
 
     extern "C" __global__ void __anyhit__radiance__cell__gathering__scene() {
@@ -54,12 +85,38 @@ namespace mcrt {
 
     extern "C" __global__ void __closesthit__radiance__cell__gathering__grid()
     {
-        printf("Closest hit grid!");
+        //printf("Closest hit grid!");
     }
 
     extern "C" __global__ void __anyhit__radiance__cell__gathering__grid() {
-        // Do nothing
-        printf("Hit grid!");
+        printf("Any hit grid!");
+        const MeshSBTDataRadianceCellGather& sbtData
+            = *(const MeshSBTDataRadianceCellGather*)optixGetSbtDataPointer();
+
+        // ------------------------------------------------------------------
+        // gather some basic hit information
+        // ------------------------------------------------------------------
+        const int   primID = optixGetPrimitiveIndex();
+        const glm::ivec3 index = sbtData.index[primID];
+        const float u = optixGetTriangleBarycentrics().x;
+        const float v = optixGetTriangleBarycentrics().y;
+
+        const glm::vec3 intersectionWorldPos =
+            (1.f - u - v) * sbtData.vertex[index.x]
+            + u * sbtData.vertex[index.y]
+            + v * sbtData.vertex[index.z];
+
+        RadianceCellGatherPRD prd = loadRadianceCellGatherPRD();
+        //("distance to proxy: %f", prd.distanceToClosestProxyIntersection);
+
+        float distanceToGridIntersect = (((intersectionWorldPos.x - prd.rayOrigin.x) * (intersectionWorldPos.x - prd.rayOrigin.x)) + ((intersectionWorldPos.y - prd.rayOrigin.y) * (intersectionWorldPos.y - prd.rayOrigin.y)) + ((intersectionWorldPos.z - prd.rayOrigin.z) * (intersectionWorldPos.z - prd.rayOrigin.z)));
+
+        if (distanceToGridIntersect < prd.distanceToClosestProxyIntersection)
+        {        
+            printf("Hit grid closer!");
+        }
+
+        //printf("Hit grid!");
     }
 
     extern "C" __global__ void __miss__radiance__cell__gathering()
@@ -76,6 +133,9 @@ namespace mcrt {
         const float cellSize = optixLaunchParams.cellSize;
         float stratifyCellWidth = cellSize / optixLaunchParams.stratifyResX;
         float stratifyCellHeight = cellSize / optixLaunchParams.stratifyResY;
+
+        float stratifyCellWidthNormalized = 1 / optixLaunchParams.stratifyResX;
+        float stratifyCellHeightNormalized = 1 / optixLaunchParams.stratifyResY;
 
         // TODO: SKIP PIXELS THAT ARE BLACK!
         uint32_t lightSrcColor = optixLaunchParams.lightSourceTexture.colorBuffer[vIndex * optixLaunchParams.lightSourceTexture.size + uIndex];
@@ -149,18 +209,79 @@ namespace mcrt {
                                     float3 rayOrigin3f = float3{ UVWorldPos.x, UVWorldPos.y, UVWorldPos.z };
                                     float3 rayDir3f = float3{ lightToCellDir.x, lightToCellDir.y, lightToCellDir.z };
 
-                                    optixTrace(optixLaunchParams.iasTraversable,
+
+                                    RadianceCellGatherPRD prd{};
+                                    prd.rayOrigin = UVWorldPos;
+
+                                    unsigned int u0, u1, u2, u3;
+
+                                    u1 = __float_as_uint(prd.rayOrigin.x);
+                                    u2 = __float_as_uint(prd.rayOrigin.y);
+                                    u3 = __float_as_uint(prd.rayOrigin.z);
+
+                                    // Call against scene geometry
+                                    optixTrace(optixLaunchParams.gasTraversables[0],
                                         rayOrigin3f,
                                         rayDir3f,
                                         0.f,    // tmin
                                         1e20f,  // tmax
                                         0.0f,   // rayTime
                                         OptixVisibilityMask(255),
-                                        OPTIX_RAY_FLAG_NONE,
+                                        OPTIX_RAY_FLAG_DISABLE_ANYHIT,      // We only need closest-hit for scene geometry
                                         0,  // SBT offset
                                         1,  // SBT stride
-                                        0  // missSBTIndex 
+                                        0,  // missSBTIndex
+                                        u0, u1, u2, u3
                                     );
+
+                                    prd.distanceToClosestProxyIntersection = u0;
+                                    float distanceToGridIntersect = (((rayDestination.x - prd.rayOrigin.x) * (rayDestination.x - prd.rayOrigin.x)) + ((rayDestination.y - prd.rayOrigin.y) * (rayDestination.y - prd.rayOrigin.y)) + ((rayDestination.z - prd.rayOrigin.z) * (rayDestination.z - prd.rayOrigin.z)));
+
+                                    if (distanceToGridIntersect < prd.distanceToClosestProxyIntersection)
+                                    {
+                                        // We calculate the dx and dy offsets to the (x,y) coordinate of the sampled point on a normalized square to use in 
+                                        // the calculation of the weights for bilinear extrapolation
+                                        float dx = (stratifyIndexX * stratifyCellWidthNormalized + randomOffset.x * stratifyCellWidthNormalized) - 0.5f;
+                                        float dy = (stratifyIndexY * stratifyCellHeightNormalized + randomOffset.y * stratifyCellHeightNormalized) - 0.5f;
+
+                                        // See thesis for explanation
+                                        float areaA = (0.5f + dx) * (1.0f - (0.5f + dy));
+                                        float areaB = (1.0f - (0.5f + dx)) * (1.0f - (0.5f + dy));
+                                        float areaC = (0.5f + dx) * (0.5f + dy);
+                                        float areaD = (1.0f - (0.5f + dx)) * (0.5f + dy);
+                                    }
+
+                                    //// Call against grid geometry
+                                    //optixTrace(optixLaunchParams.gasTraversables[1],
+                                    //    rayOrigin3f,
+                                    //    rayDir3f,
+                                    //    0.f,    // tmin
+                                    //    1e20f,  // tmax
+                                    //    0.0f,   // rayTime
+                                    //    OptixVisibilityMask(255),
+                                    //    OPTIX_RAY_FLAG_NONE,
+                                    //    0,  // SBT offset
+                                    //    1,  // SBT stride
+                                    //    0,  // missSBTIndex 
+                                    //    u0, u1, u2, u3
+                                    //);
+
+
+
+                                    //optixTrace(optixLaunchParams.iasTraversable,
+                                    //    rayOrigin3f,
+                                    //    rayDir3f,
+                                    //    0.f,    // tmin
+                                    //    1e20f,  // tmax
+                                    //    0.0f,   // rayTime
+                                    //    OptixVisibilityMask(255),
+                                    //    OPTIX_RAY_FLAG_NONE,
+                                    //    0,  // SBT offset
+                                    //    1,  // SBT stride
+                                    //    0  // missSBTIndex 
+                                    //);
+
+
                                 }
                             }
                         }

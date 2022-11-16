@@ -42,19 +42,19 @@ namespace mcrt {
         int numNonEmptyCells = scene.grid.getNonEmptyCells().nonEmptyCells.size();
         int numSceneObjects = scene.numObjects();
         std::vector<int> numsBuildInputs = { numSceneObjects, numNonEmptyCells  };
+        std::vector<bool> disableAnyHit = { true, false };
 
         // Build GASes
-        buildGASes(context, geometries, numsBuildInputs);
+        buildGASes(context, geometries, numsBuildInputs, disableAnyHit);
         launchParams.gasTraversables[0] = GASes[0].traversableHandle();
         launchParams.gasTraversables[1] = GASes[1].traversableHandle();
         
         // Build IAS
-        std::vector<int>gasIndices = { 0,1 };
-        std::vector<glm::mat4> transforms = { glm::mat4(1.0f), glm::mat4(1.0f) };
-        buildIAS(context, transforms, GASes, 1, gasIndices);
-        launchParams.iasTraversable = ias->traversableHandle();
+        //std::vector<int>gasIndices = { 0,1 };
+        //std::vector<glm::mat4> transforms = { glm::mat4(1.0f), glm::mat4(1.0f) };
+        //buildIAS(context, transforms, GASes, 1, gasIndices);
+        //launchParams.iasTraversable = ias->traversableHandle();
 
-        // TODO: ASSIGN IAS traversableHandle!!!
         launchParamsBuffer.alloc(sizeof(launchParams));
 	}
 
@@ -81,7 +81,7 @@ namespace mcrt {
         pipelineCompileOptions = {};
         pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY;
         pipelineCompileOptions.usesMotionBlur = false;
-        pipelineCompileOptions.numPayloadValues = 2;
+        pipelineCompileOptions.numPayloadValues = 4;
         pipelineCompileOptions.numAttributeValues = 2;
         pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE;
         pipelineCompileOptions.pipelineLaunchParamsVariableName = "optixLaunchParams";

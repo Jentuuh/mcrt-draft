@@ -1,7 +1,7 @@
 #include "gas.hpp"
 
 namespace mcrt {
-	GAS::GAS(OptixDeviceContext& context, GeometryBufferHandle& geometry, int numBuildInputs): numBuildInputs{numBuildInputs}
+	GAS::GAS(OptixDeviceContext& context, GeometryBufferHandle& geometry, int numBuildInputs, bool disableAnyHit): numBuildInputs{numBuildInputs}
 	{
         // ==================================================================
         // Triangle inputs
@@ -18,6 +18,14 @@ namespace mcrt {
             triangleInputs[meshID].type
                 = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
 
+            unsigned flags;
+            if (disableAnyHit) {
+                flags = OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT;
+            }
+            else {
+                flags = OPTIX_GEOMETRY_FLAG_NONE;
+            }
+
             // create local variables, because we need a *pointer* to the
             // device pointers
             d_vertices[meshID] = geometry.vertices[meshID].d_pointer();
@@ -32,8 +40,7 @@ namespace mcrt {
             triangleInputs[meshID].triangleArray.indexStrideInBytes = sizeof(glm::ivec3);
             triangleInputs[meshID].triangleArray.numIndexTriplets = geometry.amountIndices[meshID];
             triangleInputs[meshID].triangleArray.indexBuffer = d_indices[meshID];
-
-            triangleInputFlags[meshID] = 0;
+            triangleInputFlags[meshID] = flags;
 
             // in this example we have one SBT entry, and no per-primitive
             // materials:
@@ -73,7 +80,7 @@ namespace mcrt {
         emitDesc.type = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE;
         emitDesc.result = compactedSizeBuffer.d_pointer();
 
-        // ==================================================================
+       // ==================================================================
        // execute build (main stage)
        // ==================================================================
 
