@@ -23,6 +23,7 @@ namespace mcrt {
 	struct SHWeights {
 		float* weights;
 		int size;
+		int amountBasisFunctions;
 	};
 
 	struct UVWorldData {
@@ -68,8 +69,9 @@ namespace mcrt {
 		SHWeights sphericalHarmonicsWeights;	// Radiance cells thus need to get an index in their SBT data so we can index the weights array by that index!
 		PixelBuffer lightSourceTexture;
 
-		OptixTraversableHandle gasTraversables[2];
-		OptixTraversableHandle iasTraversable;
+		OptixTraversableHandle sceneTraversable;
+		//OptixTraversableHandle gasTraversables[2];
+		//OptixTraversableHandle iasTraversable;
 	};
 
 

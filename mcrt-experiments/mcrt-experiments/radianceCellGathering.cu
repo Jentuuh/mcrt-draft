@@ -9,7 +9,7 @@
 
 #define PI 3.14159265358979323846f
 #define EPSILON 0.0000000000002f
-#define NUM_SAMPLES_PER_STRATIFY_CELL 150
+#define NUM_SAMPLES_PER_STRATIFY_CELL 50
 
 using namespace mcrt;
 
@@ -56,8 +56,6 @@ namespace mcrt {
 
     extern "C" __global__ void __closesthit__radiance__cell__gathering__scene()
     {
-        //printf("Closest hit scene!");
-
         const MeshSBTDataRadianceCellGather& sbtData
             = *(const MeshSBTDataRadianceCellGather*)optixGetSbtDataPointer();
 
@@ -90,33 +88,6 @@ namespace mcrt {
 
     extern "C" __global__ void __anyhit__radiance__cell__gathering__grid() {
         printf("Any hit grid!");
-        const MeshSBTDataRadianceCellGather& sbtData
-            = *(const MeshSBTDataRadianceCellGather*)optixGetSbtDataPointer();
-
-        // ------------------------------------------------------------------
-        // gather some basic hit information
-        // ------------------------------------------------------------------
-        const int   primID = optixGetPrimitiveIndex();
-        const glm::ivec3 index = sbtData.index[primID];
-        const float u = optixGetTriangleBarycentrics().x;
-        const float v = optixGetTriangleBarycentrics().y;
-
-        const glm::vec3 intersectionWorldPos =
-            (1.f - u - v) * sbtData.vertex[index.x]
-            + u * sbtData.vertex[index.y]
-            + v * sbtData.vertex[index.z];
-
-        RadianceCellGatherPRD prd = loadRadianceCellGatherPRD();
-        //("distance to proxy: %f", prd.distanceToClosestProxyIntersection);
-
-        float distanceToGridIntersect = (((intersectionWorldPos.x - prd.rayOrigin.x) * (intersectionWorldPos.x - prd.rayOrigin.x)) + ((intersectionWorldPos.y - prd.rayOrigin.y) * (intersectionWorldPos.y - prd.rayOrigin.y)) + ((intersectionWorldPos.z - prd.rayOrigin.z) * (intersectionWorldPos.z - prd.rayOrigin.z)));
-
-        if (distanceToGridIntersect < prd.distanceToClosestProxyIntersection)
-        {        
-            printf("Hit grid closer!");
-        }
-
-        //printf("Hit grid!");
     }
 
     extern "C" __global__ void __miss__radiance__cell__gathering()
@@ -176,6 +147,8 @@ namespace mcrt {
                 float3 cellNormals[6] = { float3{-1.0f, 0.0f, 0.0f}, float3{1.0f, 0.0f, 0.0f}, float3{0.0f, 1.0f, 0.0f}, float3{0.0f, -1.0f, 0.0f}, float3{0.0f, 0.0f, -1.0f}, float3{0.0f, 0.0f, 1.0f} };
                 // Origin, du, dv for each face
                 float3 faceOgDuDv[6][3] = { {ogLeft, float3{0.0f, 0.0f, -1.0f}, float3{0.0f, 1.0f, 0.0f} }, {ogRight, float3{0.0f, 0.0f, 1.0f},float3{0.0f, 1.0f, 0.0f} }, {ogUp, float3{1.0f, 0.0f, 0.0f},float3{0.0f, 0.0f, 1.0f} }, {ogDown, float3{1.0f, 0.0f, 0.0f},float3{0.0f, 0.0f, -1.0f}}, {ogFront, float3{1.0f, 0.0f, 0.0f},float3{0.0f, 1.0f, 0.0f} }, {ogBack, float3{-1.0f, 0.0f, 0.0f},float3{0.0f, 1.0f, 0.0f} } };
+                // The indices of the SHs that belong to each face, to use while indexing the buffer (L,R,U,D,F,B)
+                int4 cellSHIndices[6] = { int4{4, 0, 6, 2}, int4{1, 5, 3, 7}, int4{2, 3, 6, 7}, int4{4, 5, 0, 1}, int4{0, 1, 2, 3}, int4{5, 4, 7, 6} };
 
                 for (int face = 0; face < 6; face++)
                 {
@@ -220,7 +193,7 @@ namespace mcrt {
                                     u3 = __float_as_uint(prd.rayOrigin.z);
 
                                     // Call against scene geometry
-                                    optixTrace(optixLaunchParams.gasTraversables[0],
+                                    optixTrace(optixLaunchParams.sceneTraversable,
                                         rayOrigin3f,
                                         rayDir3f,
                                         0.f,    // tmin
@@ -245,10 +218,24 @@ namespace mcrt {
                                         float dy = (stratifyIndexY * stratifyCellHeightNormalized + randomOffset.y * stratifyCellHeightNormalized) - 0.5f;
 
                                         // See thesis for explanation
-                                        float areaA = (0.5f + dx) * (1.0f - (0.5f + dy));
-                                        float areaB = (1.0f - (0.5f + dx)) * (1.0f - (0.5f + dy));
-                                        float areaC = (0.5f + dx) * (0.5f + dy);
-                                        float areaD = (1.0f - (0.5f + dx)) * (0.5f + dy);
+                                        float weightA = 1.0f / ((0.5f + dx) * (1.0f - (0.5f + dy)));
+                                        float weightB = 1.0f / ((1.0f - (0.5f + dx)) * (1.0f - (0.5f + dy)));
+                                        float weightC = 1.0f / ((0.5f + dx) * (0.5f + dy));
+                                        float weightD = 1.0f / ((1.0f - (0.5f + dx)) * (0.5f + dy));
+
+                                        // Current non-empty cell * amount of basis functions * 8 SHs per cell 
+                                        int cellOffset = i * optixLaunchParams.sphericalHarmonicsWeights.amountBasisFunctions * 8;
+
+                                        // The ray projected into SH basis function coefficients
+                                        float contribution[9] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
+
+                                        for (int i = 0; i < 9; i++)
+                                        {
+                                            optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + cellSHIndices[face].x * 9 + i] = contribution[i] * weightC;
+                                            optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + cellSHIndices[face].y * 9 + i] = contribution[i] * weightD;
+                                            optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + cellSHIndices[face].z * 9 + i] = contribution[i] * weightA;
+                                            optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + cellSHIndices[face].w * 9 + i] = contribution[i] * weightB;
+                                        }
                                     }
 
                                     //// Call against grid geometry

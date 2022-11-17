@@ -316,6 +316,23 @@ namespace mcrt {
         writeToImage("direct_lighting_output.png", directLightPipeline->launchParams.directLightingTexture.size, directLightPipeline->launchParams.directLightingTexture.size, result_reversed.data());
     }
 
+    void Renderer::initSHWeightsBuffer(int amountNonEmptyCells)
+    {
+        NonEmptyCells nonEmpties = scene.grid.getNonEmptyCells();
+        
+        // How to index: (nonEmptyCellIndex * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS) + (SHIndex * SPHERICAL_HARMONIC_BASIS_FUNCTIONS) + BasisFunctionIndex
+        std::vector<float> shCoefficients(amountNonEmptyCells * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS, 0.0f);
+        SHWeightsDataBuffer.resize(shCoefficients.size() * sizeof(float));
+        SHWeightsDataBuffer.upload(shCoefficients.data(), 1);
+        radianceCellGatherPipeline->launchParams.sphericalHarmonicsWeights.weights = (float*)SHWeightsDataBuffer.d_pointer();
+        radianceCellGatherPipeline->launchParams.sphericalHarmonicsWeights.size = amountNonEmptyCells * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS; // 8 SHs per cell, each 9 basis functions
+        radianceCellGatherPipeline->launchParams.sphericalHarmonicsWeights.amountBasisFunctions = SPHERICAL_HARMONIC_BASIS_FUNCTIONS;
+
+        std::cout << "Size of SH weights buffer on GPU in bytes: " << shCoefficients.size() * sizeof(float) << std::endl;
+    }
+
+
+
     void Renderer::calculateRadianceCellGatherPass()
     {
         const int texSize = directLightPipeline->launchParams.directLightingTexture.size;
@@ -338,12 +355,8 @@ namespace mcrt {
         radianceCellGatherPipeline->launchParams.lightSourceTexture.size = texSize;
 
         // Initialize SH data on GPU
-        std::vector<float> shCoefficients(nonEmptyCellCenters.size() * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS, 0.0f );
-        SHWeightsDataBuffer.resize(shCoefficients.size() * sizeof(float));
-        SHWeightsDataBuffer.upload(shCoefficients.data(), 1);
-        radianceCellGatherPipeline->launchParams.sphericalHarmonicsWeights.weights = (float*)SHWeightsDataBuffer.d_pointer();
-        radianceCellGatherPipeline->launchParams.sphericalHarmonicsWeights.size = SPHERICAL_HARMONIC_BASIS_FUNCTIONS * 8 * nonEmpties.nonEmptyCells.size(); // 8 SHs per cell, each 9 basis functions
-        
+        initSHWeightsBuffer(nonEmptyCellCenters.size());
+
         // Initialize UV World positions data on GPU
         directLightPipeline->launchParams.uvWorldPositions.size = texSize * texSize;
         radianceCellGatherPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();

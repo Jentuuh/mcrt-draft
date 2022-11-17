@@ -38,16 +38,13 @@ namespace mcrt {
 
         std::vector<GeometryBufferHandle> geometries;
         geometries.push_back(proxyGeometry);
-        geometries.push_back(radianceCellGeometry);
-        int numNonEmptyCells = scene.grid.getNonEmptyCells().nonEmptyCells.size();
         int numSceneObjects = scene.numObjects();
-        std::vector<int> numsBuildInputs = { numSceneObjects, numNonEmptyCells  };
-        std::vector<bool> disableAnyHit = { true, false };
+        std::vector<int> numsBuildInputs = { numSceneObjects };
+        std::vector<bool> disableAnyHit = { true };
 
-        // Build GASes
+        // Build GAS
         buildGASes(context, geometries, numsBuildInputs, disableAnyHit);
-        launchParams.gasTraversables[0] = GASes[0].traversableHandle();
-        launchParams.gasTraversables[1] = GASes[1].traversableHandle();
+        launchParams.sceneTraversable = GASes[0].traversableHandle();
         
         // Build IAS
         //std::vector<int>gasIndices = { 0,1 };
@@ -163,7 +160,7 @@ namespace mcrt {
         //---------------------------------------
         //  HITGROUP PROGRAMS
         //---------------------------------------
-        hitgroupPGs.resize(2);
+        hitgroupPGs.resize(1);
 
         // Hitgroup scene geometry
         OptixProgramGroupOptions pgOptionsHitgroupScene = {};
@@ -184,22 +181,22 @@ namespace mcrt {
         ));
 
         // Hitgroup radiance grid geometry
-        OptixProgramGroupOptions pgOptionsHitgroupGrid = {};
-        OptixProgramGroupDesc    pgDescHitgroupGrid = {};
-        pgDescHitgroupGrid.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
-        pgDescHitgroupGrid.hitgroup.moduleCH = module;
-        pgDescHitgroupGrid.hitgroup.moduleAH = module;
+        //OptixProgramGroupOptions pgOptionsHitgroupGrid = {};
+        //OptixProgramGroupDesc    pgDescHitgroupGrid = {};
+        //pgDescHitgroupGrid.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
+        //pgDescHitgroupGrid.hitgroup.moduleCH = module;
+        //pgDescHitgroupGrid.hitgroup.moduleAH = module;
 
-        pgDescHitgroupGrid.hitgroup.entryFunctionNameCH = "__closesthit__radiance__cell__gathering__grid";
-        pgDescHitgroupGrid.hitgroup.entryFunctionNameAH = "__anyhit__radiance__cell__gathering__grid";
+        //pgDescHitgroupGrid.hitgroup.entryFunctionNameCH = "__closesthit__radiance__cell__gathering__grid";
+        //pgDescHitgroupGrid.hitgroup.entryFunctionNameAH = "__anyhit__radiance__cell__gathering__grid";
 
-        OPTIX_CHECK(optixProgramGroupCreate(context,
-            &pgDescHitgroupGrid,
-            1,
-            &pgOptionsHitgroupGrid,
-            log, &sizeof_log,
-            &hitgroupPGs[1]
-        ));
+        //OPTIX_CHECK(optixProgramGroupCreate(context,
+        //    &pgDescHitgroupGrid,
+        //    1,
+        //    &pgOptionsHitgroupGrid,
+        //    log, &sizeof_log,
+        //    &hitgroupPGs[1]
+        //));
 
         if (sizeof_log > 1)
         {
@@ -270,19 +267,17 @@ namespace mcrt {
         NonEmptyCells nonEmptyCells = scene.grid.getNonEmptyCells();
         int numNonEmptyCells = nonEmptyCells.nonEmptyCells.size();
 
-        // Radiance grid geometry
-        for (int i = 0; i < numNonEmptyCells; i++) {
+        //// Radiance grid geometry
+        //for (int i = 0; i < numNonEmptyCells; i++) {
 
-            HitgroupRecordRadianceCellGather rec_grid;
-            OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[1], &rec_grid));
+        //    HitgroupRecordRadianceCellGather rec_grid;
+        //    OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[1], &rec_grid));
 
-            rec_grid.data.cellIndex = i;
-            rec_grid.data.vertex = (glm::vec3*)radianceCellGeometry.vertices[nonEmptyCells.nonEmptyCellIndices[i]].d_pointer();     // Kan ik deze niet ook 1 keer opslaan en ter plekke hier transformeren?
-            rec_grid.data.index = (glm::ivec3*)radianceCellGeometry.indices[nonEmptyCells.nonEmptyCellIndices[i]].d_pointer();
-            hitgroupRecords.push_back(rec_grid);
-        }
-
-        std::cout << "HITGROUPRECS SIZE: " << hitgroupRecords.size() << std::endl;
+        //    rec_grid.data.cellIndex = i;
+        //    rec_grid.data.vertex = (glm::vec3*)radianceCellGeometry.vertices[nonEmptyCells.nonEmptyCellIndices[i]].d_pointer();     // Kan ik deze niet ook 1 keer opslaan en ter plekke hier transformeren?
+        //    rec_grid.data.index = (glm::ivec3*)radianceCellGeometry.indices[nonEmptyCells.nonEmptyCellIndices[i]].d_pointer();
+        //    hitgroupRecords.push_back(rec_grid);
+        //}
 
         // Upload records to device
         hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);
