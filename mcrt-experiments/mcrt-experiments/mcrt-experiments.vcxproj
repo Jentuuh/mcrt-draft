@@ -184,6 +184,7 @@
     <None Include="devicePrograms.cu" />
     <None Include="directLightingShaders.cu" />
     <None Include="directLightingShadersGathering.cu" />
+    <None Include="spherical_harmonics.cuh" />
     <None Include="radianceCellGathering.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

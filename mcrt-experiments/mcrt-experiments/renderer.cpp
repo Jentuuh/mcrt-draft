@@ -382,6 +382,20 @@ namespace mcrt {
         ));
 
         CUDA_SYNC_CHECK();
+
+        // Print SH results
+        std::vector<float> shCoefficients(nonEmptyCellCenters.size() * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS);
+        SHWeightsDataBuffer.download(shCoefficients.data(), nonEmptyCellCenters.size() * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS);
+
+        for (int i = 0; i < nonEmptyCellCenters.size() * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS; i += 9)
+        {
+            std::cout << "[";
+            for (int j = 0; j < 9; j++)
+            {
+                std::cout << shCoefficients[i + j] << ",";
+            }
+            std::cout << "]" << std::endl;
+        }
     }   
 
 

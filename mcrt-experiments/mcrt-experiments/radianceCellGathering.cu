@@ -7,9 +7,11 @@
 #include "LaunchParams.hpp"
 #include "glm/glm.hpp"
 
+#include "spherical_harmonics.cuh"
+
 #define PI 3.14159265358979323846f
 #define EPSILON 0.0000000000002f
-#define NUM_SAMPLES_PER_STRATIFY_CELL 50
+#define NUM_SAMPLES_PER_STRATIFY_CELL 10
 
 using namespace mcrt;
 
@@ -81,15 +83,6 @@ namespace mcrt {
         printf("Hit scene!");
     }
 
-    extern "C" __global__ void __closesthit__radiance__cell__gathering__grid()
-    {
-        //printf("Closest hit grid!");
-    }
-
-    extern "C" __global__ void __anyhit__radiance__cell__gathering__grid() {
-        printf("Any hit grid!");
-    }
-
     extern "C" __global__ void __miss__radiance__cell__gathering()
     {
     }
@@ -99,6 +92,9 @@ namespace mcrt {
         // Get thread indices
         const int uIndex = optixGetLaunchIndex().x;
         const int vIndex = optixGetLaunchIndex().y;
+
+        // Amount SH basis functions
+        int amountBasisFunctions = optixLaunchParams.sphericalHarmonicsWeights.amountBasisFunctions;
 
         // Size of a radiance cell + dimensions of each stratified cell
         const float cellSize = optixLaunchParams.cellSize;
@@ -115,6 +111,7 @@ namespace mcrt {
         glm::vec3 UVWorldPos = optixLaunchParams.uvWorldPositions.UVDataBuffer[vIndex * optixLaunchParams.lightSourceTexture.size + uIndex].worldPosition;
         const glm::vec3 UVNormal = optixLaunchParams.uvWorldPositions.UVDataBuffer[vIndex * optixLaunchParams.lightSourceTexture.size + uIndex].worldNormal;
         float3 uvNormal3f = float3{ UVNormal.x, UVNormal.y, UVNormal.z };
+
         // We apply a small offset of 0.00001f in the direction of the normal to the UV world pos, to 'mitigate' floating point rounding errors causing false occlusions/illuminations
         UVWorldPos = glm::vec3{ UVWorldPos.x + UVNormal.x * 0.00001f, UVWorldPos.y + UVNormal.y * 0.00001f, UVWorldPos.z + UVNormal.z * 0.00001f };
         
@@ -150,11 +147,20 @@ namespace mcrt {
                 // The indices of the SHs that belong to each face, to use while indexing the buffer (L,R,U,D,F,B)
                 int4 cellSHIndices[6] = { int4{4, 0, 6, 2}, int4{1, 5, 3, 7}, int4{2, 3, 6, 7}, int4{4, 5, 0, 1}, int4{0, 1, 2, 3}, int4{5, 4, 7, 6} };
 
+            
                 for (int face = 0; face < 6; face++)
                 {
+                    // We accumulate the projections of each ray into this buffer, the projection of the lighting function
+                    // onto the SH basis functions is estimated by Monte Carlo integration. 
+                    double contribution[9] = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+                    // Expected value buffer for weightA, weightB, weightC, weightD for bilinear interpolation in the face square/
+                    // The expected values of these weights will be used to decide the final contribution to the SH of each corner after projection.
+                    double bilinInterpolWeightsExpectedValues[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+                    // Rays that pass all tests and thus contribute
+                    int n_samples = 0;
+
+                    // Check if the current cell face is facing, otherwise skip.
                     float cellFaceFacing = dot(uvNormal3f, cellNormals[face]);
-                   
-                    // Cell face i is facing
                     if (cellFaceFacing < 0)
                     {
                         // For each stratified cell on the face, take samples
@@ -180,8 +186,14 @@ namespace mcrt {
 
                                     // Convert to float3 format
                                     float3 rayOrigin3f = float3{ UVWorldPos.x, UVWorldPos.y, UVWorldPos.z };
-                                    float3 rayDir3f = float3{ lightToCellDir.x, lightToCellDir.y, lightToCellDir.z };
+                                    float3 rayDir3f = float3{ rayDir.x, rayDir.y, rayDir.z };
 
+                                    // Calculate spherical coordinate representation of ray
+                                    // (https://en.wikipedia.org/wiki/Spherical_coordinate_system#Cartesian_coordinates)
+                                    float3 normalizedRayDir = normalize(rayDir3f);
+                                    double theta = acos(normalizedRayDir.z);
+                                    int signY = signbit(normalizedRayDir.y) == 0 ? 1 : -1;
+                                    double phi = signY * acos(normalizedRayDir.x / (sqrtf((normalizedRayDir.x * normalizedRayDir.x) + (normalizedRayDir.y * normalizedRayDir.y))));
 
                                     RadianceCellGatherPRD prd{};
                                     prd.rayOrigin = UVWorldPos;
@@ -212,65 +224,66 @@ namespace mcrt {
 
                                     if (distanceToGridIntersect < prd.distanceToClosestProxyIntersection)
                                     {
+                                        ++n_samples;
+
                                         // We calculate the dx and dy offsets to the (x,y) coordinate of the sampled point on a normalized square to use in 
                                         // the calculation of the weights for bilinear extrapolation
                                         float dx = (stratifyIndexX * stratifyCellWidthNormalized + randomOffset.x * stratifyCellWidthNormalized) - 0.5f;
                                         float dy = (stratifyIndexY * stratifyCellHeightNormalized + randomOffset.y * stratifyCellHeightNormalized) - 0.5f;
+                       
+                                        // Accumulate bilinear interpolation weights, see thesis for explanation
+                                        bilinInterpolWeightsExpectedValues[0] += (0.5f + dx) * (1.0f - (0.5f + dy));
+                                        bilinInterpolWeightsExpectedValues[1] += (1.0f - (0.5f + dx)) * (1.0f - (0.5f + dy));
+                                        bilinInterpolWeightsExpectedValues[2] += (0.5f + dx) * (0.5f + dy);
+                                        bilinInterpolWeightsExpectedValues[3] += (1.0f - (0.5f + dx)) * (0.5f + dy);
 
-                                        // See thesis for explanation
-                                        float weightA = 1.0f / ((0.5f + dx) * (1.0f - (0.5f + dy)));
-                                        float weightB = 1.0f / ((1.0f - (0.5f + dx)) * (1.0f - (0.5f + dy)));
-                                        float weightC = 1.0f / ((0.5f + dx) * (0.5f + dy));
-                                        float weightD = 1.0f / ((1.0f - (0.5f + dx)) * (0.5f + dy));
-
-                                        // Current non-empty cell * amount of basis functions * 8 SHs per cell 
-                                        int cellOffset = i * optixLaunchParams.sphericalHarmonicsWeights.amountBasisFunctions * 8;
-
-                                        // The ray projected into SH basis function coefficients
-                                        float contribution[9] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
-
-                                        for (int i = 0; i < 9; i++)
-                                        {
-                                            optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + cellSHIndices[face].x * 9 + i] = contribution[i] * weightC;
-                                            optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + cellSHIndices[face].y * 9 + i] = contribution[i] * weightD;
-                                            optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + cellSHIndices[face].z * 9 + i] = contribution[i] * weightA;
-                                            optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + cellSHIndices[face].w * 9 + i] = contribution[i] * weightB;
-                                        }
+                                        // Project lighting function (single ray accumulation) onto SH basis functions
+                                        contribution[0] += lightSrcColor * Y_0_0();
+                                        contribution[1] += lightSrcColor * Y_min1_1(phi, theta);
+                                        contribution[2] += lightSrcColor * Y_0_1(phi, theta);
+                                        contribution[3] += lightSrcColor * Y_1_1(phi, theta);
+                                        contribution[4] += lightSrcColor * Y_min2_2(phi, theta);
+                                        contribution[5] += lightSrcColor * Y_min1_2(phi, theta);
+                                        contribution[6] += lightSrcColor * Y_0_2(phi, theta);
+                                        contribution[7] += lightSrcColor * Y_1_2(phi, theta);
+                                        contribution[8] += lightSrcColor * Y_2_2(phi, theta);
                                     }
-
-                                    //// Call against grid geometry
-                                    //optixTrace(optixLaunchParams.gasTraversables[1],
-                                    //    rayOrigin3f,
-                                    //    rayDir3f,
-                                    //    0.f,    // tmin
-                                    //    1e20f,  // tmax
-                                    //    0.0f,   // rayTime
-                                    //    OptixVisibilityMask(255),
-                                    //    OPTIX_RAY_FLAG_NONE,
-                                    //    0,  // SBT offset
-                                    //    1,  // SBT stride
-                                    //    0,  // missSBTIndex 
-                                    //    u0, u1, u2, u3
-                                    //);
-
-
-
-                                    //optixTrace(optixLaunchParams.iasTraversable,
-                                    //    rayOrigin3f,
-                                    //    rayDir3f,
-                                    //    0.f,    // tmin
-                                    //    1e20f,  // tmax
-                                    //    0.0f,   // rayTime
-                                    //    OptixVisibilityMask(255),
-                                    //    OPTIX_RAY_FLAG_NONE,
-                                    //    0,  // SBT offset
-                                    //    1,  // SBT stride
-                                    //    0  // missSBTIndex 
-                                    //);
-
-
                                 }
                             }
+                        }
+                    }
+
+                    if (n_samples > 0)
+                    {
+                        // Divide by amount of rays that contributed (samples) to get expected weights value
+                        double weightsFactor = 1.0 / n_samples;
+                        for (int w = 0; w < 4; w++)
+                        {
+                            bilinInterpolWeightsExpectedValues[w] * weightsFactor;
+                        }
+
+                        // Idem for SH basis coefficients, part of the Monte Carlo integration (see paper SH Lighting: 'The gritty details')
+                        double weight = 1.0; // TODO: Unsure what this weight needs to be, in the paper they use 4pi because they are uniformly sampling the sphere, but that is not the case here...
+                        double contributionFactor = weight / n_samples;
+                        for (int w = 0; w < 9; w++)
+                        {
+                            contribution[w] * contributionFactor;
+                        }
+
+                        // Current non-empty cell * amount of basis functions * 8 SHs per cell 
+                        int cellOffset = i * amountBasisFunctions * 8;
+
+                        float weightA = 1.0f / bilinInterpolWeightsExpectedValues[0];
+                        float weightB = 1.0f / bilinInterpolWeightsExpectedValues[1];
+                        float weightC = 1.0f / bilinInterpolWeightsExpectedValues[2];
+                        float weightD = 1.0f / bilinInterpolWeightsExpectedValues[3];
+
+                        for (int w = 0; w < 9; w++)
+                        {                                                                                                   // Am i allowed to just add this here, won't this blow up the coefficients?
+                            optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + cellSHIndices[face].x * amountBasisFunctions + i] += contribution[i] * weightC;
+                            optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + cellSHIndices[face].y * amountBasisFunctions + i] += contribution[i] * weightD;
+                            optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + cellSHIndices[face].z * amountBasisFunctions + i] += contribution[i] * weightA;
+                            optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + cellSHIndices[face].w * amountBasisFunctions + i] += contribution[i] * weightB;
                         }
                     }
                 }
