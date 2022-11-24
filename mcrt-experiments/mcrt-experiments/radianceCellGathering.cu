@@ -101,8 +101,8 @@ namespace mcrt {
         float stratifyCellWidth = cellSize / optixLaunchParams.stratifyResX;
         float stratifyCellHeight = cellSize / optixLaunchParams.stratifyResY;
 
-        float stratifyCellWidthNormalized = 1 / optixLaunchParams.stratifyResX;
-        float stratifyCellHeightNormalized = 1 / optixLaunchParams.stratifyResY;
+        float stratifyCellWidthNormalized = 1.0 / optixLaunchParams.stratifyResX;
+        float stratifyCellHeightNormalized = 1.0 / optixLaunchParams.stratifyResY;
 
         // TODO: SKIP PIXELS THAT ARE BLACK!
         uint32_t lightSrcColor = optixLaunchParams.lightSourceTexture.colorBuffer[vIndex * optixLaunchParams.lightSourceTexture.size + uIndex];
@@ -128,7 +128,7 @@ namespace mcrt {
             float3 rayOgToCellCenter3f = float3{ lightToCellDir.x, lightToCellDir.y, lightToCellDir.z };
             
             // Cosine between vector from ray origin to cell center and texel normal to check if cell is facing
-            float radCellFacing = dot(normalize(rayOgToCellCenter3f), uvNormal3f);
+            double radCellFacing = dot(normalize(rayOgToCellCenter3f), uvNormal3f);
 
             if (radCellFacing > 0)
             {
@@ -160,7 +160,7 @@ namespace mcrt {
                     int n_samples = 0;
 
                     // Check if the current cell face is facing, otherwise skip.
-                    float cellFaceFacing = dot(uvNormal3f, cellNormals[face]);
+                    double cellFaceFacing = dot(uvNormal3f, cellNormals[face]);
                     if (cellFaceFacing < 0)
                     {
                         // For each stratified cell on the face, take samples
@@ -195,6 +195,8 @@ namespace mcrt {
                                     int signY = signbit(normalizedRayDir.y) == 0 ? 1 : -1;
                                     double phi = signY * acos(normalizedRayDir.x / (sqrtf((normalizedRayDir.x * normalizedRayDir.x) + (normalizedRayDir.y * normalizedRayDir.y))));
 
+                                    printf("%f %f", theta, phi);
+
                                     RadianceCellGatherPRD prd{};
                                     prd.rayOrigin = UVWorldPos;
 
@@ -228,8 +230,8 @@ namespace mcrt {
 
                                         // We calculate the dx and dy offsets to the (x,y) coordinate of the sampled point on a normalized square to use in 
                                         // the calculation of the weights for bilinear extrapolation
-                                        float dx = (stratifyIndexX * stratifyCellWidthNormalized + randomOffset.x * stratifyCellWidthNormalized) - 0.5f;
-                                        float dy = (stratifyIndexY * stratifyCellHeightNormalized + randomOffset.y * stratifyCellHeightNormalized) - 0.5f;
+                                        float dx = (stratifyIndexX * stratifyCellWidthNormalized + randomOffset.x * stratifyCellWidthNormalized) - 0.5;
+                                        float dy = (stratifyIndexY * stratifyCellHeightNormalized + randomOffset.y * stratifyCellHeightNormalized) - 0.5;
                        
                                         // Accumulate bilinear interpolation weights, see thesis for explanation
                                         bilinInterpolWeightsExpectedValues[0] += (0.5f + dx) * (1.0f - (0.5f + dy));
@@ -259,7 +261,7 @@ namespace mcrt {
                         double weightsFactor = 1.0 / n_samples;
                         for (int w = 0; w < 4; w++)
                         {
-                            bilinInterpolWeightsExpectedValues[w] * weightsFactor;
+                            bilinInterpolWeightsExpectedValues[w] = bilinInterpolWeightsExpectedValues[w] * weightsFactor;
                         }
 
                         // Idem for SH basis coefficients, part of the Monte Carlo integration (see paper SH Lighting: 'The gritty details')
@@ -267,23 +269,23 @@ namespace mcrt {
                         double contributionFactor = weight / n_samples;
                         for (int w = 0; w < 9; w++)
                         {
-                            contribution[w] * contributionFactor;
+                            contribution[w] = contribution[w] * contributionFactor;
                         }
 
                         // Current non-empty cell * amount of basis functions * 8 SHs per cell 
                         int cellOffset = i * amountBasisFunctions * 8;
 
-                        float weightA = 1.0f / bilinInterpolWeightsExpectedValues[0];
-                        float weightB = 1.0f / bilinInterpolWeightsExpectedValues[1];
-                        float weightC = 1.0f / bilinInterpolWeightsExpectedValues[2];
-                        float weightD = 1.0f / bilinInterpolWeightsExpectedValues[3];
+                        double weightA = 1.0 / bilinInterpolWeightsExpectedValues[0];
+                        double weightB = 1.0 / bilinInterpolWeightsExpectedValues[1];
+                        double weightC = 1.0 / bilinInterpolWeightsExpectedValues[2];
+                        double weightD = 1.0 / bilinInterpolWeightsExpectedValues[3];
 
                         for (int w = 0; w < 9; w++)
                         {                                                                                                   // Am i allowed to just add this here, won't this blow up the coefficients?
-                            optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + cellSHIndices[face].x * amountBasisFunctions + i] += contribution[i] * weightC;
-                            optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + cellSHIndices[face].y * amountBasisFunctions + i] += contribution[i] * weightD;
-                            optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + cellSHIndices[face].z * amountBasisFunctions + i] += contribution[i] * weightA;
-                            optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + cellSHIndices[face].w * amountBasisFunctions + i] += contribution[i] * weightB;
+                            optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + cellSHIndices[face].x * amountBasisFunctions + w] += contribution[w] * weightC;
+                            optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + cellSHIndices[face].y * amountBasisFunctions + w] += contribution[w] * weightD;
+                            optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + cellSHIndices[face].z * amountBasisFunctions + w] += contribution[w] * weightA;
+                            optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + cellSHIndices[face].w * amountBasisFunctions + w] += contribution[w] * weightB;
                         }
                     }
                 }

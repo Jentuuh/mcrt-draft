@@ -317,18 +317,16 @@ namespace mcrt {
     }
 
     void Renderer::initSHWeightsBuffer(int amountNonEmptyCells)
-    {
-        NonEmptyCells nonEmpties = scene.grid.getNonEmptyCells();
-        
+    {        
         // How to index: (nonEmptyCellIndex * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS) + (SHIndex * SPHERICAL_HARMONIC_BASIS_FUNCTIONS) + BasisFunctionIndex
-        std::vector<float> shCoefficients(amountNonEmptyCells * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS, 0.0f);
-        SHWeightsDataBuffer.resize(shCoefficients.size() * sizeof(float));
-        SHWeightsDataBuffer.upload(shCoefficients.data(), 1);
-        radianceCellGatherPipeline->launchParams.sphericalHarmonicsWeights.weights = (float*)SHWeightsDataBuffer.d_pointer();
+        std::vector<double> shCoefficients(amountNonEmptyCells * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS, 0.0);
+        SHWeightsDataBuffer.resize(shCoefficients.size() * sizeof(double));
+        SHWeightsDataBuffer.alloc_and_upload(shCoefficients);
+        radianceCellGatherPipeline->launchParams.sphericalHarmonicsWeights.weights = (double*)SHWeightsDataBuffer.d_pointer();
         radianceCellGatherPipeline->launchParams.sphericalHarmonicsWeights.size = amountNonEmptyCells * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS; // 8 SHs per cell, each 9 basis functions
         radianceCellGatherPipeline->launchParams.sphericalHarmonicsWeights.amountBasisFunctions = SPHERICAL_HARMONIC_BASIS_FUNCTIONS;
 
-        std::cout << "Size of SH weights buffer on GPU in bytes: " << shCoefficients.size() * sizeof(float) << std::endl;
+        std::cout << "Size of SH weights buffer on GPU in bytes: " << shCoefficients.size() * sizeof(double) << std::endl;
     }
 
 
@@ -384,7 +382,7 @@ namespace mcrt {
         CUDA_SYNC_CHECK();
 
         // Print SH results
-        std::vector<float> shCoefficients(nonEmptyCellCenters.size() * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS);
+        std::vector<double> shCoefficients(nonEmptyCellCenters.size() * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS);
         SHWeightsDataBuffer.download(shCoefficients.data(), nonEmptyCellCenters.size() * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS);
 
         for (int i = 0; i < nonEmptyCellCenters.size() * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS; i += 9)

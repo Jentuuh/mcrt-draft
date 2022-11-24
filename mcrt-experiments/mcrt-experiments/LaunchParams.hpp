@@ -21,7 +21,7 @@ namespace mcrt {
 
 
 	struct SHWeights {
-		float* weights;
+		double* weights;
 		int size;
 		int amountBasisFunctions;
 	};
