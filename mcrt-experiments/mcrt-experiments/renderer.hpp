@@ -31,6 +31,7 @@ namespace mcrt {
 		void initDirectLightingTexture(int size);
 		void calculateDirectLighting();
 		void initSHWeightsBuffer(int amountNonEmptyCells);
+		void initSHAccumulators(int divisionResolution, int amountNonEmptyCells);
 		void calculateRadianceCellGatherPass();
 
 		void prepareUVWorldPositions();
@@ -78,6 +79,8 @@ namespace mcrt {
 
 		CUDABuffer nonEmptyCellDataBuffer;	// In this buffer we'll store our data for non empty radiance cells
 		CUDABuffer SHWeightsDataBuffer; // In this buffer we'll store the SH weights
+		CUDABuffer SHAccumulatorsBuffer; // In this buffer we'll store the SH accumulators
+		CUDABuffer numSamplesAccumulatorsBuffer; // In this buffer we'll store the numSamples accumulators per radiance cell SH
 		CUDABuffer UVWorldPositionDeviceBuffer; // In this buffer we'll store the world positions for each of our UV texels (starting from 0,0 --> 1,1), this means this array starts at the left bottom of the actual texture image
 
 

@@ -21,7 +21,7 @@ namespace mcrt {
 
 
 	struct SHWeights {
-		double* weights;
+		float* weights;
 		int size;
 		int amountBasisFunctions;
 	};
@@ -65,7 +65,10 @@ namespace mcrt {
 		float cellSize;
 		int stratifyResX;
 		int stratifyResY;
+		int divisionResolution;		// The amount of cells the light source texture is divided in both dimensions
 
+		float* shAccumulators;
+		int* shNumSamplesAccumulators;
 		SHWeights sphericalHarmonicsWeights;	// Radiance cells thus need to get an index in their SBT data so we can index the weights array by that index!
 		PixelBuffer lightSourceTexture;
 

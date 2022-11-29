@@ -15,6 +15,7 @@
 #define STRATIFIED_X_SIZE 5
 #define STRATIFIED_Y_SIZE 5
 #define SPHERICAL_HARMONIC_BASIS_FUNCTIONS 9
+#define TEXTURE_DIVISION_RES 128
 
 namespace mcrt {
 
@@ -257,7 +258,6 @@ namespace mcrt {
     void Renderer::initDirectLightingTexture(int size)
     {
         std::vector<uint32_t> zeros(size * size, 0.0f);
-        //directLightingTexture.resize(size * size * sizeof(uint32_t));
         directLightingTexture.alloc_and_upload(zeros);
         directLightPipeline->launchParams.directLightingTexture.size = size;
         directLightPipeline->launchParams.directLightingTexture.colorBuffer = (uint32_t*)directLightingTexture.d_pointer();
@@ -319,16 +319,29 @@ namespace mcrt {
     void Renderer::initSHWeightsBuffer(int amountNonEmptyCells)
     {        
         // How to index: (nonEmptyCellIndex * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS) + (SHIndex * SPHERICAL_HARMONIC_BASIS_FUNCTIONS) + BasisFunctionIndex
-        std::vector<double> shCoefficients(amountNonEmptyCells * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS, 0.0);
-        SHWeightsDataBuffer.resize(shCoefficients.size() * sizeof(double));
+        std::vector<float> shCoefficients(amountNonEmptyCells * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS, 0.0);
         SHWeightsDataBuffer.alloc_and_upload(shCoefficients);
-        radianceCellGatherPipeline->launchParams.sphericalHarmonicsWeights.weights = (double*)SHWeightsDataBuffer.d_pointer();
+        radianceCellGatherPipeline->launchParams.sphericalHarmonicsWeights.weights = (float*)SHWeightsDataBuffer.d_pointer();
         radianceCellGatherPipeline->launchParams.sphericalHarmonicsWeights.size = amountNonEmptyCells * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS; // 8 SHs per cell, each 9 basis functions
         radianceCellGatherPipeline->launchParams.sphericalHarmonicsWeights.amountBasisFunctions = SPHERICAL_HARMONIC_BASIS_FUNCTIONS;
 
-        std::cout << "Size of SH weights buffer on GPU in bytes: " << shCoefficients.size() * sizeof(double) << std::endl;
+        std::cout << "Size of SH weights buffer on GPU in bytes: " << shCoefficients.size() * sizeof(float) << std::endl;
     }
 
+    void Renderer::initSHAccumulators(int divisionResolution, int amountNonEmptyCells)
+    {
+        // Initialize SH weights accumulators
+        std::vector<float> shAccumulators(amountNonEmptyCells * divisionResolution * divisionResolution * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS, 0.0);
+        SHAccumulatorsBuffer.resize(shAccumulators.size() * sizeof(float));
+        SHAccumulatorsBuffer.alloc_and_upload(shAccumulators);
+        radianceCellGatherPipeline->launchParams.shAccumulators = (float*)SHAccumulatorsBuffer.d_pointer();
+
+        // Initialize SH num samples accumulators
+        std::vector<int> numSamplesAccumulators(amountNonEmptyCells * 8 * divisionResolution * divisionResolution, 0);
+        numSamplesAccumulatorsBuffer.resize(numSamplesAccumulators.size() * sizeof(int));
+        numSamplesAccumulatorsBuffer.alloc_and_upload(numSamplesAccumulators);
+        radianceCellGatherPipeline->launchParams.shNumSamplesAccumulators = (int*)numSamplesAccumulatorsBuffer.d_pointer();
+    }
 
 
     void Renderer::calculateRadianceCellGatherPass()
@@ -343,9 +356,11 @@ namespace mcrt {
             nonEmptyCellCenters.push_back(nonEmpty->getCenter());
         }
         nonEmptyCellDataBuffer.resize(nonEmptyCellCenters.size() * sizeof(glm::vec3));
-        nonEmptyCellDataBuffer.upload(nonEmptyCellCenters.data(), 1);
+        nonEmptyCellDataBuffer.upload(nonEmptyCellCenters.data(), nonEmptyCellCenters.size());
         radianceCellGatherPipeline->launchParams.nonEmptyCells.centers = (glm::vec3*)nonEmptyCellDataBuffer.d_pointer();
         radianceCellGatherPipeline->launchParams.nonEmptyCells.size = nonEmpties.nonEmptyCells.size();
+
+        std::cout << "Amount non-empty cells: " << nonEmpties.nonEmptyCells.size() << std::endl;
 
         // Initialize Light Source Texture data on GPU
         // Take the direct lighting pass output as light source texture (for now), this should normally be the output from the previous pass in each iteration
@@ -354,6 +369,8 @@ namespace mcrt {
 
         // Initialize SH data on GPU
         initSHWeightsBuffer(nonEmptyCellCenters.size());
+
+        //initSHAccumulators(TEXTURE_DIVISION_RES, nonEmptyCellCenters.size());
 
         // Initialize UV World positions data on GPU
         directLightPipeline->launchParams.uvWorldPositions.size = texSize * texSize;
@@ -366,6 +383,8 @@ namespace mcrt {
         radianceCellGatherPipeline->launchParams.stratifyResX = STRATIFIED_X_SIZE;
         radianceCellGatherPipeline->launchParams.stratifyResY = STRATIFIED_Y_SIZE;
 
+        radianceCellGatherPipeline->launchParams.divisionResolution = TEXTURE_DIVISION_RES;
+
         radianceCellGatherPipeline->uploadLaunchParams();
 
         OPTIX_CHECK(optixLaunch(
@@ -373,16 +392,16 @@ namespace mcrt {
             radianceCellGatherPipeline->launchParamsBuffer.d_pointer(),
             radianceCellGatherPipeline->launchParamsBuffer.sizeInBytes,
             &radianceCellGatherPipeline->sbt,
-            radianceCellGatherPipeline->launchParams.lightSourceTexture.size,   // dimension X: x resolution of light source UV map
-            radianceCellGatherPipeline->launchParams.lightSourceTexture.size,   // dimension Y: y resolution of light source UV map
-            1                                                                   // dimension Z: 1
+            nonEmpties.nonEmptyCells.size(),                                    // dimension X: amount of non-empty cells
+            TEXTURE_DIVISION_RES,                                               // dimension Y: divisionResX: amount of tiles in the X direction of the light src texture
+            TEXTURE_DIVISION_RES                                                // dimension Z: divisionResY: amount of tiles in the Y direction of the light src texture
             // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
         ));
 
         CUDA_SYNC_CHECK();
 
         // Print SH results
-        std::vector<double> shCoefficients(nonEmptyCellCenters.size() * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS);
+        std::vector<float> shCoefficients(nonEmptyCellCenters.size() * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS);
         SHWeightsDataBuffer.download(shCoefficients.data(), nonEmptyCellCenters.size() * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS);
 
         for (int i = 0; i < nonEmptyCellCenters.size() * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS; i += 9)

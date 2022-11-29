@@ -190,5 +190,8 @@
     <None Include="spherical_harmonics.cuh">
       <Filter>Source Files\GPU</Filter>
     </None>
+    <None Include="radianceCellGathering2.cu">
+      <Filter>Source Files\GPU</Filter>
+    </None>
   </ItemGroup>
 </Project>
