@@ -6,6 +6,7 @@
 #include "default_pipeline.hpp"
 #include "direct_light_pipeline.hpp"
 #include "radiance_cell_gather_pipeline.hpp"
+#include "radiance_cell_scatter_pipeline.hpp"
 
 namespace mcrt {
 
@@ -33,6 +34,7 @@ namespace mcrt {
 		void initSHWeightsBuffer(int amountNonEmptyCells);
 		void initSHAccumulators(int divisionResolution, int amountNonEmptyCells);
 		void calculateRadianceCellGatherPass();
+		void calculateRadianceCellScatterPass();
 
 		void prepareUVWorldPositions();
 
@@ -68,10 +70,11 @@ namespace mcrt {
 		// OptiX context that pipeline will run in
 		OptixDeviceContext	optixContext;
 
+		// Pipelines
 		std::unique_ptr<DefaultPipeline> tutorialPipeline;
 		std::unique_ptr<DirectLightPipeline> directLightPipeline;
 		std::unique_ptr<RadianceCellGatherPipeline> radianceCellGatherPipeline;
-
+		std::unique_ptr<RadianceCellScatterPipeline> radianceCellScatterPipeline;
 
 		CUDABuffer colorBuffer;	// Framebuffer we will write to
 		CUDABuffer directLightingTexture; // Texture in which we store the direct lighting
@@ -82,8 +85,6 @@ namespace mcrt {
 		CUDABuffer SHAccumulatorsBuffer; // In this buffer we'll store the SH accumulators
 		CUDABuffer numSamplesAccumulatorsBuffer; // In this buffer we'll store the numSamples accumulators per radiance cell SH
 		CUDABuffer UVWorldPositionDeviceBuffer; // In this buffer we'll store the world positions for each of our UV texels (starting from 0,0 --> 1,1), this means this array starts at the left bottom of the actual texture image
-
-
 
 		Camera renderCamera;
 

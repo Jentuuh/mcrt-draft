@@ -15,7 +15,7 @@
 #define STRATIFIED_X_SIZE 5
 #define STRATIFIED_Y_SIZE 5
 #define SPHERICAL_HARMONIC_BASIS_FUNCTIONS 9
-#define TEXTURE_DIVISION_RES 128
+#define TEXTURE_DIVISION_RES 1024
 
 namespace mcrt {
 
@@ -44,6 +44,7 @@ namespace mcrt {
         tutorialPipeline = std::make_unique<DefaultPipeline>(optixContext, geometryData, scene);
         directLightPipeline = std::make_unique<DirectLightPipeline>(optixContext, geometryData, scene);
         radianceCellGatherPipeline = std::make_unique<RadianceCellGatherPipeline>(optixContext, radianceCellGeometry, geometryData, scene); // For now we can use normal geometry instead of proxy
+        radianceCellScatterPipeline = std::make_unique<RadianceCellScatterPipeline>(optixContext, geometryData, scene);
 
         std::cout << "Context, module, pipeline, etc, all set up." << std::endl;
         std::cout << "MCRT renderer fully set up." << std::endl;
@@ -52,7 +53,8 @@ namespace mcrt {
         initDirectLightingTexture(1024);
         prepareUVWorldPositions();
         calculateDirectLighting();
-        calculateRadianceCellGatherPass();
+        //calculateRadianceCellGatherPass();
+        calculateRadianceCellScatterPass();
     }
 
     void Renderer::fillGeometryBuffers()
@@ -153,7 +155,6 @@ namespace mcrt {
             CUDA_CHECK(CreateTextureObject(&cuda_tex, &res_desc, &tex_desc, nullptr));
             textureObjects[textureID] = cuda_tex;
         }
-
     }
 
 
@@ -325,6 +326,10 @@ namespace mcrt {
         radianceCellGatherPipeline->launchParams.sphericalHarmonicsWeights.size = amountNonEmptyCells * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS; // 8 SHs per cell, each 9 basis functions
         radianceCellGatherPipeline->launchParams.sphericalHarmonicsWeights.amountBasisFunctions = SPHERICAL_HARMONIC_BASIS_FUNCTIONS;
 
+        std::vector<int> numSamplesAccumulator(amountNonEmptyCells * 8);
+        numSamplesAccumulatorsBuffer.alloc_and_upload(numSamplesAccumulator);
+        radianceCellGatherPipeline->launchParams.shNumSamplesAccumulators = (int*)numSamplesAccumulatorsBuffer.d_pointer();
+
         std::cout << "Size of SH weights buffer on GPU in bytes: " << shCoefficients.size() * sizeof(float) << std::endl;
     }
 
@@ -332,13 +337,11 @@ namespace mcrt {
     {
         // Initialize SH weights accumulators
         std::vector<float> shAccumulators(amountNonEmptyCells * divisionResolution * divisionResolution * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS, 0.0);
-        SHAccumulatorsBuffer.resize(shAccumulators.size() * sizeof(float));
         SHAccumulatorsBuffer.alloc_and_upload(shAccumulators);
         radianceCellGatherPipeline->launchParams.shAccumulators = (float*)SHAccumulatorsBuffer.d_pointer();
 
         // Initialize SH num samples accumulators
         std::vector<int> numSamplesAccumulators(amountNonEmptyCells * 8 * divisionResolution * divisionResolution, 0);
-        numSamplesAccumulatorsBuffer.resize(numSamplesAccumulators.size() * sizeof(int));
         numSamplesAccumulatorsBuffer.alloc_and_upload(numSamplesAccumulators);
         radianceCellGatherPipeline->launchParams.shNumSamplesAccumulators = (int*)numSamplesAccumulatorsBuffer.d_pointer();
     }
@@ -404,16 +407,42 @@ namespace mcrt {
         std::vector<float> shCoefficients(nonEmptyCellCenters.size() * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS);
         SHWeightsDataBuffer.download(shCoefficients.data(), nonEmptyCellCenters.size() * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS);
 
-        for (int i = 0; i < nonEmptyCellCenters.size() * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS; i += 9)
+        std::vector<int> numSamplesPerSH(nonEmptyCellCenters.size() * 8);
+        numSamplesAccumulatorsBuffer.download(numSamplesPerSH.data(), nonEmptyCellCenters.size() * 8);
+
+        for (int i = 0; i < nonEmptyCellCenters.size(); i++)
         {
-            std::cout << "[";
-            for (int j = 0; j < 9; j++)
+            int cellOffset = i * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS;
+            for (int sh = 0; sh < 8; sh++)
             {
-                std::cout << shCoefficients[i + j] << ",";
+                float weight = 1.0f / (numSamplesPerSH[i * 8 + sh] * 4 * glm::pi<float>());
+                int shOffset = sh * SPHERICAL_HARMONIC_BASIS_FUNCTIONS;
+                std::cout << "[";
+                for (int bf = 0; bf < 9; bf++)
+                {
+                    std::cout << shCoefficients[cellOffset + shOffset + bf] * weight  << ",";
+                    shCoefficients[cellOffset + shOffset + bf] *= weight;
+                }
+                std::cout << "]" << std::endl;
             }
-            std::cout << "]" << std::endl;
         }
+        // Upload back to GPU
+        SHWeightsDataBuffer.upload(shCoefficients.data(), shCoefficients.size());
     }   
+
+
+    void Renderer::calculateRadianceCellScatterPass()
+    {
+        NonEmptyCells nonEmpties = scene.grid.getNonEmptyCells();
+        int i = 0;
+        for (auto c : nonEmpties.nonEmptyCells)
+        {
+            // Load uvs per cell 
+            std::vector<glm::vec2> cellUVs = c->getUVsInside();
+    
+        }
+
+    }
 
 
     void Renderer::prepareUVWorldPositions()
@@ -430,6 +459,8 @@ namespace mcrt {
             const float v = (float((i - (i % texSize))) / float(texSize)) / float(texSize);
             glm::vec2 uv = glm::vec2{ u,v };
             UVWorldPositions[i] = UVto3D(uv);
+           
+            scene.grid.assignUVToCells(uv, UVWorldPositions[i].worldPosition);
         }
 
         // Upload world positions to the GPU and pass a pointer to this memory into the launch params

@@ -150,8 +150,10 @@
     <ClCompile Include="mcrt_pipeline.cpp" />
     <ClCompile Include="model.cpp" />
     <ClCompile Include="radianceCellGathering_embedded.c" />
+    <ClCompile Include="radianceCellScattering_embedded.c" />
     <ClCompile Include="radiance_cell.cpp" />
     <ClCompile Include="radiance_cell_gather_pipeline.cpp" />
+    <ClCompile Include="radiance_cell_scatter_pipeline.cpp" />
     <ClCompile Include="radiance_grid.cpp" />
     <ClCompile Include="renderer.cpp" />
     <ClCompile Include="scene.cpp" />
@@ -174,6 +176,7 @@
     <ClInclude Include="model.hpp" />
     <ClInclude Include="radiance_cell.hpp" />
     <ClInclude Include="radiance_cell_gather_pipeline.hpp" />
+    <ClInclude Include="radiance_cell_scatter_pipeline.hpp" />
     <ClInclude Include="radiance_grid.hpp" />
     <ClInclude Include="renderer.hpp" />
     <ClInclude Include="optix7.hpp" />
@@ -184,6 +187,7 @@
     <None Include="devicePrograms.cu" />
     <None Include="directLightingShaders.cu" />
     <None Include="directLightingShadersGathering.cu" />
+    <None Include="radianceCellScattering.cu" />
     <None Include="radianceCellGathering2.cu" />
     <None Include="spherical_harmonics.cuh" />
     <None Include="radianceCellGathering.cu" />

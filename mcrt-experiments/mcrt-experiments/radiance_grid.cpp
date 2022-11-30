@@ -65,6 +65,16 @@ namespace mcrt {
 		}
 	}
 
+	void RadianceGrid::assignUVToCells(glm::vec2 uv, glm::vec3 UVWorldCoord)
+	{
+		for (auto& c : grid)
+		{
+			// We can return once the UV has been added to a cell, because it cannot be part of multiple cells
+			if(c.addUVIfInside(uv, UVWorldCoord))
+				return;
+		}
+	}
+
 	NonEmptyCells RadianceGrid::getNonEmptyCells()
 	{
 		NonEmptyCells returnStruct;

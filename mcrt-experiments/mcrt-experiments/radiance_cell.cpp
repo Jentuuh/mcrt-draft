@@ -53,6 +53,17 @@ namespace mcrt {
 		remove(objectsInside.begin(), objectsInside.end(), obj);
 	}
 
+    bool RadianceCell::addUVIfInside(glm::vec2 uv, glm::vec3 uvWorldCoord)
+    {
+        if (contains(uvWorldCoord))
+        {
+            uvsInside.push_back(uv);
+            return true;
+        }
+        return false;
+    }
+
+
     std::vector<glm::vec3> RadianceCell::getNormals()
     {
         std::vector<glm::vec3> normals;
@@ -65,7 +76,6 @@ namespace mcrt {
 
         return normals;
     }
-
 
     bool RadianceCell::intersects(Voxel v)
     {

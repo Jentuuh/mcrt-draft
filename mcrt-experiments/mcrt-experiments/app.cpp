@@ -51,7 +51,7 @@ namespace mcrt {
 		scene.loadLights();
 
 		// Build radiance grid that is contained within the scene
-		scene.buildRadianceGrid(0.1f);
+		scene.buildRadianceGrid(0.2f);
 
 		// For each radiance cell, check which objects are (partially) in it
 		scene.grid.assignObjectsToCells(scene.getVoxelizers());

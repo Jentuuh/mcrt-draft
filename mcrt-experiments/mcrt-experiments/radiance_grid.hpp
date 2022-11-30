@@ -18,6 +18,7 @@ namespace mcrt {
 		RadianceGrid();
 		void init(float cellSize);
 		void assignObjectsToCells(std::vector<std::shared_ptr<Voxelizer>>& voxelizers);
+		void assignUVToCells(glm::vec2 uv, glm::vec3 UVWorldCoord);
 		NonEmptyCells getNonEmptyCells();
 
 		int getCellIndex(std::shared_ptr<RadianceCell> cell);

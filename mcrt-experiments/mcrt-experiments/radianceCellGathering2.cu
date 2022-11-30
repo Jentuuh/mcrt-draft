@@ -19,21 +19,6 @@ namespace mcrt {
 
     extern "C" __constant__ LaunchParamsRadianceCellGather optixLaunchParams;
 
-    static __forceinline__ __device__
-        void* unpackPointer(uint32_t i0, uint32_t i1)
-    {
-        const uint64_t uptr = static_cast<uint64_t>(i0) << 32 | i1;
-        void* ptr = reinterpret_cast<void*>(uptr);
-        return ptr;
-    }
-
-    static __forceinline__ __device__
-        void  packPointer(void* ptr, uint32_t& i0, uint32_t& i1)
-    {
-        const uint64_t uptr = reinterpret_cast<uint64_t>(ptr);
-        i0 = uptr >> 32;
-        i1 = uptr & 0x00000000ffffffff;
-    }
 
     static __forceinline__ __device__ RadianceCellGatherPRD loadRadianceCellGatherPRD()
     {
@@ -154,6 +139,18 @@ namespace mcrt {
 
                     uint32_t lightSrcColor = optixLaunchParams.lightSourceTexture.colorBuffer[v * optixLaunchParams.lightSourceTexture.size + u];
 
+                    // Extract rgb values from light source texture pixel
+                    const uint32_t r = 0x000000ff & (lightSrcColor);
+                    const uint32_t g = (0x0000ff00 & (lightSrcColor)) >> 8;
+                    const uint32_t b = (0x00ff0000 & (lightSrcColor)) >> 16;
+
+                    // Convert to grayscale (for now we assume 1 color channel)
+                    const float grayscale = (0.3 * r + 0.59 * g + 0.11 * b) / 255.0f;
+                    
+                    if (grayscale == 0.0f)  // Skip pixels with no outgoing radiance
+                        continue;
+
+                    // World position + normal of the texel
                     glm::vec3 UVWorldPos = optixLaunchParams.uvWorldPositions.UVDataBuffer[v * optixLaunchParams.lightSourceTexture.size + u].worldPosition;
                     const glm::vec3 UVNormal = optixLaunchParams.uvWorldPositions.UVDataBuffer[v * optixLaunchParams.lightSourceTexture.size + u].worldNormal;
                     float3 uvNormal3f = float3{ UVNormal.x, UVNormal.y, UVNormal.z };
@@ -254,48 +251,48 @@ namespace mcrt {
                                         float weightD = (1.0f - (0.5f + dx)) * (0.5f + dy);
 
                                         // Left bottom contribution
-                                        SHAccumulator[cellSHIndices[face].x * 9] += weightC * lightSrcColor * Y_0_0();
-                                        SHAccumulator[cellSHIndices[face].x * 9 + 1] += weightC * lightSrcColor * Y_min1_1(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].x * 9 + 2] += weightC * lightSrcColor * Y_0_1(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].x * 9 + 3] += weightC * lightSrcColor * Y_1_1(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].x * 9 + 4] += weightC * lightSrcColor * Y_min2_2(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].x * 9 + 5] += weightC * lightSrcColor * Y_min1_2(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].x * 9 + 6] += weightC * lightSrcColor * Y_0_2(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].x * 9 + 7] += weightC * lightSrcColor * Y_1_2(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].x * 9 + 8] += weightC * lightSrcColor * Y_2_2(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].x * 9] += weightC * grayscale * Y_0_0();
+                                        SHAccumulator[cellSHIndices[face].x * 9 + 1] += weightC * grayscale * Y_min1_1(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].x * 9 + 2] += weightC * grayscale * Y_0_1(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].x * 9 + 3] += weightC * grayscale * Y_1_1(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].x * 9 + 4] += weightC * grayscale * Y_min2_2(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].x * 9 + 5] += weightC * grayscale * Y_min1_2(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].x * 9 + 6] += weightC * grayscale * Y_0_2(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].x * 9 + 7] += weightC * grayscale * Y_1_2(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].x * 9 + 8] += weightC * grayscale * Y_2_2(phi, theta);
 
                                         // Right bottom contribution
-                                        SHAccumulator[cellSHIndices[face].y * 9] += weightD * lightSrcColor * Y_0_0();
-                                        SHAccumulator[cellSHIndices[face].y * 9 + 1] += weightD * lightSrcColor * Y_min1_1(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].y * 9 + 2] += weightD * lightSrcColor * Y_0_1(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].y * 9 + 3] += weightD * lightSrcColor * Y_1_1(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].y * 9 + 4] += weightD * lightSrcColor * Y_min2_2(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].y * 9 + 5] += weightD * lightSrcColor * Y_min1_2(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].y * 9 + 6] += weightD * lightSrcColor * Y_0_2(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].y * 9 + 7] += weightD * lightSrcColor * Y_1_2(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].y * 9 + 8] += weightD * lightSrcColor * Y_2_2(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].y * 9] += weightD * grayscale * Y_0_0();
+                                        SHAccumulator[cellSHIndices[face].y * 9 + 1] += weightD * grayscale * Y_min1_1(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].y * 9 + 2] += weightD * grayscale * Y_0_1(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].y * 9 + 3] += weightD * grayscale * Y_1_1(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].y * 9 + 4] += weightD * grayscale * Y_min2_2(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].y * 9 + 5] += weightD * grayscale * Y_min1_2(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].y * 9 + 6] += weightD * grayscale * Y_0_2(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].y * 9 + 7] += weightD * grayscale * Y_1_2(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].y * 9 + 8] += weightD * grayscale * Y_2_2(phi, theta);
 
                                         // Left top contribution
-                                        SHAccumulator[cellSHIndices[face].z * 9] += weightA * lightSrcColor * Y_0_0();
-                                        SHAccumulator[cellSHIndices[face].z * 9 + 1] += weightA * lightSrcColor * Y_min1_1(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].z * 9 + 2] += weightA * lightSrcColor * Y_0_1(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].z * 9 + 3] += weightA * lightSrcColor * Y_1_1(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].z * 9 + 4] += weightA * lightSrcColor * Y_min2_2(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].z * 9 + 5] += weightA * lightSrcColor * Y_min1_2(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].z * 9 + 6] += weightA * lightSrcColor * Y_0_2(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].z * 9 + 7] += weightA * lightSrcColor * Y_1_2(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].z * 9 + 8] += weightA * lightSrcColor * Y_2_2(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].z * 9] += weightA * grayscale * Y_0_0();
+                                        SHAccumulator[cellSHIndices[face].z * 9 + 1] += weightA * grayscale * Y_min1_1(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].z * 9 + 2] += weightA * grayscale * Y_0_1(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].z * 9 + 3] += weightA * grayscale * Y_1_1(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].z * 9 + 4] += weightA * grayscale * Y_min2_2(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].z * 9 + 5] += weightA * grayscale * Y_min1_2(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].z * 9 + 6] += weightA * grayscale * Y_0_2(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].z * 9 + 7] += weightA * grayscale * Y_1_2(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].z * 9 + 8] += weightA * grayscale * Y_2_2(phi, theta);
 
                                         // Right top contribution
-                                        SHAccumulator[cellSHIndices[face].w * 9] += weightB * lightSrcColor * Y_0_0();
-                                        SHAccumulator[cellSHIndices[face].w * 9 + 1] += weightB * lightSrcColor * Y_min1_1(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].w * 9 + 2] += weightB * lightSrcColor * Y_0_1(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].w * 9 + 3] += weightB * lightSrcColor * Y_1_1(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].w * 9 + 4] += weightB * lightSrcColor * Y_min2_2(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].w * 9 + 5] += weightB * lightSrcColor * Y_min1_2(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].w * 9 + 6] += weightB * lightSrcColor * Y_0_2(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].w * 9 + 7] += weightB * lightSrcColor * Y_1_2(phi, theta);
-                                        SHAccumulator[cellSHIndices[face].w * 9 + 8] += weightB * lightSrcColor * Y_2_2(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].w * 9] += weightB * grayscale * Y_0_0();
+                                        SHAccumulator[cellSHIndices[face].w * 9 + 1] += weightB * grayscale * Y_min1_1(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].w * 9 + 2] += weightB * grayscale * Y_0_1(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].w * 9 + 3] += weightB * grayscale * Y_1_1(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].w * 9 + 4] += weightB * grayscale * Y_min2_2(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].w * 9 + 5] += weightB * grayscale * Y_min1_2(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].w * 9 + 6] += weightB * grayscale * Y_0_2(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].w * 9 + 7] += weightB * grayscale * Y_1_2(phi, theta);
+                                        SHAccumulator[cellSHIndices[face].w * 9 + 8] += weightB * grayscale * Y_2_2(phi, theta);
                                     }
                                 }
                             }
@@ -311,12 +308,17 @@ namespace mcrt {
         for (int n_samples_i = 0; n_samples_i < 8; n_samples_i++)
         {
             int numSamples = numSamplesAccumulator[n_samples_i];
+            atomicAdd(&optixLaunchParams.shNumSamplesAccumulators[nonEmptyCellIndex * 8 + n_samples_i], numSamples);
+
             if (numSamples > 0) {
                 //double weight = 1.0 / (numSamplesAccumulator[n_samples_i] * 4.0 * PI);
                 for (int basis_f_i = 0; basis_f_i < 9; basis_f_i++)
                 {
                     // Accumulate
-                    atomicAdd(&optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + n_samples_i * 9 + basis_f_i], SHAccumulator[n_samples_i * 9 + basis_f_i]);
+                    if (!isnan(SHAccumulator[n_samples_i * 9 + basis_f_i]))
+                    {
+                        atomicAdd(&optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + n_samples_i * 9 + basis_f_i], SHAccumulator[n_samples_i * 9 + basis_f_i]);
+                    }
                     //optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + n_samples_i * 9 + basis_f_i] += SHAccumulator[n_samples_i * 9 + basis_f_i];
                 }
             }

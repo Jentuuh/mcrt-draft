@@ -91,7 +91,7 @@ namespace mcrt {
         const float u = optixGetTriangleBarycentrics().x;
         const float v = optixGetTriangleBarycentrics().y;
 
-        // Barycentric tex coords
+        // Barycentric world coords
         const glm::vec3 worldPos =
             (1.f - u - v) * sbtData.vertex[index.x]
             + u * sbtData.vertex[index.y]

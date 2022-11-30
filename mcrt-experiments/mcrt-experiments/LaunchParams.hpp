@@ -31,6 +31,28 @@ namespace mcrt {
 		glm::vec3 worldNormal;
 	};
 
+	/**
+	* ==================================
+	*	 RADIANCE CELL SCATTER PASS
+	* ==================================
+	*/
+	struct MeshSBTDataRadianceCellScatter{
+		glm::vec3* vertex;
+		glm::vec3* normal;
+		glm::ivec3* index;
+
+		int cellIndex;
+	};
+
+
+	struct LaunchParamsRadianceCellScatter {
+
+
+
+		OptixTraversableHandle sceneTraversable;
+	};
+
+
 
 	/**
 	* ==================================
