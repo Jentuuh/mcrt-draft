@@ -317,7 +317,7 @@ namespace mcrt {
                     // Accumulate
                     if (!isnan(SHAccumulator[n_samples_i * 9 + basis_f_i]))
                     {
-                        atomicAdd(&optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + n_samples_i * 9 + basis_f_i], SHAccumulator[n_samples_i * 9 + basis_f_i]);
+                        atomicAdd(&optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + n_samples_i * amountBasisFunctions + basis_f_i], SHAccumulator[n_samples_i * amountBasisFunctions + basis_f_i]);
                     }
                     //optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + n_samples_i * 9 + basis_f_i] += SHAccumulator[n_samples_i * 9 + basis_f_i];
                 }

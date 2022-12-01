@@ -53,7 +53,9 @@ namespace mcrt {
         initDirectLightingTexture(1024);
         prepareUVWorldPositions();
         calculateDirectLighting();
-        //calculateRadianceCellGatherPass();
+        std::cout << "Calculating radiance cell gather pass 0..." << std::endl;
+        calculateRadianceCellGatherPass();
+        std::cout << "Calculating radiance cell scatter pass 0..." << std::endl;
         calculateRadianceCellScatterPass();
     }
 
@@ -349,6 +351,7 @@ namespace mcrt {
 
     void Renderer::calculateRadianceCellGatherPass()
     {
+        // TODO: For now we're using the same texture size as for the direct lighting pass, we can downsample in the future to gain performance
         const int texSize = directLightPipeline->launchParams.directLightingTexture.size;
 
         // Initialize non-empty cell data on GPU
@@ -376,7 +379,7 @@ namespace mcrt {
         //initSHAccumulators(TEXTURE_DIVISION_RES, nonEmptyCellCenters.size());
 
         // Initialize UV World positions data on GPU
-        directLightPipeline->launchParams.uvWorldPositions.size = texSize * texSize;
+        radianceCellGatherPipeline->launchParams.uvWorldPositions.size = texSize * texSize;
         radianceCellGatherPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
         
         // Initialize cell size in launch params
@@ -433,13 +436,54 @@ namespace mcrt {
 
     void Renderer::calculateRadianceCellScatterPass()
     {
+        // TODO: For now we're using the same texture size as for the direct lighting pass, we can downsample in the future to gain performance
+        const int texSize = directLightPipeline->launchParams.directLightingTexture.size;
+
         NonEmptyCells nonEmpties = scene.grid.getNonEmptyCells();
-        int i = 0;
-        for (auto c : nonEmpties.nonEmptyCells)
+
+        for (int i = 0 ; i < nonEmpties.nonEmptyCells.size(); i++)
         {
+            radianceCellScatterPipeline->launchParams.nonEmptyCellIndex = i;
+
             // Load uvs per cell 
-            std::vector<glm::vec2> cellUVs = c->getUVsInside();
-    
+            // TODO: preload these into memory?
+            std::vector<glm::vec2> cellUVs = nonEmpties.nonEmptyCells[i]->getUVsInside();
+            radianceCellScatterPipeline->launchParams.uvsInside = cellUVs.data();
+
+            std::cout << "UVs in this cell: " << cellUVs.size() << std::endl;
+
+            // SH weights data
+            radianceCellScatterPipeline->launchParams.sphericalHarmonicsWeights.weights = (float*)SHWeightsDataBuffer.d_pointer();
+            radianceCellScatterPipeline->launchParams.sphericalHarmonicsWeights.size = nonEmpties.nonEmptyCells.size() * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS; // 8 SHs per cell, each 9 basis functions
+            radianceCellScatterPipeline->launchParams.sphericalHarmonicsWeights.amountBasisFunctions = SPHERICAL_HARMONIC_BASIS_FUNCTIONS;
+
+            // Radiance cell data
+            radianceCellScatterPipeline->launchParams.cellCenter = nonEmpties.nonEmptyCells[i]->getCenter();
+            radianceCellScatterPipeline->launchParams.cellSize = scene.grid.getCellSize();
+
+            // UV world position data
+            radianceCellScatterPipeline->launchParams.uvWorldPositions.size = texSize * texSize;
+            radianceCellScatterPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+
+            // Stratified sampling parameters
+            radianceCellScatterPipeline->launchParams.stratifyResX = STRATIFIED_X_SIZE;
+            radianceCellScatterPipeline->launchParams.stratifyResY = STRATIFIED_Y_SIZE;
+
+            radianceCellScatterPipeline->uploadLaunchParams();
+
+            OPTIX_CHECK(optixLaunch(
+                radianceCellScatterPipeline->pipeline, stream,
+                radianceCellScatterPipeline->launchParamsBuffer.d_pointer(),
+                radianceCellScatterPipeline->launchParamsBuffer.sizeInBytes,
+                &radianceCellScatterPipeline->sbt,
+                cellUVs.size(),                     // dimension X: amount of UV texels in the cell
+                1,                                  // dimension Y: 1
+                1                                   // dimension Z: 1
+                // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
+            ));
+
+            CUDA_SYNC_CHECK();
+            
         }
 
     }

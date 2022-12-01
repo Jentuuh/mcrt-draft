@@ -44,6 +44,8 @@ namespace mcrt {
         // Build GAS
         buildGASes(context, geometries, numsBuildInputs, disableAnyHit);
         launchParams.sceneTraversable = GASes[0].traversableHandle();
+
+        launchParamsBuffer.alloc(sizeof(launchParams));
 	}
 
     void RadianceCellScatterPipeline::uploadLaunchParams()
@@ -60,7 +62,7 @@ namespace mcrt {
         pipelineCompileOptions = {};
         pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY;
         pipelineCompileOptions.usesMotionBlur = false;
-        pipelineCompileOptions.numPayloadValues = 0;
+        pipelineCompileOptions.numPayloadValues = 4;
         pipelineCompileOptions.numAttributeValues = 2;
         pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE;
         pipelineCompileOptions.pipelineLaunchParamsVariableName = "optixLaunchParams";

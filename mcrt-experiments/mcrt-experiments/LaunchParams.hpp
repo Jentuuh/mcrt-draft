@@ -36,6 +36,11 @@ namespace mcrt {
 	*	 RADIANCE CELL SCATTER PASS
 	* ==================================
 	*/
+	struct RadianceCellScatterPRD {
+		float distanceToClosestIntersection;
+		glm::vec3 rayOrigin;
+	};
+
 	struct MeshSBTDataRadianceCellScatter{
 		glm::vec3* vertex;
 		glm::vec3* normal;
@@ -46,8 +51,21 @@ namespace mcrt {
 
 
 	struct LaunchParamsRadianceCellScatter {
+		struct {
+			UVWorldData* UVDataBuffer;
+			int size;
+		} uvWorldPositions;
 
+		SHWeights sphericalHarmonicsWeights;
 
+		glm::vec2* uvsInside;
+		glm::vec3 cellCenter;
+		float cellSize;
+
+		int stratifyResX;
+		int stratifyResY;
+
+		int nonEmptyCellIndex;
 
 		OptixTraversableHandle sceneTraversable;
 	};
