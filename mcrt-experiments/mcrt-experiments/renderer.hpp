@@ -29,7 +29,7 @@ namespace mcrt {
 
 	private:
 		void writeToImage(std::string fileName, int resX, int resY, void* data);
-		void initDirectLightingTexture(int size);
+		void initLightingTextures(int size);
 		void calculateDirectLighting();
 		void initSHWeightsBuffer(int amountNonEmptyCells);
 		void initSHAccumulators(int divisionResolution, int amountNonEmptyCells);
@@ -37,6 +37,7 @@ namespace mcrt {
 		void calculateRadianceCellScatterPass();
 
 		void prepareUVWorldPositions();
+		void prepareUVsInsideBuffer();
 
 		// Helpers
 		float area(glm::vec2 a, glm::vec2 b, glm::vec2 c);
@@ -78,6 +79,7 @@ namespace mcrt {
 
 		CUDABuffer colorBuffer;	// Framebuffer we will write to
 		CUDABuffer directLightingTexture; // Texture in which we store the direct lighting
+		CUDABuffer secondBounceTexture;	// Texture in which we store the second lighting bounce
 		CUDABuffer lightDataBuffer;	// In this buffer we'll store our light source data
 
 		CUDABuffer nonEmptyCellDataBuffer;	// In this buffer we'll store our data for non empty radiance cells
@@ -85,6 +87,8 @@ namespace mcrt {
 		CUDABuffer SHAccumulatorsBuffer; // In this buffer we'll store the SH accumulators
 		CUDABuffer numSamplesAccumulatorsBuffer; // In this buffer we'll store the numSamples accumulators per radiance cell SH
 		CUDABuffer UVWorldPositionDeviceBuffer; // In this buffer we'll store the world positions for each of our UV texels (starting from 0,0 --> 1,1), this means this array starts at the left bottom of the actual texture image
+		CUDABuffer UVsInsideBuffer;		// In this buffer we'll store the UV worldpositions for all texels inside each cell
+		CUDABuffer UVsInsideOffsets;	// In this buffer we'll store the offsets to index the UVsInsideBuffer
 
 		Camera renderCamera;
 

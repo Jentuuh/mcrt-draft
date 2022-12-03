@@ -82,7 +82,7 @@ namespace mcrt {
 		// Get all non empty cells
 		for (int i = 0; i < grid.size(); i++)
 		{
-			if (grid[i].amountObjects() > 0)
+			if (grid[i].getAmountUVsInside() > 0)
 			{
 				returnStruct.nonEmptyCellIndices.push_back(i);
 				returnStruct.nonEmptyCells.push_back(std::make_shared<RadianceCell>(grid[i]));

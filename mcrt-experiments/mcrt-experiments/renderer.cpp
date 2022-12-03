@@ -50,8 +50,9 @@ namespace mcrt {
         std::cout << "MCRT renderer fully set up." << std::endl;
 
         // Direct lighting (preprocess)
-        initDirectLightingTexture(1024);
+        initLightingTextures(1024);
         prepareUVWorldPositions();
+        prepareUVsInsideBuffer();
         calculateDirectLighting();
         std::cout << "Calculating radiance cell gather pass 0..." << std::endl;
         calculateRadianceCellGatherPass();
@@ -258,12 +259,19 @@ namespace mcrt {
     }
 
     // Will allocate a `size * size` buffer on the GPU
-    void Renderer::initDirectLightingTexture(int size)
+    void Renderer::initLightingTextures(int size)
     {
         std::vector<uint32_t> zeros(size * size, 0.0f);
+
+        // Direct lighting
         directLightingTexture.alloc_and_upload(zeros);
         directLightPipeline->launchParams.directLightingTexture.size = size;
         directLightPipeline->launchParams.directLightingTexture.colorBuffer = (uint32_t*)directLightingTexture.d_pointer();
+
+        // Second bounce
+        secondBounceTexture.alloc_and_upload(zeros);
+        radianceCellScatterPipeline->launchParams.currentBounceTexture.size = size;
+        radianceCellScatterPipeline->launchParams.currentBounceTexture.colorBuffer = (uint32_t*)secondBounceTexture.d_pointer();
     }
 
 
@@ -446,9 +454,7 @@ namespace mcrt {
             radianceCellScatterPipeline->launchParams.nonEmptyCellIndex = i;
 
             // Load uvs per cell 
-            // TODO: preload these into memory?
             std::vector<glm::vec2> cellUVs = nonEmpties.nonEmptyCells[i]->getUVsInside();
-            radianceCellScatterPipeline->launchParams.uvsInside = cellUVs.data();
 
             std::cout << "UVs in this cell: " << cellUVs.size() << std::endl;
 
@@ -462,7 +468,7 @@ namespace mcrt {
             radianceCellScatterPipeline->launchParams.cellSize = scene.grid.getCellSize();
 
             // UV world position data
-            radianceCellScatterPipeline->launchParams.uvWorldPositions.size = texSize * texSize;
+            radianceCellScatterPipeline->launchParams.uvWorldPositions.size = texSize;
             radianceCellScatterPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
 
             // Stratified sampling parameters
@@ -483,9 +489,15 @@ namespace mcrt {
             ));
 
             CUDA_SYNC_CHECK();
-            
         }
 
+        // Download resulting texture from GPU
+        std::vector<uint32_t> current_bounce_result(radianceCellScatterPipeline->launchParams.currentBounceTexture.size * radianceCellScatterPipeline->launchParams.currentBounceTexture.size);
+        secondBounceTexture.download(current_bounce_result.data(),
+            radianceCellScatterPipeline->launchParams.currentBounceTexture.size * radianceCellScatterPipeline->launchParams.currentBounceTexture.size);
+
+        // Write the result to an image (for debugging purposes)
+        writeToImage("current_bounce_output.png", radianceCellScatterPipeline->launchParams.currentBounceTexture.size, radianceCellScatterPipeline->launchParams.currentBounceTexture.size, current_bounce_result.data());
     }
 
 
@@ -495,7 +507,7 @@ namespace mcrt {
         assert( (texSize > 0) && "Direct lighting texture needs to be initialized before preparing UV indices!");
         
         std::vector<UVWorldData> UVWorldPositions(texSize * texSize, { glm::vec3{-1000.0f, -1000.0f, -1000.0f}, glm::vec3{-1000.0f, -1000.0f, -1000.0f} });    // Scene is scaled within (0;1) so this should not form a problem
-
+        std::vector<uint32_t> testUVImage(texSize * texSize, 0);
         for (int i = 0; i < UVWorldPositions.size(); i++)
         {
             const float u = float(i % texSize) / float(texSize);
@@ -512,6 +524,28 @@ namespace mcrt {
         directLightPipeline->launchParams.uvWorldPositions.size = texSize * texSize;
         directLightPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
     }
+
+    void Renderer::prepareUVsInsideBuffer()
+    {
+        NonEmptyCells nonEmpties = scene.grid.getNonEmptyCells();
+
+        std::vector<int> offsets;
+        std::vector<glm::vec2> cellUVs;
+
+        
+        for (int i = 0; i < nonEmpties.nonEmptyCells.size(); i++)
+        {
+            // Load uvs per cell 
+            offsets.push_back(cellUVs.size());
+            cellUVs.insert(cellUVs.end(), nonEmpties.nonEmptyCells[i]->getUVsInside().begin(), nonEmpties.nonEmptyCells[i]->getUVsInside().end());
+        }
+
+        UVsInsideBuffer.alloc_and_upload(cellUVs);
+        radianceCellScatterPipeline->launchParams.uvsInside = (glm::vec2*)UVsInsideBuffer.d_pointer();
+        UVsInsideOffsets.alloc_and_upload(offsets);
+        radianceCellScatterPipeline->launchParams.uvsInsideOffsets = (int*)UVsInsideOffsets.d_pointer();
+    }
+
 
     float Renderer::area(glm::vec2 a, glm::vec2 b, glm::vec2 c)
     {

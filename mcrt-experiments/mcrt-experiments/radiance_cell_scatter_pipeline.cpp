@@ -68,7 +68,7 @@ namespace mcrt {
         pipelineCompileOptions.pipelineLaunchParamsVariableName = "optixLaunchParams";
 
         // Max # of ray bounces
-        pipelineLinkOptions.maxTraceDepth = 2;
+        pipelineLinkOptions.maxTraceDepth = 3;
 
         const std::string ptxCode = embedded_ptx_code_radiance_cell_scattering;
 

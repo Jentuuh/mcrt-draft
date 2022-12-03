@@ -78,15 +78,15 @@ namespace mcrt {
         // Take different seed for each radiance cell face
         unsigned int seed = tea<4>(uvIndex, optixLaunchParams.nonEmptyCellIndex);
 
-        printf("%d\n", sizeof(optixLaunchParams.uvsInside));
-
         // Get UV world position for this shader pass
-        glm::vec2 uv = optixLaunchParams.uvsInside[uvIndex];    // Deze moeten als CUDABuffer worden ingeladen!
+        const int uvInsideOffset = optixLaunchParams.uvsInsideOffsets[optixLaunchParams.nonEmptyCellIndex];
+        glm::vec2 uv = optixLaunchParams.uvsInside[uvInsideOffset + uvIndex];    // Deze moeten als CUDABuffer worden ingeladen!
         const int u = int(uv.x * optixLaunchParams.uvWorldPositions.size);
         const int v = int(uv.y * optixLaunchParams.uvWorldPositions.size);
 
         glm::vec3 UVWorldPos = optixLaunchParams.uvWorldPositions.UVDataBuffer[v * optixLaunchParams.uvWorldPositions.size + u].worldPosition;
         const glm::vec3 UVNormal = optixLaunchParams.uvWorldPositions.UVDataBuffer[v * optixLaunchParams.uvWorldPositions.size + u].worldNormal;
+
         float3 uvNormal3f = float3{ UVNormal.x, UVNormal.y, UVNormal.z };
 
         // Center of this radiance cell
@@ -95,8 +95,8 @@ namespace mcrt {
         float stratifyCellWidth = cellSize / optixLaunchParams.stratifyResX;
         float stratifyCellHeight = cellSize / optixLaunchParams.stratifyResY;
 
-        float stratifyCellWidthNormalized = 1.0 / optixLaunchParams.stratifyResX;
-        float stratifyCellHeightNormalized = 1.0 / optixLaunchParams.stratifyResY;
+        float stratifyCellWidthNormalized = 1.0f / optixLaunchParams.stratifyResX;
+        float stratifyCellHeightNormalized = 1.0f / optixLaunchParams.stratifyResY;
 
         // SH weights for this cell
         float SHweights[8][9];
@@ -125,6 +125,9 @@ namespace mcrt {
         float3 faceOgDuDv[6][3] = { {ogLeft, float3{0.0f, 0.0f, -1.0f}, float3{0.0f, 1.0f, 0.0f} }, {ogRight, float3{0.0f, 0.0f, 1.0f},float3{0.0f, 1.0f, 0.0f} }, {ogUp, float3{1.0f, 0.0f, 0.0f},float3{0.0f, 0.0f, 1.0f} }, {ogDown, float3{1.0f, 0.0f, 0.0f},float3{0.0f, 0.0f, -1.0f}}, {ogFront, float3{1.0f, 0.0f, 0.0f},float3{0.0f, 1.0f, 0.0f} }, {ogBack, float3{-1.0f, 0.0f, 0.0f},float3{0.0f, 1.0f, 0.0f} } };
         // The indices of the SHs that belong to each face, to use while indexing the buffer (L,R,U,D,F,B), (LB, RB, LT, RT)
         int4 cellSHIndices[6] = { int4{4, 0, 6, 2}, int4{1, 5, 3, 7}, int4{2, 3, 6, 7}, int4{4, 5, 0, 1}, int4{0, 1, 2, 3}, int4{5, 4, 7, 6} };
+
+        // Irradiance accumulator
+        float totalIrradiance = 0.0f;
 
         // Loop over cell faces
         for (int face = 0; face < 6; face++)
@@ -232,12 +235,26 @@ namespace mcrt {
 
                                 float irradiance = (b0 * w0) + (b1 * w1) + (b2 * w2) + (b3 * w3) + (b4 * w4) + (b5 * w5) + (b6 * w6) + (b7 * w7) + (b8 * w8);
 
-                                printf("Irradiance: %f\n", irradiance);
+                                totalIrradiance += irradiance;
                             }
                         }
                     }
                 }
             }
         }
+
+        int numSamples = 6 * NUM_SAMPLES_PER_STRATIFY_CELL * optixLaunchParams.stratifyResX * optixLaunchParams.stratifyResY;
+        //printf("Total irradiance: %f\n", totalIrradiance);
+
+        const int r = int(255.99 * totalIrradiance);
+        const int g = int(255.99 * totalIrradiance);
+        const int b = int(255.99 * totalIrradiance);
+
+        // convert to 32-bit rgba value (we explicitly set alpha to 0xff
+        // to make stb_image_write happy ...
+        const uint32_t rgba = 0xff000000
+        | (r << 0) | (g << 8) | (b << 16);
+
+        optixLaunchParams.currentBounceTexture.colorBuffer[v * optixLaunchParams.uvWorldPositions.size + u] = rgba;
     }
 }

@@ -58,7 +58,10 @@ namespace mcrt {
 
 		SHWeights sphericalHarmonicsWeights;
 
+		PixelBuffer currentBounceTexture;
+
 		glm::vec2* uvsInside;
+		int* uvsInsideOffsets;
 		glm::vec3 cellCenter;
 		float cellSize;
 
