@@ -8,6 +8,7 @@
 // std
 #include <iostream>
 #include <cassert>
+#include <fstream>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
@@ -54,10 +55,7 @@ namespace mcrt {
         prepareUVWorldPositions();
         prepareUVsInsideBuffer();
         calculateDirectLighting();
-        std::cout << "Calculating radiance cell gather pass 0..." << std::endl;
-        calculateRadianceCellGatherPass();
-        std::cout << "Calculating radiance cell scatter pass 0..." << std::endl;
-        calculateRadianceCellScatterPass();
+        calculateIndirectLighting();
     }
 
     void Renderer::fillGeometryBuffers()
@@ -327,8 +325,26 @@ namespace mcrt {
         writeToImage("direct_lighting_output.png", directLightPipeline->launchParams.directLightingTexture.size, directLightPipeline->launchParams.directLightingTexture.size, result_reversed.data());
     }
 
+    void Renderer::calculateIndirectLighting()
+    {
+        for (int i = 0; i < 1; i++)
+        {
+            std::cout << "Calculating radiance cell gather pass " << i << "..." << std::endl;
+            if (i == 0) {
+                calculateRadianceCellGatherPass(directLightingTexture);
+            }
+            else {
+                calculateRadianceCellGatherPass(secondBounceTexture);
+            }
+            std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
+            calculateRadianceCellScatterPass(i);
+        }
+    }
+
+
     void Renderer::initSHWeightsBuffer(int amountNonEmptyCells)
     {        
+        SHWeightsDataBuffer.free();
         // How to index: (nonEmptyCellIndex * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS) + (SHIndex * SPHERICAL_HARMONIC_BASIS_FUNCTIONS) + BasisFunctionIndex
         std::vector<float> shCoefficients(amountNonEmptyCells * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS, 0.0);
         SHWeightsDataBuffer.alloc_and_upload(shCoefficients);
@@ -336,6 +352,7 @@ namespace mcrt {
         radianceCellGatherPipeline->launchParams.sphericalHarmonicsWeights.size = amountNonEmptyCells * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS; // 8 SHs per cell, each 9 basis functions
         radianceCellGatherPipeline->launchParams.sphericalHarmonicsWeights.amountBasisFunctions = SPHERICAL_HARMONIC_BASIS_FUNCTIONS;
 
+        numSamplesAccumulatorsBuffer.free();
         std::vector<int> numSamplesAccumulator(amountNonEmptyCells * 8);
         numSamplesAccumulatorsBuffer.alloc_and_upload(numSamplesAccumulator);
         radianceCellGatherPipeline->launchParams.shNumSamplesAccumulators = (int*)numSamplesAccumulatorsBuffer.d_pointer();
@@ -357,7 +374,7 @@ namespace mcrt {
     }
 
 
-    void Renderer::calculateRadianceCellGatherPass()
+    void Renderer::calculateRadianceCellGatherPass(CUDABuffer& previousPassLightSourceTexture)
     {
         // TODO: For now we're using the same texture size as for the direct lighting pass, we can downsample in the future to gain performance
         const int texSize = directLightPipeline->launchParams.directLightingTexture.size;
@@ -378,7 +395,7 @@ namespace mcrt {
 
         // Initialize Light Source Texture data on GPU
         // Take the direct lighting pass output as light source texture (for now), this should normally be the output from the previous pass in each iteration
-        radianceCellGatherPipeline->launchParams.lightSourceTexture.colorBuffer = (uint32_t*)directLightingTexture.d_pointer();
+        radianceCellGatherPipeline->launchParams.lightSourceTexture.colorBuffer = (uint32_t*)previousPassLightSourceTexture.d_pointer();
         radianceCellGatherPipeline->launchParams.lightSourceTexture.size = texSize;
 
         // Initialize SH data on GPU
@@ -421,6 +438,9 @@ namespace mcrt {
         std::vector<int> numSamplesPerSH(nonEmptyCellCenters.size() * 8);
         numSamplesAccumulatorsBuffer.download(numSamplesPerSH.data(), nonEmptyCellCenters.size() * 8);
 
+        // Write SH weights to file
+        writeWeightsToTxtFile(shCoefficients, numSamplesPerSH, nonEmptyCellCenters.size());
+
         for (int i = 0; i < nonEmptyCellCenters.size(); i++)
         {
             int cellOffset = i * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS;
@@ -442,7 +462,7 @@ namespace mcrt {
     }   
 
 
-    void Renderer::calculateRadianceCellScatterPass()
+    void Renderer::calculateRadianceCellScatterPass(int iteration)
     {
         // TODO: For now we're using the same texture size as for the direct lighting pass, we can downsample in the future to gain performance
         const int texSize = directLightPipeline->launchParams.directLightingTexture.size;
@@ -497,9 +517,37 @@ namespace mcrt {
             radianceCellScatterPipeline->launchParams.currentBounceTexture.size * radianceCellScatterPipeline->launchParams.currentBounceTexture.size);
 
         // Write the result to an image (for debugging purposes)
-        writeToImage("current_bounce_output.png", radianceCellScatterPipeline->launchParams.currentBounceTexture.size, radianceCellScatterPipeline->launchParams.currentBounceTexture.size, current_bounce_result.data());
+        writeToImage("current_bounce_output" + std::to_string(iteration) + ".png", radianceCellScatterPipeline->launchParams.currentBounceTexture.size, radianceCellScatterPipeline->launchParams.currentBounceTexture.size, current_bounce_result.data());
     }
 
+    void Renderer::writeWeightsToTxtFile(std::vector<float>& weights, std::vector<int>& numSamples, int amountCells)
+    {
+        std::ofstream outputFile;
+        outputFile.open("../weights.txt");
+
+
+        for (int i = 0; i < amountCells; i++)
+        {
+            int cellOffset = i * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS;
+            for (int sh = 0; sh < 8; sh++)
+            {
+                float weight = 1.0f / (numSamples[i * 8 + sh] * 4 * glm::pi<float>());
+                int shOffset = sh * SPHERICAL_HARMONIC_BASIS_FUNCTIONS;
+                for (int bf = 0; bf < 9; bf++)
+                {   
+                    if (bf < 8)
+                    {
+                        outputFile << weights[cellOffset + shOffset + bf] * weight << ",";
+                    }
+                    else {
+                        outputFile << weights[cellOffset + shOffset + bf] * weight;
+                    }
+                }
+                outputFile << "\n";
+            }
+            outputFile << "\n";
+        }
+    }
 
     void Renderer::prepareUVWorldPositions()
     {

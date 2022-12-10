@@ -31,10 +31,13 @@ namespace mcrt {
 		void writeToImage(std::string fileName, int resX, int resY, void* data);
 		void initLightingTextures(int size);
 		void calculateDirectLighting();
+		void calculateIndirectLighting();
 		void initSHWeightsBuffer(int amountNonEmptyCells);
 		void initSHAccumulators(int divisionResolution, int amountNonEmptyCells);
-		void calculateRadianceCellGatherPass();
-		void calculateRadianceCellScatterPass();
+		void calculateRadianceCellGatherPass(CUDABuffer& previousPassLightSourceTexture);
+		void calculateRadianceCellScatterPass(int iteration);
+
+		void writeWeightsToTxtFile(std::vector<float>& weights, std::vector<int>& numSamples, int amountCells);
 
 		void prepareUVWorldPositions();
 		void prepareUVsInsideBuffer();

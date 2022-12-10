@@ -205,5 +205,11 @@
     <None Include="radianceCellScattering.cu">
       <Filter>Source Files\GPU</Filter>
     </None>
+    <None Include="radianceCellGathering3.cu">
+      <Filter>Source Files\GPU</Filter>
+    </None>
+    <None Include="radianceCellScattering_trilinear.cu">
+      <Filter>Source Files\GPU</Filter>
+    </None>
   </ItemGroup>
 </Project>
