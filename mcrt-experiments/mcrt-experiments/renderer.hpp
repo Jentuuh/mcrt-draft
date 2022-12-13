@@ -8,6 +8,8 @@
 #include "radiance_cell_gather_pipeline.hpp"
 #include "radiance_cell_scatter_pipeline.hpp"
 
+#include <stb/stb_image.h>
+
 namespace mcrt {
 
 	class Renderer {
@@ -23,6 +25,7 @@ namespace mcrt {
 		// Download rendered color buffer from device
 		void downloadPixels(uint32_t h_pixels[]);
 		void downloadDirectLighting(uint32_t h_pixels[]);
+		void downloadAndWriteLightSourceTexture();
 
 		// Update camera to render from
 		void updateCamera(const Camera& camera);
@@ -37,6 +40,7 @@ namespace mcrt {
 		void calculateRadianceCellGatherPass(CUDABuffer& previousPassLightSourceTexture);
 		void calculateRadianceCellScatterPass(int iteration);
 
+		void loadLightTexture();
 		void writeWeightsToTxtFile(std::vector<float>& weights, std::vector<int>& numSamples, int amountCells);
 
 		void prepareUVWorldPositions();
@@ -80,6 +84,7 @@ namespace mcrt {
 		std::unique_ptr<RadianceCellGatherPipeline> radianceCellGatherPipeline;
 		std::unique_ptr<RadianceCellScatterPipeline> radianceCellScatterPipeline;
 
+		CUDABuffer lightSourceTexture; // UV map with direct light source (to test the SH projection)
 		CUDABuffer colorBuffer;	// Framebuffer we will write to
 		CUDABuffer directLightingTexture; // Texture in which we store the direct lighting
 		CUDABuffer secondBounceTexture;	// Texture in which we store the second lighting bounce

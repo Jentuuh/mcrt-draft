@@ -45,7 +45,7 @@ namespace mcrt {
 		scene.normalize();
 
 		// Build proxy geometry
-		scene.voxelizeObjects();
+		//scene.voxelizeObjects();
 
 		// Create light sources
 		scene.loadLights();

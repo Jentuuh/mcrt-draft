@@ -10,8 +10,10 @@
 #include <cassert>
 #include <fstream>
 
+
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb/stb_image_write.h"
+#include <stb/stb_image_write.h>
+
 
 #define STRATIFIED_X_SIZE 5
 #define STRATIFIED_Y_SIZE 5
@@ -54,6 +56,8 @@ namespace mcrt {
         initLightingTextures(1024);
         prepareUVWorldPositions();
         prepareUVsInsideBuffer();
+        loadLightTexture();
+        downloadAndWriteLightSourceTexture();
         calculateDirectLighting();
         calculateIndirectLighting();
     }
@@ -208,6 +212,8 @@ namespace mcrt {
     {
         // First resize needs to be done before rendering
         if (tutorialPipeline->launchParams.frame.size.x == 0) return;
+        tutorialPipeline->launchParams.lightTexture.colorBuffer = (uint32_t*)directLightingTexture.d_pointer();
+        tutorialPipeline->launchParams.lightTexture.size = 1024;
 
         tutorialPipeline->uploadLaunchParams();
 
@@ -254,6 +260,11 @@ namespace mcrt {
     void Renderer::writeToImage(std::string fileName, int resX, int resY, void* data)
     {
         stbi_write_png(fileName.c_str(), resX, resY, 4, data, resX * sizeof(uint32_t));
+    }
+
+    void writeToImageUnsignedChar(std::string fileName, int resX, int resY, void* data)
+    {
+        stbi_write_png(fileName.c_str(), resX, resY, 4, data, resX * 4 * sizeof(stbi_uc));
     }
 
     // Will allocate a `size * size` buffer on the GPU
@@ -331,7 +342,7 @@ namespace mcrt {
         {
             std::cout << "Calculating radiance cell gather pass " << i << "..." << std::endl;
             if (i == 0) {
-                calculateRadianceCellGatherPass(directLightingTexture);
+                calculateRadianceCellGatherPass(lightSourceTexture);
             }
             else {
                 calculateRadianceCellGatherPass(secondBounceTexture);
@@ -446,15 +457,18 @@ namespace mcrt {
             int cellOffset = i * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS;
             for (int sh = 0; sh < 8; sh++)
             {
-                float weight = 1.0f / (numSamplesPerSH[i * 8 + sh] * 4 * glm::pi<float>());
-                int shOffset = sh * SPHERICAL_HARMONIC_BASIS_FUNCTIONS;
-                std::cout << "[";
-                for (int bf = 0; bf < 9; bf++)
+                if (numSamplesPerSH[i * 8 + sh] > 0)
                 {
-                    std::cout << shCoefficients[cellOffset + shOffset + bf] * weight  << ",";
-                    shCoefficients[cellOffset + shOffset + bf] *= weight;
-                }
-                std::cout << "]" << std::endl;
+                    float weight = 1.0f / (numSamplesPerSH[i * 8 + sh] * 4 * glm::pi<float>());
+                    int shOffset = sh * SPHERICAL_HARMONIC_BASIS_FUNCTIONS;
+                    std::cout << "[";
+                    for (int bf = 0; bf < 9; bf++)
+                    {
+                        std::cout << shCoefficients[cellOffset + shOffset + bf] * weight << ",";
+                        shCoefficients[cellOffset + shOffset + bf] *= weight;
+                    }
+                    std::cout << "]" << std::endl;
+                }  
             }
         }
         // Upload back to GPU
@@ -520,6 +534,31 @@ namespace mcrt {
         writeToImage("current_bounce_output" + std::to_string(iteration) + ".png", radianceCellScatterPipeline->launchParams.currentBounceTexture.size, radianceCellScatterPipeline->launchParams.currentBounceTexture.size, current_bounce_result.data());
     }
 
+    void Renderer::loadLightTexture()
+    {
+        int width;
+        int height;
+        int comp;
+        //stbi_uc* pixels = stbi_load("../textures/cornell_uv_light.png", &width, &height, &comp, 4);
+
+        stbi_uc* pixels = stbi_load("../textures/cornell_uv_light.png", &width, &height, &comp, 4);
+
+        std::cout << width << std::endl;
+        std::cout << height << std::endl;
+        std::cout << comp << std::endl;
+        if (pixels == NULL) {
+            std::cout << "Error while loading light texture!" << std::endl;
+            return;
+        }
+
+        // Upload image to GPU
+        lightSourceTexture.alloc(width * height * comp * sizeof(stbi_uc));
+        lightSourceTexture.upload(pixels, width * height * comp);
+
+        stbi_image_free(pixels);
+    }
+
+
     void Renderer::writeWeightsToTxtFile(std::vector<float>& weights, std::vector<int>& numSamples, int amountCells)
     {
         std::ofstream outputFile;
@@ -531,13 +570,20 @@ namespace mcrt {
             int cellOffset = i * 8 * SPHERICAL_HARMONIC_BASIS_FUNCTIONS;
             for (int sh = 0; sh < 8; sh++)
             {
-                float weight = 1.0f / (numSamples[i * 8 + sh] * 4 * glm::pi<float>());
+                float weight;
+                if (numSamples[i * 8 + sh] > 0)
+                {
+                    weight = 1.0f / (numSamples[i * 8 + sh] * 4 * glm::pi<float>());
+                }
+                else {
+                    weight = 0.0f;
+                }
                 int shOffset = sh * SPHERICAL_HARMONIC_BASIS_FUNCTIONS;
                 for (int bf = 0; bf < 9; bf++)
                 {   
                     if (bf < 8)
                     {
-                        outputFile << weights[cellOffset + shOffset + bf] * weight << ",";
+                        outputFile << weights[cellOffset + shOffset + bf] * weight << " ";
                     }
                     else {
                         outputFile << weights[cellOffset + shOffset + bf] * weight;
@@ -545,7 +591,6 @@ namespace mcrt {
                 }
                 outputFile << "\n";
             }
-            outputFile << "\n";
         }
     }
 
@@ -668,6 +713,12 @@ namespace mcrt {
     {
         directLightingTexture.download(h_pixels,
             directLightPipeline->launchParams.directLightingTexture.size * directLightPipeline->launchParams.directLightingTexture.size);
+    }
+
+    void Renderer::downloadAndWriteLightSourceTexture() {
+        std::vector<stbi_uc> result(1024 * 1024 * 4);
+        lightSourceTexture.download(result.data(), 1024 * 1024 * 4);
+        writeToImageUnsignedChar("lightSourceTextureTest.png", 1024, 1024, result.data());
     }
 
 }

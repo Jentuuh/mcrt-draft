@@ -24,7 +24,7 @@ namespace mcrt {
     {
         RadianceCellGatherPRD prd = {};
 
-        prd.distanceToClosestProxyIntersection = __uint_as_float(optixGetPayload_0());
+        prd.distanceToClosestProxyIntersectionSquared = __uint_as_float(optixGetPayload_0());
         prd.rayOrigin.x = __uint_as_float(optixGetPayload_1());
         prd.rayOrigin.y = __uint_as_float(optixGetPayload_2());
         prd.rayOrigin.z = __uint_as_float(optixGetPayload_3());
@@ -34,7 +34,7 @@ namespace mcrt {
 
     static __forceinline__ __device__ void storeRadianceCellGatherPRD(RadianceCellGatherPRD prd)
     {
-        optixSetPayload_0(__float_as_uint(prd.distanceToClosestProxyIntersection));
+        optixSetPayload_0(__float_as_uint(prd.distanceToClosestProxyIntersectionSquared));
         optixSetPayload_1(__float_as_uint(prd.rayOrigin.x));
         optixSetPayload_2(__float_as_uint(prd.rayOrigin.y));
         optixSetPayload_3(__float_as_uint(prd.rayOrigin.z));
@@ -59,7 +59,7 @@ namespace mcrt {
         RadianceCellGatherPRD prd = loadRadianceCellGatherPRD();
         float distanceToProxyIntersect = (((intersectionWorldPos.x - prd.rayOrigin.x) * (intersectionWorldPos.x - prd.rayOrigin.x)) + ((intersectionWorldPos.y - prd.rayOrigin.y) * (intersectionWorldPos.y - prd.rayOrigin.y)) + ((intersectionWorldPos.z - prd.rayOrigin.z) * (intersectionWorldPos.z - prd.rayOrigin.z)));
 
-        prd.distanceToClosestProxyIntersection = distanceToProxyIntersect;
+        prd.distanceToClosestProxyIntersectionSquared = distanceToProxyIntersect;
         storeRadianceCellGatherPRD(prd);
     }
 
@@ -228,11 +228,11 @@ namespace mcrt {
                                         u0, u1, u2, u3
                                     );
 
-                                    prd.distanceToClosestProxyIntersection = u0;
+                                    prd.distanceToClosestProxyIntersectionSquared = u0;
                                     float distanceToGridIntersect = (((rayDestination.x - prd.rayOrigin.x) * (rayDestination.x - prd.rayOrigin.x)) + ((rayDestination.y - prd.rayOrigin.y) * (rayDestination.y - prd.rayOrigin.y)) + ((rayDestination.z - prd.rayOrigin.z) * (rayDestination.z - prd.rayOrigin.z)));
 
                                     // No occlusion, we can let the ray contribute
-                                    if (distanceToGridIntersect < prd.distanceToClosestProxyIntersection)
+                                    if (distanceToGridIntersect < prd.distanceToClosestProxyIntersectionSquared)
                                     {
                                         numSamplesAccumulator[cellSHIndices[face].x]++;
                                         numSamplesAccumulator[cellSHIndices[face].y]++;

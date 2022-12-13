@@ -211,5 +211,8 @@
     <None Include="radianceCellScattering_trilinear.cu">
       <Filter>Source Files\GPU</Filter>
     </None>
+    <None Include="cameraRayProgram.cu">
+      <Filter>Source Files\GPU</Filter>
+    </None>
   </ItemGroup>
 </Project>

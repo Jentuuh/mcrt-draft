@@ -187,6 +187,7 @@
     <None Include="devicePrograms.cu" />
     <None Include="directLightingShaders.cu" />
     <None Include="directLightingShadersGathering.cu" />
+    <None Include="cameraRayProgram.cu" />
     <None Include="radianceCellGathering3.cu" />
     <None Include="radianceCellScattering.cu" />
     <None Include="radianceCellGathering2.cu" />

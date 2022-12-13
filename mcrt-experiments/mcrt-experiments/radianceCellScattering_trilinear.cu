@@ -168,9 +168,8 @@ namespace mcrt {
                             // Calculate spherical coordinate representation of ray
                             // (https://en.wikipedia.org/wiki/Spherical_coordinate_system#Cartesian_coordinates)
                             float3 normalizedRayDir = normalize(rayDir3f);
-                            double theta = acos(normalizedRayDir.z);
-                            int signY = signbit(normalizedRayDir.y) == 0 ? 1 : -1;
-                            double phi = signY * acos(normalizedRayDir.x / (sqrtf((normalizedRayDir.x * normalizedRayDir.x) + (normalizedRayDir.y * normalizedRayDir.y))));
+                            double theta = acos(clamp(rayDir3f.z, -1.0, 1.0));
+                            double phi = atan2(rayDir3f.y, rayDir3f.x);
 
                             RadianceCellScatterPRD prd{};
                             prd.rayOrigin = rayOrigin;
