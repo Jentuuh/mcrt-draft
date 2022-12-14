@@ -224,11 +224,11 @@ namespace mcrt {
                         prd.distanceToClosestProxyIntersectionSquared = __uint_as_float(u0);
 
                         float distanceToSHSquared = (((rayDestination.x - UVWorldPos.x) * (rayDestination.x - UVWorldPos.x)) + ((rayDestination.y - UVWorldPos.y) * (rayDestination.y - UVWorldPos.y)) + ((rayDestination.z - UVWorldPos.z) * (rayDestination.z - UVWorldPos.z)));
-                        printf("distanceToProxy: %f distanceToSH: %f\n", prd.distanceToClosestProxyIntersectionSquared, distanceToSHSquared);
+                        //printf("distanceToProxy: %f distanceToSH: %f\n", prd.distanceToClosestProxyIntersectionSquared, distanceToSHSquared);
 
                         // No occlusion, we can let the ray contribute
-              /*          if (distanceToSHSquared < prd.distanceToClosestProxyIntersectionSquared)
-                        {*/
+                        if (distanceToSHSquared < prd.distanceToClosestProxyIntersectionSquared)
+                        {
                             numSamplesAccumulator[sh]++;
 
                             // Ray contribution
@@ -241,10 +241,7 @@ namespace mcrt {
                             SHAccumulator[sh * 9 + 6] += grayscale * Y_0_2(normalizedRayDir.x, normalizedRayDir.y, normalizedRayDir.z);
                             SHAccumulator[sh * 9 + 7] += grayscale * Y_1_2(normalizedRayDir.x, normalizedRayDir.y, normalizedRayDir.z);
                             SHAccumulator[sh * 9 + 8] += grayscale * Y_2_2(normalizedRayDir.x, normalizedRayDir.y, normalizedRayDir.z);
-                  /*      }
-                        else {
-                            printf("Contribution blocked!");
-                        }*/
+                        }
                     }
                 }
             }

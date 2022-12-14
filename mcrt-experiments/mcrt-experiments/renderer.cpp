@@ -212,8 +212,14 @@ namespace mcrt {
     {
         // First resize needs to be done before rendering
         if (tutorialPipeline->launchParams.frame.size.x == 0) return;
+
+        // Light bounce textures
         tutorialPipeline->launchParams.lightTexture.colorBuffer = (uint32_t*)directLightingTexture.d_pointer();
         tutorialPipeline->launchParams.lightTexture.size = 1024;
+        tutorialPipeline->launchParams.lightTextureSecondBounce.colorBuffer = (uint32_t*)secondBounceTexture.d_pointer();
+        tutorialPipeline->launchParams.lightTextureSecondBounce.size = 1024;
+        tutorialPipeline->launchParams.lightTextureThirdBounce.colorBuffer = (uint32_t*)thirdBounceTexture.d_pointer();
+        tutorialPipeline->launchParams.lightTextureThirdBounce.size = 1024;
 
         tutorialPipeline->uploadLaunchParams();
 
@@ -279,8 +285,9 @@ namespace mcrt {
 
         // Second bounce
         secondBounceTexture.alloc_and_upload(zeros);
-        radianceCellScatterPipeline->launchParams.currentBounceTexture.size = size;
-        radianceCellScatterPipeline->launchParams.currentBounceTexture.colorBuffer = (uint32_t*)secondBounceTexture.d_pointer();
+
+        // Third bounce
+        thirdBounceTexture.alloc_and_upload(zeros);
     }
 
 
@@ -338,17 +345,25 @@ namespace mcrt {
 
     void Renderer::calculateIndirectLighting()
     {
-        for (int i = 0; i < 1; i++)
+        for (int i = 0; i < 2; i++)
         {
             std::cout << "Calculating radiance cell gather pass " << i << "..." << std::endl;
-            if (i == 0) {
-                calculateRadianceCellGatherPass(lightSourceTexture);
-            }
-            else {
+
+            switch (i)
+            {
+            case 0:
+                calculateRadianceCellGatherPass(directLightingTexture);
+                std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
+                calculateRadianceCellScatterPass(i, secondBounceTexture);
+                break;
+            case 1:
                 calculateRadianceCellGatherPass(secondBounceTexture);
+                std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
+                calculateRadianceCellScatterPass(i, thirdBounceTexture);
+                break;
+            default:
+                break;
             }
-            std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
-            calculateRadianceCellScatterPass(i);
         }
     }
 
@@ -459,7 +474,7 @@ namespace mcrt {
             {
                 if (numSamplesPerSH[i * 8 + sh] > 0)
                 {
-                    float weight = 1.0f / (numSamplesPerSH[i * 8 + sh] * 4 * glm::pi<float>());
+                    float weight = 1.0f / (float(numSamplesPerSH[i * 8 + sh]) * 4.0f * glm::pi<float>()); // TODO: Not sure if the inverse weight should be 4 pi (probably not, because we're not uniformly sampling on a sphere, but rather only the light sources in the scene)
                     int shOffset = sh * SPHERICAL_HARMONIC_BASIS_FUNCTIONS;
                     std::cout << "[";
                     for (int bf = 0; bf < 9; bf++)
@@ -476,16 +491,19 @@ namespace mcrt {
     }   
 
 
-    void Renderer::calculateRadianceCellScatterPass(int iteration)
+    void Renderer::calculateRadianceCellScatterPass(int iteration, CUDABuffer& dstTexture)
     {
         // TODO: For now we're using the same texture size as for the direct lighting pass, we can downsample in the future to gain performance
         const int texSize = directLightPipeline->launchParams.directLightingTexture.size;
 
         NonEmptyCells nonEmpties = scene.grid.getNonEmptyCells();
-
+       
         for (int i = 0 ; i < nonEmpties.nonEmptyCells.size(); i++)
         {
             radianceCellScatterPipeline->launchParams.nonEmptyCellIndex = i;
+
+            radianceCellScatterPipeline->launchParams.currentBounceTexture.size = texSize;
+            radianceCellScatterPipeline->launchParams.currentBounceTexture.colorBuffer = (uint32_t*)dstTexture.d_pointer();
 
             // Load uvs per cell 
             std::vector<glm::vec2> cellUVs = nonEmpties.nonEmptyCells[i]->getUVsInside();
@@ -527,7 +545,7 @@ namespace mcrt {
 
         // Download resulting texture from GPU
         std::vector<uint32_t> current_bounce_result(radianceCellScatterPipeline->launchParams.currentBounceTexture.size * radianceCellScatterPipeline->launchParams.currentBounceTexture.size);
-        secondBounceTexture.download(current_bounce_result.data(),
+        dstTexture.download(current_bounce_result.data(),
             radianceCellScatterPipeline->launchParams.currentBounceTexture.size * radianceCellScatterPipeline->launchParams.currentBounceTexture.size);
 
         // Write the result to an image (for debugging purposes)

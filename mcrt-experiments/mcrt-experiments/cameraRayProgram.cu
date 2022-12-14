@@ -66,17 +66,35 @@ namespace mcrt {
             + u * sbtData.texcoord[index.y]
             + v * sbtData.texcoord[index.z];
 
-        uint32_t texelColor = optixLaunchParams.lightTexture.colorBuffer[int(tc.y * optixLaunchParams.lightTexture.size) * optixLaunchParams.lightTexture.size + int(tc.x * optixLaunchParams.lightTexture.size)];
+        uint32_t colorDirect = optixLaunchParams.lightTexture.colorBuffer[int(tc.y * optixLaunchParams.lightTexture.size) * optixLaunchParams.lightTexture.size + int(tc.x * optixLaunchParams.lightTexture.size)];
+        uint32_t colorSecondBounce = optixLaunchParams.lightTextureSecondBounce.colorBuffer[int(tc.y * optixLaunchParams.lightTextureSecondBounce.size) * optixLaunchParams.lightTextureSecondBounce.size + int(tc.x * optixLaunchParams.lightTextureSecondBounce.size)];
+        uint32_t colorThirdBounce = optixLaunchParams.lightTextureThirdBounce.colorBuffer[int(tc.y * optixLaunchParams.lightTextureThirdBounce.size) * optixLaunchParams.lightTextureThirdBounce.size + int(tc.x * optixLaunchParams.lightTextureThirdBounce.size)];
         
         // Extract rgb values from light source texture pixel
-        const uint32_t r = 0x000000ff & (texelColor);
-        const uint32_t g = (0x0000ff00 & (texelColor)) >> 8;
-        const uint32_t b = (0x00ff0000 & (texelColor)) >> 16;
+        const uint32_t r_direct = 0x000000ff & (colorDirect);
+        const uint32_t r_second = 0x000000ff & (colorSecondBounce);
+        const uint32_t r_third = 0x000000ff & (colorThirdBounce);
 
-        const glm::vec3 diffuseColor = { float(r) / 255.0f, float(g) / 255.0f, float(b) / 255.0f };
+        const uint32_t g_direct = (0x0000ff00 & (colorDirect)) >> 8;
+        const uint32_t g_second = (0x0000ff00 & (colorSecondBounce)) >> 8;
+        const uint32_t g_third = (0x0000ff00 & (colorThirdBounce)) >> 8;
+
+        const uint32_t b_direct = (0x00ff0000 & (colorDirect)) >> 16;
+        const uint32_t b_second = (0x00ff0000 & (colorSecondBounce)) >> 16;
+        const uint32_t b_third = (0x00ff0000 & (colorThirdBounce)) >> 16;
+
+        const uint32_t r_total = r_direct + r_second + r_third;
+        const uint32_t g_total = g_direct + g_second + g_third;
+        const uint32_t b_total = b_direct + b_second + b_third;
+
+        const glm::vec3 diffuseColor_direct = { float(r_direct) / 255.0f, float(g_direct) / 255.0f, float(b_direct) / 255.0f };
+        const glm::vec3 diffuseColor_second = { float(r_second) / 255.0f, float(g_second) / 255.0f, float(b_second) / 255.0f };
+        const glm::vec3 diffuseColor_third = { float(r_third) / 255.0f, float(g_third) / 255.0f, float(b_third) / 255.0f };
+
+        const glm::vec3 diffuseTotal = 0.6f * diffuseColor_direct +  0.3f * diffuseColor_second +  0.2f * diffuseColor_third
 
         glm::vec3& prd = *(glm::vec3*)getPRD<glm::vec3>();
-        prd = diffuseColor;
+        prd = diffuseTotal;
     }
 
     extern "C" __global__ void __anyhit__radiance()

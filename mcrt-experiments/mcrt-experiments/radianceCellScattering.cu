@@ -23,7 +23,7 @@ namespace mcrt {
     {
         RadianceCellScatterPRD prd = {};
 
-        prd.distanceToClosestIntersection = __uint_as_float(optixGetPayload_0());
+        prd.distanceToClosestIntersectionSquared = __uint_as_float(optixGetPayload_0());
         prd.rayOrigin.x = __uint_as_float(optixGetPayload_1());
         prd.rayOrigin.y = __uint_as_float(optixGetPayload_2());
         prd.rayOrigin.z = __uint_as_float(optixGetPayload_3());
@@ -33,7 +33,7 @@ namespace mcrt {
 
     static __forceinline__ __device__ void storeRadianceCellScatterPRD(RadianceCellScatterPRD prd)
     {
-        optixSetPayload_0(__float_as_uint(prd.distanceToClosestIntersection));
+        optixSetPayload_0(__float_as_uint(prd.distanceToClosestIntersectionSquared));
         optixSetPayload_1(__float_as_uint(prd.rayOrigin.x));
         optixSetPayload_2(__float_as_uint(prd.rayOrigin.y));
         optixSetPayload_3(__float_as_uint(prd.rayOrigin.z));
@@ -58,7 +58,7 @@ namespace mcrt {
         RadianceCellScatterPRD prd = loadRadianceCellScatterPRD();
         float distanceToIntersection = (((intersectionWorldPos.x - prd.rayOrigin.x) * (intersectionWorldPos.x - prd.rayOrigin.x)) + ((intersectionWorldPos.y - prd.rayOrigin.y) * (intersectionWorldPos.y - prd.rayOrigin.y)) + ((intersectionWorldPos.z - prd.rayOrigin.z) * (intersectionWorldPos.z - prd.rayOrigin.z)));
 
-        prd.distanceToClosestIntersection = distanceToIntersection;
+        prd.distanceToClosestIntersectionSquared = distanceToIntersection;
         storeRadianceCellScatterPRD(prd);
     }
 
@@ -195,10 +195,10 @@ namespace mcrt {
                                 u0, u1, u2, u3
                             );
 
-                            prd.distanceToClosestIntersection = u0;
+                            prd.distanceToClosestIntersectionSquared = u0;
                             float distanceToUV = (((UVWorldPos.x - prd.rayOrigin.x) * (UVWorldPos.x - prd.rayOrigin.x)) + ((UVWorldPos.y - prd.rayOrigin.y) * (UVWorldPos.y - prd.rayOrigin.y)) + ((UVWorldPos.z - prd.rayOrigin.z) * (UVWorldPos.z - prd.rayOrigin.z)));
 
-                            if (distanceToUV < prd.distanceToClosestIntersection)
+                            if (distanceToUV < prd.distanceToClosestIntersectionSquared)
                             {
                                 // We calculate the dx and dy offsets to the (x,y) coordinate of the sampled point on a normalized square to use in 
                                 // the calculation of the weights for bilinear interpolation

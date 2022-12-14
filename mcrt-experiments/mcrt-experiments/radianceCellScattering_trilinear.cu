@@ -23,7 +23,7 @@ namespace mcrt {
     {
         RadianceCellScatterPRD prd = {};
 
-        prd.distanceToClosestIntersection = __uint_as_float(optixGetPayload_0());
+        prd.distanceToClosestIntersectionSquared = __uint_as_float(optixGetPayload_0());
         prd.rayOrigin.x = __uint_as_float(optixGetPayload_1());
         prd.rayOrigin.y = __uint_as_float(optixGetPayload_2());
         prd.rayOrigin.z = __uint_as_float(optixGetPayload_3());
@@ -33,7 +33,7 @@ namespace mcrt {
 
     static __forceinline__ __device__ void storeRadianceCellScatterPRD(RadianceCellScatterPRD prd)
     {
-        optixSetPayload_0(__float_as_uint(prd.distanceToClosestIntersection));
+        optixSetPayload_0(__float_as_uint(prd.distanceToClosestIntersectionSquared));
         optixSetPayload_1(__float_as_uint(prd.rayOrigin.x));
         optixSetPayload_2(__float_as_uint(prd.rayOrigin.y));
         optixSetPayload_3(__float_as_uint(prd.rayOrigin.z));
@@ -56,9 +56,9 @@ namespace mcrt {
             + v * sbtData.vertex[index.z];
 
         RadianceCellScatterPRD prd = loadRadianceCellScatterPRD();
-        float distanceToIntersection = (((intersectionWorldPos.x - prd.rayOrigin.x) * (intersectionWorldPos.x - prd.rayOrigin.x)) + ((intersectionWorldPos.y - prd.rayOrigin.y) * (intersectionWorldPos.y - prd.rayOrigin.y)) + ((intersectionWorldPos.z - prd.rayOrigin.z) * (intersectionWorldPos.z - prd.rayOrigin.z)));
+        float distanceToIntersectionSquared = (((intersectionWorldPos.x - prd.rayOrigin.x) * (intersectionWorldPos.x - prd.rayOrigin.x)) + ((intersectionWorldPos.y - prd.rayOrigin.y) * (intersectionWorldPos.y - prd.rayOrigin.y)) + ((intersectionWorldPos.z - prd.rayOrigin.z) * (intersectionWorldPos.z - prd.rayOrigin.z)));
 
-        prd.distanceToClosestIntersection = distanceToIntersection;
+        prd.distanceToClosestIntersectionSquared = distanceToIntersectionSquared;
         storeRadianceCellScatterPRD(prd);
     }
 
@@ -86,25 +86,26 @@ namespace mcrt {
 
         glm::vec3 UVWorldPos = optixLaunchParams.uvWorldPositions.UVDataBuffer[v * optixLaunchParams.uvWorldPositions.size + u].worldPosition;
         const glm::vec3 UVNormal = optixLaunchParams.uvWorldPositions.UVDataBuffer[v * optixLaunchParams.uvWorldPositions.size + u].worldNormal;
-
         float3 uvNormal3f = float3{ UVNormal.x, UVNormal.y, UVNormal.z };
+
+        // We apply a small offset of 0.00001f in the direction of the normal to the UV world pos, to 'mitigate' floating point rounding errors causing false occlusions/illuminations
+        UVWorldPos = glm::vec3{ UVWorldPos.x + UVNormal.x * 0.0001f, UVWorldPos.y + UVNormal.y * 0.0001f, UVWorldPos.z + UVNormal.z * 0.0001f };
 
         // Center of this radiance cell
         glm::vec3 cellCenter = optixLaunchParams.cellCenter;
         float cellSize = optixLaunchParams.cellSize;
+        glm::vec3 cellOrigin = { cellCenter.x - 0.5f * cellSize,cellCenter.y - 0.5f * cellSize,cellCenter.z - 0.5f * cellSize };    // Origin corner point of the cell
+
         float stratifyCellWidth = cellSize / optixLaunchParams.stratifyResX;
         float stratifyCellHeight = cellSize / optixLaunchParams.stratifyResY;
         float invCellVolume = 1.0f / (cellSize * cellSize * cellSize);
-
-        float stratifyCellWidthNormalized = 1.0f / optixLaunchParams.stratifyResX;
-        float stratifyCellHeightNormalized = 1.0f / optixLaunchParams.stratifyResY;
 
         // SH weights for this cell
         float SHweights[8][9];
         int amountBasisFunctions = optixLaunchParams.sphericalHarmonicsWeights.amountBasisFunctions;
         int cellOffset = optixLaunchParams.nonEmptyCellIndex * amountBasisFunctions * 8;
 
-        // Load in SH weights from buffer
+        // Load in SH weights from GPU buffer
         for (int sh_i = 0; sh_i < 8; sh_i++)
         {
             for (int basis_f_i = 0; basis_f_i < 9; basis_f_i++)
@@ -129,6 +130,8 @@ namespace mcrt {
 
         // Irradiance accumulator
         float totalIrradiance = 0.0f;
+        // Number of samples accumulator
+        int numSamples = 0;
 
         // Loop over cell faces
         for (int face = 0; face < 6; face++)
@@ -141,7 +144,7 @@ namespace mcrt {
             glm::vec3 dv = glm::vec3{ faceOgDuDv[face][2].x,faceOgDuDv[face][2].y,faceOgDuDv[face][2].z };
 
             // Face normal and UV normal need to point in the same direction (hemisphere) for the UV to get contribution from that face
-            double cellFaceFacing = dot(uvNormal3f, cellNormals[face]);
+            float cellFaceFacing = dot(uvNormal3f, cellNormals[face]);
             if (cellFaceFacing > 0)
             {
                 // For each stratified cell on the face, take samples
@@ -159,17 +162,19 @@ namespace mcrt {
                             glm::vec3 rayOrigin = stratifyCellOrigin + (randomOffset.x * stratifyCellWidth * du) + (randomOffset.y * stratifyCellHeight * dv);
 
                             // Ray direction (from the sample to the UV texel)
-                            glm::vec3 rayDir = rayOrigin - UVWorldPos;
+                            glm::vec3 rayDir = UVWorldPos - rayOrigin;
+                            glm::vec3 rayDirInv = rayOrigin - UVWorldPos;
 
                             // Convert to float3 format
                             float3 rayOrigin3f = float3{ rayOrigin.x, rayOrigin.y, rayOrigin.z };
                             float3 rayDir3f = float3{ rayDir.x, rayDir.y, rayDir.z };
+                            float3 rayDir3fInv = float3{ rayDirInv.x, rayDirInv.y, rayDirInv.z };
 
-                            // Calculate spherical coordinate representation of ray
-                            // (https://en.wikipedia.org/wiki/Spherical_coordinate_system#Cartesian_coordinates)
-                            float3 normalizedRayDir = normalize(rayDir3f);
-                            double theta = acos(clamp(rayDir3f.z, -1.0, 1.0));
-                            double phi = atan2(rayDir3f.y, rayDir3f.x);
+                            //// Calculate spherical coordinate representation of ray
+                            //// (https://en.wikipedia.org/wiki/Spherical_coordinate_system#Cartesian_coordinates)
+                            //float3 normalizedRayDir = normalize(rayDir3f);
+                            //double theta = acos(clamp(rayDir3f.z, -1.0, 1.0));
+                            //double phi = atan2(rayDir3f.y, rayDir3f.x);
 
                             RadianceCellScatterPRD prd{};
                             prd.rayOrigin = rayOrigin;
@@ -195,14 +200,16 @@ namespace mcrt {
                                 u0, u1, u2, u3
                             );
 
-                            prd.distanceToClosestIntersection = u0;
-                            float distanceToUV = (((UVWorldPos.x - prd.rayOrigin.x) * (UVWorldPos.x - prd.rayOrigin.x)) + ((UVWorldPos.y - prd.rayOrigin.y) * (UVWorldPos.y - prd.rayOrigin.y)) + ((UVWorldPos.z - prd.rayOrigin.z) * (UVWorldPos.z - prd.rayOrigin.z)));
+                            prd.distanceToClosestIntersectionSquared = __uint_as_float(u0);
+                            float distanceToUVSquared = (((UVWorldPos.x - rayOrigin.x) * (UVWorldPos.x - rayOrigin.x)) + ((UVWorldPos.y - rayOrigin.y) * (UVWorldPos.y - rayOrigin.y)) + ((UVWorldPos.z - rayOrigin.z) * (UVWorldPos.z - rayOrigin.z)));
 
-                            if (distanceToUV < prd.distanceToClosestIntersection)
+                            if (distanceToUVSquared < prd.distanceToClosestIntersectionSquared)
                             {
+                                numSamples++;
+
                                 // We calculate the UV world position's offset within the cell to do
                                 // the calculation of the weights for trilinear interpolation
-                                glm::vec3 diff = UVWorldPos - og;
+                                glm::vec3 diff = UVWorldPos - cellOrigin;
 
                                 // Calculate trilinear interpolation weights, see thesis for explanation
                                 float weightA = (diff.x * diff.y * diff.z) * invCellVolume;
@@ -216,29 +223,29 @@ namespace mcrt {
 
                                 // Basis function evaluations
                                 float b0 = Y_0_0();
-                                float b1 = Y_min1_1(phi, theta);
-                                float b2 = Y_0_1(phi, theta);
-                                float b3 = Y_1_1(phi, theta);
-                                float b4 = Y_min2_2(phi, theta);
-                                float b5 = Y_min1_2(phi, theta);
-                                float b6 = Y_0_2(phi, theta);
-                                float b7 = Y_1_2(phi, theta);
-                                float b8 = Y_2_2(phi, theta);
+                                float b1 = Y_min1_1(rayDirInv.x, rayDirInv.y, rayDirInv.z);
+                                float b2 = Y_0_1(rayDirInv.x, rayDirInv.y, rayDirInv.z);
+                                float b3 = Y_1_1(rayDirInv.x, rayDirInv.y, rayDirInv.z);
+                                float b4 = Y_min2_2(rayDirInv.x, rayDirInv.y, rayDirInv.z);
+                                float b5 = Y_min1_2(rayDirInv.x, rayDirInv.y, rayDirInv.z);
+                                float b6 = Y_0_2(rayDirInv.x, rayDirInv.y, rayDirInv.z);
+                                float b7 = Y_1_2(rayDirInv.x, rayDirInv.y, rayDirInv.z);
+                                float b8 = Y_2_2(rayDirInv.x, rayDirInv.y, rayDirInv.z);
 
-                                // Calculate the outcoming weight to apply to each basis function
-                                float w0 = SHweights[0][0] * weightA + SHweights[1][0] * weightB + SHweights[2][0] * weightC + SHweights[3][0] * weightD + SHweights[4][0] * weightE + SHweights[5][0] * weightF + SHweights[6][0] * weightG + SHweights[7][0] * weightF;
-                                float w1 = SHweights[0][1] * weightA + SHweights[1][1] * weightB + SHweights[2][1] * weightC + SHweights[3][1] * weightD + SHweights[4][1] * weightE + SHweights[5][1] * weightF + SHweights[6][1] * weightG + SHweights[7][1] * weightF;
-                                float w2 = SHweights[0][2] * weightA + SHweights[1][2] * weightB + SHweights[2][2] * weightC + SHweights[3][2] * weightD + SHweights[4][2] * weightE + SHweights[5][2] * weightF + SHweights[6][2] * weightG + SHweights[7][2] * weightF;
-                                float w3 = SHweights[0][3] * weightA + SHweights[1][3] * weightB + SHweights[2][3] * weightC + SHweights[3][3] * weightD + SHweights[4][3] * weightE + SHweights[5][3] * weightF + SHweights[6][3] * weightG + SHweights[7][3] * weightF;
-                                float w4 = SHweights[0][4] * weightA + SHweights[1][4] * weightB + SHweights[2][4] * weightC + SHweights[3][4] * weightD + SHweights[4][4] * weightE + SHweights[5][4] * weightF + SHweights[6][4] * weightG + SHweights[7][4] * weightF;
-                                float w5 = SHweights[0][5] * weightA + SHweights[1][5] * weightB + SHweights[2][5] * weightC + SHweights[3][5] * weightD + SHweights[4][5] * weightE + SHweights[5][5] * weightF + SHweights[6][5] * weightG + SHweights[7][5] * weightF;
-                                float w6 = SHweights[0][6] * weightA + SHweights[1][6] * weightB + SHweights[2][6] * weightC + SHweights[3][6] * weightD + SHweights[4][6] * weightE + SHweights[5][6] * weightF + SHweights[6][6] * weightG + SHweights[7][6] * weightF;
-                                float w7 = SHweights[0][7] * weightA + SHweights[1][7] * weightB + SHweights[2][7] * weightC + SHweights[3][7] * weightD + SHweights[4][7] * weightE + SHweights[5][7] * weightF + SHweights[6][7] * weightG + SHweights[7][7] * weightF;
-                                float w8 = SHweights[0][8] * weightA + SHweights[1][8] * weightB + SHweights[2][8] * weightC + SHweights[3][8] * weightD + SHweights[4][8] * weightE + SHweights[5][8] * weightF + SHweights[6][8] * weightG + SHweights[7][8] * weightF;
+                                // Calculate the trilinearly interpolated weights to apply to each basis function
+                                float w0 = SHweights[0][0] * weightA + SHweights[1][0] * weightB + SHweights[2][0] * weightC + SHweights[3][0] * weightD + SHweights[4][0] * weightE + SHweights[5][0] * weightF + SHweights[6][0] * weightG + SHweights[7][0] * weightH;
+                                float w1 = SHweights[0][1] * weightA + SHweights[1][1] * weightB + SHweights[2][1] * weightC + SHweights[3][1] * weightD + SHweights[4][1] * weightE + SHweights[5][1] * weightF + SHweights[6][1] * weightG + SHweights[7][1] * weightH;
+                                float w2 = SHweights[0][2] * weightA + SHweights[1][2] * weightB + SHweights[2][2] * weightC + SHweights[3][2] * weightD + SHweights[4][2] * weightE + SHweights[5][2] * weightF + SHweights[6][2] * weightG + SHweights[7][2] * weightH;
+                                float w3 = SHweights[0][3] * weightA + SHweights[1][3] * weightB + SHweights[2][3] * weightC + SHweights[3][3] * weightD + SHweights[4][3] * weightE + SHweights[5][3] * weightF + SHweights[6][3] * weightG + SHweights[7][3] * weightH;
+                                float w4 = SHweights[0][4] * weightA + SHweights[1][4] * weightB + SHweights[2][4] * weightC + SHweights[3][4] * weightD + SHweights[4][4] * weightE + SHweights[5][4] * weightF + SHweights[6][4] * weightG + SHweights[7][4] * weightH;
+                                float w5 = SHweights[0][5] * weightA + SHweights[1][5] * weightB + SHweights[2][5] * weightC + SHweights[3][5] * weightD + SHweights[4][5] * weightE + SHweights[5][5] * weightF + SHweights[6][5] * weightG + SHweights[7][5] * weightH;
+                                float w6 = SHweights[0][6] * weightA + SHweights[1][6] * weightB + SHweights[2][6] * weightC + SHweights[3][6] * weightD + SHweights[4][6] * weightE + SHweights[5][6] * weightF + SHweights[6][6] * weightG + SHweights[7][6] * weightH;
+                                float w7 = SHweights[0][7] * weightA + SHweights[1][7] * weightB + SHweights[2][7] * weightC + SHweights[3][7] * weightD + SHweights[4][7] * weightE + SHweights[5][7] * weightF + SHweights[6][7] * weightG + SHweights[7][7] * weightH;
+                                float w8 = SHweights[0][8] * weightA + SHweights[1][8] * weightB + SHweights[2][8] * weightC + SHweights[3][8] * weightD + SHweights[4][8] * weightE + SHweights[5][8] * weightF + SHweights[6][8] * weightG + SHweights[7][8] * weightH;
 
                                 // SH reconstruction
                                 float irradiance = (b0 * w0) + (b1 * w1) + (b2 * w2) + (b3 * w3) + (b4 * w4) + (b5 * w5) + (b6 * w6) + (b7 * w7) + (b8 * w8);
-                                float cosContribution = dot(normalize(rayDir3f), uvNormal3f);
+                                float cosContribution = dot(normalize(rayDir3fInv), uvNormal3f);
 
                                 totalIrradiance += cosContribution * irradiance;
                             }
@@ -248,12 +255,9 @@ namespace mcrt {
             }
         }
 
-        int numSamples = 6 * NUM_SAMPLES_PER_STRATIFY_CELL * optixLaunchParams.stratifyResX * optixLaunchParams.stratifyResY;
-        // printf("Total irradiance: %f\n", totalIrradiance);
-
-        const int r = int(255.99 * totalIrradiance);
-        const int g = int(255.99 * totalIrradiance);
-        const int b = int(255.99 * totalIrradiance);
+        const int r = int(255.99 * (totalIrradiance / float(numSamples / 2.0f)));
+        const int g = int(255.99 * (totalIrradiance / float(numSamples / 2.0f)));
+        const int b = int(255.99 * (totalIrradiance / float(numSamples / 2.0f)));
 
         // convert to 32-bit rgba value (we explicitly set alpha to 0xff
         // to make stb_image_write happy ...

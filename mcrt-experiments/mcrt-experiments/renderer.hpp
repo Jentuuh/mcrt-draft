@@ -38,7 +38,7 @@ namespace mcrt {
 		void initSHWeightsBuffer(int amountNonEmptyCells);
 		void initSHAccumulators(int divisionResolution, int amountNonEmptyCells);
 		void calculateRadianceCellGatherPass(CUDABuffer& previousPassLightSourceTexture);
-		void calculateRadianceCellScatterPass(int iteration);
+		void calculateRadianceCellScatterPass(int iteration, CUDABuffer& dstTexture);
 
 		void loadLightTexture();
 		void writeWeightsToTxtFile(std::vector<float>& weights, std::vector<int>& numSamples, int amountCells);
@@ -88,6 +88,7 @@ namespace mcrt {
 		CUDABuffer colorBuffer;	// Framebuffer we will write to
 		CUDABuffer directLightingTexture; // Texture in which we store the direct lighting
 		CUDABuffer secondBounceTexture;	// Texture in which we store the second lighting bounce
+		CUDABuffer thirdBounceTexture; // Texture in which we store the third lighting bounce
 		CUDABuffer lightDataBuffer;	// In this buffer we'll store our light source data
 
 		CUDABuffer nonEmptyCellDataBuffer;	// In this buffer we'll store our data for non empty radiance cells

@@ -37,7 +37,7 @@ namespace mcrt {
 	* ==================================
 	*/
 	struct RadianceCellScatterPRD {
-		float distanceToClosestIntersection;
+		float distanceToClosestIntersectionSquared;
 		glm::vec3 rayOrigin;
 	};
 
@@ -195,6 +195,9 @@ namespace mcrt {
 		} camera;
 
 		PixelBuffer lightTexture;
+		PixelBuffer lightTextureSecondBounce;
+		PixelBuffer lightTextureThirdBounce;
+
 		OptixTraversableHandle traversable;
 	};
 }
