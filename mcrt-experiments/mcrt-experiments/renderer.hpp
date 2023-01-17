@@ -6,11 +6,16 @@
 #include "default_pipeline.hpp"
 #include "direct_light_pipeline.hpp"
 #include "radiance_cell_gather_pipeline.hpp"
+#include "radiance_cell_gather_cube_map_pipeline.hpp"
 #include "radiance_cell_scatter_pipeline.hpp"
 
 #include <stb/stb_image.h>
 
 namespace mcrt {
+	enum PROBE_MODE {
+		CUBE_MAP,
+		SPHERICAL_HARMONICS
+	};
 
 	class Renderer {
 	public:
@@ -33,11 +38,13 @@ namespace mcrt {
 	private:
 		void writeToImage(std::string fileName, int resX, int resY, void* data);
 		void initLightingTextures(int size);
+		void initLightProbeCubeMaps(int resolution, int amount);
 		void calculateDirectLighting();
-		void calculateIndirectLighting();
+		void calculateIndirectLighting(PROBE_MODE mode);
 		void initSHWeightsBuffer(int amountNonEmptyCells);
 		void initSHAccumulators(int divisionResolution, int amountNonEmptyCells);
 		void calculateRadianceCellGatherPass(CUDABuffer& previousPassLightSourceTexture);
+		void calculateRadianceCellGatherPassCubeMap(CUDABuffer& previousPassLightSourceTexture);
 		void calculateRadianceCellScatterPass(int iteration, CUDABuffer& dstTexture);
 
 		void loadLightTexture();
@@ -82,6 +89,7 @@ namespace mcrt {
 		std::unique_ptr<DefaultPipeline> tutorialPipeline;
 		std::unique_ptr<DirectLightPipeline> directLightPipeline;
 		std::unique_ptr<RadianceCellGatherPipeline> radianceCellGatherPipeline;
+		std::unique_ptr<RadianceCellGatherCubeMapPipeline> radianceCellGatherCubeMapPipeline;
 		std::unique_ptr<RadianceCellScatterPipeline> radianceCellScatterPipeline;
 
 		CUDABuffer lightSourceTexture; // UV map with direct light source (to test the SH projection)
@@ -91,6 +99,8 @@ namespace mcrt {
 		CUDABuffer thirdBounceTexture; // Texture in which we store the third lighting bounce
 		CUDABuffer lightDataBuffer;	// In this buffer we'll store our light source data
 
+		CUDABuffer cubeMaps; // In this buffer we'll store the light probe cubemaps
+
 		CUDABuffer nonEmptyCellDataBuffer;	// In this buffer we'll store our data for non empty radiance cells
 		CUDABuffer SHWeightsDataBuffer; // In this buffer we'll store the SH weights
 		CUDABuffer SHAccumulatorsBuffer; // In this buffer we'll store the SH accumulators
@@ -98,6 +108,8 @@ namespace mcrt {
 		CUDABuffer UVWorldPositionDeviceBuffer; // In this buffer we'll store the world positions for each of our UV texels (starting from 0,0 --> 1,1), this means this array starts at the left bottom of the actual texture image
 		CUDABuffer UVsInsideBuffer;		// In this buffer we'll store the UV worldpositions for all texels inside each cell
 		CUDABuffer UVsInsideOffsets;	// In this buffer we'll store the offsets to index the UVsInsideBuffer
+
+
 
 		Camera renderCamera;
 

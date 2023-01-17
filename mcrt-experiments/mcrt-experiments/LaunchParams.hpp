@@ -94,6 +94,29 @@ namespace mcrt {
 		int cellIndex;
 	};
 
+	struct LaunchParamsRadianceCellGatherCubeMap {
+		struct {
+			UVWorldData* UVDataBuffer;
+			int size;
+		} uvWorldPositions;
+
+		struct {
+			glm::vec3* centers;
+			int size;
+		} nonEmptyCells;
+
+		float cellSize;
+		int nonEmptyCellIndex;
+		int divisionResolution;		// The amount of cells the light source texture is divided in both dimensions
+
+		PixelBuffer lightSourceTexture;
+
+		uint32_t* cubeMaps; // A pointer to cubemap faces
+		int cubeMapResolution;
+
+		OptixTraversableHandle sceneTraversable;
+	};
+
 	struct LaunchParamsRadianceCellGather {
 		struct {
 			UVWorldData* UVDataBuffer;
@@ -110,9 +133,11 @@ namespace mcrt {
 		int stratifyResY;
 		int divisionResolution;		// The amount of cells the light source texture is divided in both dimensions
 
+		int nonEmptyCellIndex;
+
 		float* shAccumulators;
 		int* shNumSamplesAccumulators;
-		SHWeights sphericalHarmonicsWeights;	// Radiance cells thus need to get an index in their SBT data so we can index the weights array by that index!
+		SHWeights sphericalHarmonicsWeights; // Radiance cells thus need to get an index in their SBT data so we can index the weights array by that index!
 		PixelBuffer lightSourceTexture;
 
 		OptixTraversableHandle sceneTraversable;

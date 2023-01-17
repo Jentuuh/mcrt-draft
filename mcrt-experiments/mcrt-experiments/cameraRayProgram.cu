@@ -91,7 +91,7 @@ namespace mcrt {
         const glm::vec3 diffuseColor_second = { float(r_second) / 255.0f, float(g_second) / 255.0f, float(b_second) / 255.0f };
         const glm::vec3 diffuseColor_third = { float(r_third) / 255.0f, float(g_third) / 255.0f, float(b_third) / 255.0f };
 
-        const glm::vec3 diffuseTotal = 0.6f * diffuseColor_direct +  0.3f * diffuseColor_second +  0.2f * diffuseColor_third
+        const glm::vec3 diffuseTotal = 0.4f * diffuseColor_direct + 0.5f * diffuseColor_second + 0.1f * diffuseColor_third;
 
         glm::vec3& prd = *(glm::vec3*)getPRD<glm::vec3>();
         prd = diffuseTotal;

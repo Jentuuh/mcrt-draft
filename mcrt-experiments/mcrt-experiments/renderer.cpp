@@ -47,19 +47,22 @@ namespace mcrt {
         tutorialPipeline = std::make_unique<DefaultPipeline>(optixContext, geometryData, scene);
         directLightPipeline = std::make_unique<DirectLightPipeline>(optixContext, geometryData, scene);
         radianceCellGatherPipeline = std::make_unique<RadianceCellGatherPipeline>(optixContext, radianceCellGeometry, geometryData, scene); // For now we can use normal geometry instead of proxy
+        radianceCellGatherCubeMapPipeline = std::make_unique<RadianceCellGatherCubeMapPipeline>(optixContext, radianceCellGeometry, geometryData, scene);
         radianceCellScatterPipeline = std::make_unique<RadianceCellScatterPipeline>(optixContext, geometryData, scene);
 
         std::cout << "Context, module, pipeline, etc, all set up." << std::endl;
         std::cout << "MCRT renderer fully set up." << std::endl;
 
         // Direct lighting (preprocess)
+        initLightProbeCubeMaps(128, 26 * 8);
+
         initLightingTextures(1024);
         prepareUVWorldPositions();
         prepareUVsInsideBuffer();
         loadLightTexture();
         downloadAndWriteLightSourceTexture();
         calculateDirectLighting();
-        calculateIndirectLighting();
+        calculateIndirectLighting(CUBE_MAP);
     }
 
     void Renderer::fillGeometryBuffers()
@@ -290,6 +293,16 @@ namespace mcrt {
         thirdBounceTexture.alloc_and_upload(zeros);
     }
 
+    void Renderer::initLightProbeCubeMaps(int resolution, int amount)
+    {
+
+        std::vector<uint32_t> zeros(resolution * resolution * amount * 6, 0.0f);
+        cubeMaps.alloc_and_upload(zeros);
+
+        radianceCellGatherCubeMapPipeline->launchParams.cubeMaps = (uint32_t*)cubeMaps.d_pointer();
+        radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution = resolution;
+    }
+
 
     void Renderer::calculateDirectLighting()
     {
@@ -343,26 +356,56 @@ namespace mcrt {
         writeToImage("direct_lighting_output.png", directLightPipeline->launchParams.directLightingTexture.size, directLightPipeline->launchParams.directLightingTexture.size, result_reversed.data());
     }
 
-    void Renderer::calculateIndirectLighting()
+    void Renderer::calculateIndirectLighting(PROBE_MODE mode)
     {
-        for (int i = 0; i < 2; i++)
+        if (mode == SPHERICAL_HARMONICS)
         {
-            std::cout << "Calculating radiance cell gather pass " << i << "..." << std::endl;
+            std::cout << "Calculating indirect lighting with spherical harmonics probes..." << std::endl;
 
-            switch (i)
+            for (int i = 0; i < 1; i++)
             {
-            case 0:
-                calculateRadianceCellGatherPass(directLightingTexture);
-                std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
-                calculateRadianceCellScatterPass(i, secondBounceTexture);
-                break;
-            case 1:
-                calculateRadianceCellGatherPass(secondBounceTexture);
-                std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
-                calculateRadianceCellScatterPass(i, thirdBounceTexture);
-                break;
-            default:
-                break;
+                std::cout << "Calculating radiance cell gather pass " << i << "..." << std::endl;
+
+                switch (i)
+                {
+                case 0:
+                    calculateRadianceCellGatherPass(lightSourceTexture);
+                    std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
+                    calculateRadianceCellScatterPass(i, secondBounceTexture);
+                    break;
+                case 1:
+                    calculateRadianceCellGatherPass(secondBounceTexture);
+                    std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
+                    calculateRadianceCellScatterPass(i, thirdBounceTexture);
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+        else if (mode == CUBE_MAP)
+        {
+            std::cout << "Calculating indirect lighting with cubemap probes..." << std::endl;
+
+            for (int i = 0; i < 1; i++)
+            {
+                std::cout << "Calculating radiance cell gather pass " << i << "..." << std::endl;
+
+                switch (i)
+                {
+                case 0:
+                    calculateRadianceCellGatherPassCubeMap(lightSourceTexture);
+                    std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
+                    calculateRadianceCellScatterPass(i, secondBounceTexture);
+                    break;
+                case 1:
+                    calculateRadianceCellGatherPassCubeMap(secondBounceTexture);
+                    std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
+                    calculateRadianceCellScatterPass(i, thirdBounceTexture);
+                    break;
+                default:
+                    break;
+                }
             }
         }
     }
@@ -442,18 +485,23 @@ namespace mcrt {
 
         radianceCellGatherPipeline->launchParams.divisionResolution = TEXTURE_DIVISION_RES;
 
-        radianceCellGatherPipeline->uploadLaunchParams();
+        for (int i = 0; i < nonEmpties.nonEmptyCells.size(); i++)
+        {
+            radianceCellGatherPipeline->launchParams.nonEmptyCellIndex = i;
+            radianceCellGatherPipeline->uploadLaunchParams();
 
-        OPTIX_CHECK(optixLaunch(
-            radianceCellGatherPipeline->pipeline, stream,
-            radianceCellGatherPipeline->launchParamsBuffer.d_pointer(),
-            radianceCellGatherPipeline->launchParamsBuffer.sizeInBytes,
-            &radianceCellGatherPipeline->sbt,
-            nonEmpties.nonEmptyCells.size(),                                    // dimension X: amount of non-empty cells
-            TEXTURE_DIVISION_RES,                                               // dimension Y: divisionResX: amount of tiles in the X direction of the light src texture
-            TEXTURE_DIVISION_RES                                                // dimension Z: divisionResY: amount of tiles in the Y direction of the light src texture
-            // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
-        ));
+            OPTIX_CHECK(optixLaunch(
+                radianceCellGatherPipeline->pipeline, stream,
+                radianceCellGatherPipeline->launchParamsBuffer.d_pointer(),
+                radianceCellGatherPipeline->launchParamsBuffer.sizeInBytes,
+                &radianceCellGatherPipeline->sbt,
+                TEXTURE_DIVISION_RES,                                               // dimension X: divisionResX: amount of tiles in the X direction of the light src texture
+                TEXTURE_DIVISION_RES,                                               // dimension Y: divisionResY: amount of tiles in the Y direction of the light src texture
+                1
+                // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
+            ));
+        }
+
 
         CUDA_SYNC_CHECK();
 
@@ -490,6 +538,68 @@ namespace mcrt {
         SHWeightsDataBuffer.upload(shCoefficients.data(), shCoefficients.size());
     }   
 
+    void Renderer::calculateRadianceCellGatherPassCubeMap(CUDABuffer& previousPassLightSourceTexture)
+    {
+        // TODO: For now we're using the same texture size as for the direct lighting pass, we can downsample in the future to gain performance
+        const int texSize = directLightPipeline->launchParams.directLightingTexture.size;
+
+        // Initialize non-empty cell data on GPU
+        // TODO: does this need to happen in each call of radiance cell gather?
+        NonEmptyCells nonEmpties = scene.grid.getNonEmptyCells();
+        std::vector<glm::vec3> nonEmptyCellCenters;
+        for (auto& nonEmpty : nonEmpties.nonEmptyCells)
+        {
+            nonEmptyCellCenters.push_back(nonEmpty->getCenter());
+        }
+        
+        nonEmptyCellDataBuffer.resize(nonEmptyCellCenters.size() * sizeof(glm::vec3));
+        nonEmptyCellDataBuffer.upload(nonEmptyCellCenters.data(), nonEmptyCellCenters.size());
+        radianceCellGatherCubeMapPipeline->launchParams.nonEmptyCells.centers = (glm::vec3*)nonEmptyCellDataBuffer.d_pointer();
+        radianceCellGatherCubeMapPipeline->launchParams.nonEmptyCells.size = nonEmpties.nonEmptyCells.size();
+        std::cout << "Amount non-empty cells: " << nonEmpties.nonEmptyCells.size() << std::endl;
+
+        // Initialize Light Source Texture data on GPU
+        radianceCellGatherCubeMapPipeline->launchParams.lightSourceTexture.colorBuffer = (uint32_t*)previousPassLightSourceTexture.d_pointer();
+        radianceCellGatherCubeMapPipeline->launchParams.lightSourceTexture.size = texSize;
+
+        // Initialize UV World positions data on GPU
+        radianceCellGatherCubeMapPipeline->launchParams.uvWorldPositions.size = texSize * texSize;
+        radianceCellGatherCubeMapPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+
+        // Initialize cell size in launch params
+        radianceCellGatherCubeMapPipeline->launchParams.cellSize = scene.grid.getCellSize();
+
+        radianceCellGatherCubeMapPipeline->launchParams.divisionResolution = TEXTURE_DIVISION_RES;
+
+        // Iterate over non-empty cells to gather radiance
+        for (int i = 0; i < nonEmpties.nonEmptyCells.size(); i++)
+        {
+            radianceCellGatherCubeMapPipeline->launchParams.nonEmptyCellIndex = i;
+            radianceCellGatherCubeMapPipeline->uploadLaunchParams();
+
+            OPTIX_CHECK(optixLaunch(
+                radianceCellGatherCubeMapPipeline->pipeline, stream,
+                radianceCellGatherCubeMapPipeline->launchParamsBuffer.d_pointer(),
+                radianceCellGatherCubeMapPipeline->launchParamsBuffer.sizeInBytes,
+                &radianceCellGatherCubeMapPipeline->sbt,
+                TEXTURE_DIVISION_RES,                                               // dimension X: divisionResX: amount of tiles in the X direction of the light src texture
+                TEXTURE_DIVISION_RES,                                               // dimension Y: divisionResY: amount of tiles in the Y direction of the light src texture
+                1
+                // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
+            ));
+        }
+
+        int cellOffset = 22 * 8 * 6 * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution;
+        int probeOffset = 2 * 6 * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution;
+        int faceOffset = 2 * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution;
+        int totalOffset = cellOffset + probeOffset + faceOffset;
+
+        std::vector<uint32_t> cubeMapTest(radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution);
+        cubeMaps.download_with_offset(cubeMapTest.data(), radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution, totalOffset);
+
+    
+        writeToImage("cubemap_test.png", radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution, radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution, cubeMapTest.data());
+    }
 
     void Renderer::calculateRadianceCellScatterPass(int iteration, CUDABuffer& dstTexture)
     {

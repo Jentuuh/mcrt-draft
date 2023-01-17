@@ -114,6 +114,12 @@
     <ClCompile Include="radianceCellScattering_embedded.c">
       <Filter>Source Files\GPU</Filter>
     </ClCompile>
+    <ClCompile Include="radiance_cell_gather_cube_map_pipeline.cpp">
+      <Filter>Source Files\Pipelines</Filter>
+    </ClCompile>
+    <ClCompile Include="radianceCellGathering_Cubemap_embedded.c">
+      <Filter>Source Files\GPU</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="renderer.hpp">
@@ -182,6 +188,9 @@
     <ClInclude Include="radiance_cell_scatter_pipeline.hpp">
       <Filter>Header Files\Pipelines</Filter>
     </ClInclude>
+    <ClInclude Include="radiance_cell_gather_cube_map_pipeline.hpp">
+      <Filter>Header Files\Pipelines</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="devicePrograms.cu">
@@ -212,6 +221,18 @@
       <Filter>Source Files\GPU</Filter>
     </None>
     <None Include="cameraRayProgram.cu">
+      <Filter>Source Files\GPU</Filter>
+    </None>
+    <None Include="radianceCellScattering_trilinear2.cu">
+      <Filter>Source Files\GPU</Filter>
+    </None>
+    <None Include="radianceCellScattering_last.cu">
+      <Filter>Source Files\GPU</Filter>
+    </None>
+    <None Include="radianceCellGathering_Cubemap.cu">
+      <Filter>Source Files\GPU</Filter>
+    </None>
+    <None Include="cube_mapping.cuh">
       <Filter>Source Files\GPU</Filter>
     </None>
   </ItemGroup>

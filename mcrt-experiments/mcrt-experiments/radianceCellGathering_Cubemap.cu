@@ -7,7 +7,7 @@
 #include "LaunchParams.hpp"
 #include "glm/glm.hpp"
 
-#include "spherical_harmonics.cuh"
+#include "cube_mapping.cuh"
 
 #define PI 3.14159265358979323846f
 #define EPSILON 0.0000000000002f
@@ -16,7 +16,7 @@ using namespace mcrt;
 
 namespace mcrt {
 
-    extern "C" __constant__ LaunchParamsRadianceCellGather optixLaunchParams;
+    extern "C" __constant__ LaunchParamsRadianceCellGatherCubeMap optixLaunchParams;
 
 
     static __forceinline__ __device__ RadianceCellGatherPRD loadRadianceCellGatherPRD()
@@ -87,15 +87,8 @@ namespace mcrt {
         const int endU = startU + tileSize;
         const int endV = startV + tileSize;
 
-        // Amount SH basis functions
-        int amountBasisFunctions = optixLaunchParams.sphericalHarmonicsWeights.amountBasisFunctions;
-
         // Size of a radiance cell + dimensions of each stratified cell
         const float cellSize = optixLaunchParams.cellSize;
-
-        // Accumulators (8*9, 8 corners, 9 basis functions per corner)
-        float SHAccumulator[8 * 9] = { 0.0 };
-        int numSamplesAccumulator[8] = { 0 };
 
         // Center of this radiance cell
         glm::vec3 cellCenter = optixLaunchParams.nonEmptyCells.centers[nonEmptyCellIndex];
@@ -111,9 +104,13 @@ namespace mcrt {
 
         float3 shOrigins[8] = { ogSh0, ogSh1, ogSh2, ogSh3, ogSh4, ogSh5, ogSh6, ogSh7 };
 
-        // Loop over cell's SHs
-        for (int sh = 0; sh < 8; sh++)
+
+        // Loop over cell's light probes
+        for (int probe = 0; probe < 8; probe++)
         {
+            // Offset into cubemap face array
+            int probeOffset = (nonEmptyCellIndex * 8 * 6 + probe * 6) * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution);
+
             // Loop over all texels of the light source texture tile
             for (int u = startU; u < endU; u++)
             {
@@ -122,18 +119,12 @@ namespace mcrt {
                     uint32_t lightSrcColor = optixLaunchParams.lightSourceTexture.colorBuffer[v * optixLaunchParams.lightSourceTexture.size + u];
 
                     // Extract rgb values from light source texture pixel
-                    const uint32_t r = 0x000000ff & (lightSrcColor);
-                    const uint32_t g = (0x0000ff00 & (lightSrcColor)) >> 8;
-                    const uint32_t b = (0x00ff0000 & (lightSrcColor)) >> 16;
+                    uint32_t r = 0x000000ff & (lightSrcColor);
+                    uint32_t g = (0x0000ff00 & (lightSrcColor)) >> 8;
+                    uint32_t b = (0x00ff0000 & (lightSrcColor)) >> 16;
 
                     // Convert to grayscale (for now we assume 1 color channel)
                     const float grayscale = (0.3 * r + 0.59 * g + 0.11 * b) / 255.0f;
-
-                    if (r > 0 && g > 0 && b > 0)
-                    {
-                        //printf("Non empty cell index:%d Cell center: %f %f %f\n", nonEmptyCellIndex, cellCenter.x, cellCenter.y, cellCenter.z);
-                        //printf("Non empty cell index:%d UV:(%d,%d) tileX:%d tileY:%d colors: %d %d %d\n", nonEmptyCellIndex, u, v, tileX, tileY, r, g, b);
-                    }
 
                     if (grayscale < 0.0001f)  // Skip pixels with no outgoing radiance
                         continue;
@@ -148,48 +139,28 @@ namespace mcrt {
                     // We apply a small offset of 0.00001f in the direction of the normal to the UV world pos, to 'mitigate' floating point rounding errors causing false occlusions/illuminations
                     UVWorldPos = glm::vec3{ UVWorldPos.x + UVNormal.x * 0.0001f, UVWorldPos.y + UVNormal.y * 0.0001f, UVWorldPos.z + UVNormal.z * 0.0001f };
              
-                    // Ray destination (SH origin)
-                    glm::vec3 rayDestination = { shOrigins[sh].x, shOrigins[sh].y, shOrigins[sh].z };
+                    // Ray destination (Probe origin)
+                    //glm::vec3 rayDestination = { shOrigins[probe].x, shOrigins[probe].y, shOrigins[probe].z };
+                    glm::vec3 rayDestination = glm::vec3{0.45f ,0.45f, 0.85f};
 
                     // Ray direction
                     glm::vec3 rayDir = UVWorldPos - rayDestination;
-                    glm::vec3 rayDirInv = rayDestination - UVWorldPos;
+                    glm::vec3 invRayDir = rayDestination - UVWorldPos;
 
                     // Convert to float3 format
                     float3 rayOrigin3f = float3{ UVWorldPos.x, UVWorldPos.y, UVWorldPos.z };
                     float3 rayDir3f = float3{ rayDir.x, rayDir.y, rayDir.z };
-                    float3 rayDir3fInv = float3{ rayDirInv.x, rayDirInv.y, rayDirInv.z };
+                    float3 invDir3f = float3{ invRayDir.x, invRayDir.y, invRayDir.z };
                     float3 normalizedRayDir = normalize(rayDir3f);
-                    float3 normalizedRayDirInv = normalize(rayDir3fInv);
 
                     // Check if the current SH is facing the light source, if not, skip it
-                    if (dot(rayDir3fInv, uvNormal3f) < 0)
+                    if (dot(rayDir3f, uvNormal3f) > 0)
                         continue;
 
 
-                    // Calculate spherical coordinate representation of ray
-                    // (https://en.wikipedia.org/wiki/Spherical_coordinate_system#Cartesian_coordinates)
-
-                    //double theta = acos(clamp(normalizedRayDir.z, -1.0, 1.0));
-                    //if (normalizedRayDir.x > 0)
-                    //{
-                    //    double phi = atan2(normalizedRayDir.y, normalizedRayDir.x); // atan2 returns something between -2*pi and 2*pi, but phi should be between [0;pi]
-                    //}
-                    //else if (normalizedRayDir.x < 0 && normalizedRayDir.y >= 0)
-                    //{
-                    //    double phi = atan2(normalizedRayDir.y, normalizedRayDir.x) + PI; 
-                    //}
-                    //else if (normalizedRayDir.x < 0 && normalizedRayDir.y < 0)
-                    //{
-                    //    double phi = atan2(normalizedRayDir.y, normalizedRayDir.x) - PI;
-                    //}
-                    //else if (normalizedRayDir.x == 0 && normalizedRayDir.y > 0)
-                    //{
-                    //    double phi = 0.5f * PI;
-                    //}
-                    //else {
-                    //    double phi = -0.5f * PI;
-                    //}
+                    // Find CubeMap face index + UV coordinates
+                    int faceIndex, float faceU, float faceV;
+                    convert_xyz_to_cube_uv(normalizedRayDir.x, normalizedRayDir.y, normalizedRayDir.z, &faceIndex, &faceU, &faceV);
 
                     RadianceCellGatherPRD prd{};
                     prd.rayOrigin = UVWorldPos;
@@ -204,7 +175,7 @@ namespace mcrt {
                     // Trace ray against scene geometry to see if ray is occluded
                     optixTrace(optixLaunchParams.sceneTraversable,
                         rayOrigin3f,
-                        rayDir3fInv,
+                        invDir3f,
                         0.f,    // tmin
                         1e20f,  // tmax
                         0.0f,   // rayTime
@@ -218,49 +189,25 @@ namespace mcrt {
 
                     prd.distanceToClosestProxyIntersectionSquared = __uint_as_float(u0);
 
-                    float distanceToSHSquared = (((rayDestination.x - UVWorldPos.x) * (rayDestination.x - UVWorldPos.x)) + ((rayDestination.y - UVWorldPos.y) * (rayDestination.y - UVWorldPos.y)) + ((rayDestination.z - UVWorldPos.z) * (rayDestination.z - UVWorldPos.z)));
-                    //printf("distanceToProxy: %f distanceToSH: %f\n", prd.distanceToClosestProxyIntersectionSquared, distanceToSHSquared);
+                    float distanceToProbeSquared = (((rayDestination.x - UVWorldPos.x) * (rayDestination.x - UVWorldPos.x)) + ((rayDestination.y - UVWorldPos.y) * (rayDestination.y - UVWorldPos.y)) + ((rayDestination.z - UVWorldPos.z) * (rayDestination.z - UVWorldPos.z)));
+                    //printf("distanceToProxy: %f distanceToSH: %f\n", prd.distanceToClosestProxyIntersectionSquared, distanceToProbeSquared);
 
                     // No occlusion, we can let the ray contribute (visibility check)
-                    if (distanceToSHSquared < prd.distanceToClosestProxyIntersectionSquared)
+                    if (distanceToProbeSquared < prd.distanceToClosestProxyIntersectionSquared)
                     {
-                        numSamplesAccumulator[sh]++;
+                        //printf("Contribution! (in cell %d, probe %d, face %d) \n ", nonEmptyCellIndex, probe, faceIndex);
 
-                        // Ray contribution
-                        SHAccumulator[sh * 9] += grayscale * Y_0_0();
-                        SHAccumulator[sh * 9 + 1] += grayscale * Y_min1_1(normalizedRayDir.x, normalizedRayDir.y, normalizedRayDir.z);
-                        SHAccumulator[sh * 9 + 2] += grayscale * Y_0_1(normalizedRayDir.x, normalizedRayDir.y, normalizedRayDir.z);
-                        SHAccumulator[sh * 9 + 3] += grayscale * Y_1_1(normalizedRayDir.x, normalizedRayDir.y, normalizedRayDir.z);
-                        SHAccumulator[sh * 9 + 4] += grayscale * Y_min2_2(normalizedRayDir.x, normalizedRayDir.y, normalizedRayDir.z);
-                        SHAccumulator[sh * 9 + 5] += grayscale * Y_min1_2(normalizedRayDir.x, normalizedRayDir.y, normalizedRayDir.z);
-                        SHAccumulator[sh * 9 + 6] += grayscale * Y_0_2(normalizedRayDir.x, normalizedRayDir.y, normalizedRayDir.z);
-                        SHAccumulator[sh * 9 + 7] += grayscale * Y_1_2(normalizedRayDir.x, normalizedRayDir.y, normalizedRayDir.z);
-                        SHAccumulator[sh * 9 + 8] += grayscale * Y_2_2(normalizedRayDir.x, normalizedRayDir.y, normalizedRayDir.z);
+                        int uIndex = optixLaunchParams.cubeMapResolution * faceU;
+                        int vIndex = optixLaunchParams.cubeMapResolution * faceV;
+                        int uvIndex = vIndex * optixLaunchParams.cubeMapResolution + uIndex;
+
+                        // convert to 32-bit rgba value (we explicitly set alpha to 0xff
+                        // to make stb_image_write happy ...
+                        const uint32_t rgba = 0xff000000
+                            | (r << 0) | (g << 8) | (b << 16);
+
+                        optixLaunchParams.cubeMaps[(probeOffset + faceIndex * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution)) + uvIndex] = rgba;
                     }
-                }
-            }
-        }
-
-        // Current non-empty cell * amount of basis functions * 8 SHs per cell 
-        int cellOffset = nonEmptyCellIndex * amountBasisFunctions * 8;
-
-        // Write projected results to output buffer
-        for (int n_samples_i = 0; n_samples_i < 8; n_samples_i++)
-        {
-            int numSamples = numSamplesAccumulator[n_samples_i];
-            if (numSamples > 0) {
-                atomicAdd(&optixLaunchParams.shNumSamplesAccumulators[nonEmptyCellIndex * 8 + n_samples_i], numSamples);
-                //double weight = 1.0 / (numSamplesAccumulator[n_samples_i] * 4.0 * PI);
-                for (int basis_f_i = 0; basis_f_i < 9; basis_f_i++)
-                {
-                    atomicAdd(&optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + n_samples_i * amountBasisFunctions + basis_f_i], SHAccumulator[n_samples_i * amountBasisFunctions + basis_f_i]);
-
-                    //// Accumulate
-                    //if (!isnan(SHAccumulator[n_samples_i * 9 + basis_f_i]))
-                    //{
-                    //    atomicAdd(&optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + n_samples_i * amountBasisFunctions + basis_f_i], SHAccumulator[n_samples_i * amountBasisFunctions + basis_f_i]);
-                    //}
-                    //optixLaunchParams.sphericalHarmonicsWeights.weights[cellOffset + n_samples_i * 9 + basis_f_i] += SHAccumulator[n_samples_i * 9 + basis_f_i];
                 }
             }
         }

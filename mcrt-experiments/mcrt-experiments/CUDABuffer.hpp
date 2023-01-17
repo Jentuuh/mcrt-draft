@@ -67,6 +67,17 @@ namespace mcrt {
 				count * sizeof(T), cudaMemcpyDeviceToHost));
 		}
 
+		// Copy device memory section to host
+		template<typename T>
+		void download_with_offset(T* t, size_t count, int offset)
+		{
+			assert(d_ptr != nullptr);
+			//assert(sizeInBytes == count * sizeof(T));
+			//assert(sizeInBytes <= offset * sizeof(T) + count * sizeof(T))
+			CUDA_CHECK(Memcpy((void*)t, (T*)d_ptr + offset,
+				count * sizeof(T), cudaMemcpyDeviceToHost));
+		}
+
 		size_t sizeInBytes{ 0 };
 		void* d_ptr{ nullptr };
 	};

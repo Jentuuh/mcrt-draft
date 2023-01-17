@@ -149,9 +149,11 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mcrt_pipeline.cpp" />
     <ClCompile Include="model.cpp" />
+    <ClCompile Include="radianceCellGathering_Cubemap_embedded.c" />
     <ClCompile Include="radianceCellGathering_embedded.c" />
     <ClCompile Include="radianceCellScattering_embedded.c" />
     <ClCompile Include="radiance_cell.cpp" />
+    <ClCompile Include="radiance_cell_gather_cube_map_pipeline.cpp" />
     <ClCompile Include="radiance_cell_gather_pipeline.cpp" />
     <ClCompile Include="radiance_cell_scatter_pipeline.cpp" />
     <ClCompile Include="radiance_grid.cpp" />
@@ -175,6 +177,7 @@
     <ClInclude Include="mcrt_pipeline.hpp" />
     <ClInclude Include="model.hpp" />
     <ClInclude Include="radiance_cell.hpp" />
+    <ClInclude Include="radiance_cell_gather_cube_map_pipeline.hpp" />
     <ClInclude Include="radiance_cell_gather_pipeline.hpp" />
     <ClInclude Include="radiance_cell_scatter_pipeline.hpp" />
     <ClInclude Include="radiance_grid.hpp" />
@@ -184,14 +187,18 @@
     <ClInclude Include="voxelizer.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="cube_mapping.cuh" />
     <None Include="devicePrograms.cu" />
     <None Include="directLightingShaders.cu" />
     <None Include="directLightingShadersGathering.cu" />
     <None Include="cameraRayProgram.cu" />
     <None Include="radianceCellGathering3.cu" />
+    <None Include="radianceCellGathering_Cubemap.cu" />
     <None Include="radianceCellScattering.cu" />
     <None Include="radianceCellGathering2.cu" />
+    <None Include="radianceCellScattering_last.cu" />
     <None Include="radianceCellScattering_trilinear.cu" />
+    <None Include="radianceCellScattering_trilinear2.cu" />
     <None Include="spherical_harmonics.cuh" />
     <None Include="radianceCellGathering.cu" />
   </ItemGroup>

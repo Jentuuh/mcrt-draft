@@ -114,6 +114,16 @@ namespace mcrt {
             }
         }
 
+        glm::vec3 ogSh0 = { cellCenter.x - 0.5f * cellSize, cellCenter.y - 0.5f * cellSize, cellCenter.z - 0.5f * cellSize };
+        glm::vec3 ogSh1 = { cellCenter.x + 0.5f * cellSize, cellCenter.y - 0.5f * cellSize, cellCenter.z - 0.5f * cellSize };
+        glm::vec3 ogSh2 = { cellCenter.x - 0.5f * cellSize, cellCenter.y + 0.5f * cellSize, cellCenter.z - 0.5f * cellSize };
+        glm::vec3 ogSh3 = { cellCenter.x + 0.5f * cellSize, cellCenter.y + 0.5f * cellSize, cellCenter.z - 0.5f * cellSize };
+        glm::vec3 ogSh4 = { cellCenter.x - 0.5f * cellSize, cellCenter.y - 0.5f * cellSize, cellCenter.z + 0.5f * cellSize };
+        glm::vec3 ogSh5 = { cellCenter.x + 0.5f * cellSize, cellCenter.y - 0.5f * cellSize, cellCenter.z + 0.5f * cellSize };
+        glm::vec3 ogSh6 = { cellCenter.x - 0.5f * cellSize, cellCenter.y + 0.5f * cellSize, cellCenter.z + 0.5f * cellSize };
+        glm::vec3 ogSh7 = { cellCenter.x + 0.5f * cellSize, cellCenter.y + 0.5f * cellSize, cellCenter.z + 0.5f * cellSize };
+
+
         float3 ogLeft{ cellCenter.x - 0.5f * cellSize, cellCenter.y - 0.5f * cellSize, cellCenter.z + 0.5f * cellSize };
         float3 ogRight{ cellCenter.x + 0.5f * cellSize, cellCenter.y - 0.5f * cellSize, cellCenter.z - 0.5f * cellSize };
         float3 ogUp{ cellCenter.x - 0.5f * cellSize, cellCenter.y + 0.5f * cellSize, cellCenter.z - 0.5f * cellSize };
@@ -127,6 +137,8 @@ namespace mcrt {
         float3 faceOgDuDv[6][3] = { {ogLeft, float3{0.0f, 0.0f, -1.0f}, float3{0.0f, 1.0f, 0.0f} }, {ogRight, float3{0.0f, 0.0f, 1.0f},float3{0.0f, 1.0f, 0.0f} }, {ogUp, float3{1.0f, 0.0f, 0.0f},float3{0.0f, 0.0f, 1.0f} }, {ogDown, float3{1.0f, 0.0f, 0.0f},float3{0.0f, 0.0f, -1.0f}}, {ogFront, float3{1.0f, 0.0f, 0.0f},float3{0.0f, 1.0f, 0.0f} }, {ogBack, float3{-1.0f, 0.0f, 0.0f},float3{0.0f, 1.0f, 0.0f} } };
         // The indices of the SHs that belong to each face, to use while indexing the buffer (L,R,U,D,F,B), (LB, RB, LT, RT)
         int4 cellSHIndices[6] = { int4{4, 0, 6, 2}, int4{1, 5, 3, 7}, int4{2, 3, 6, 7}, int4{4, 5, 0, 1}, int4{0, 1, 2, 3}, int4{5, 4, 7, 6} };
+        // Origins of the SHs located on the corners of each cell
+        glm::vec3 cellSHOrigins[8] = { ogSh0, ogSh1, ogSh2, ogSh3, ogSh4, ogSh5, ogSh6, ogSh7 };
 
         // Irradiance accumulator
         float totalIrradiance = 0.0f;
@@ -212,14 +224,37 @@ namespace mcrt {
                                 glm::vec3 diff = UVWorldPos - cellOrigin;
 
                                 // Calculate trilinear interpolation weights, see thesis for explanation
-                                float weightA = (diff.x * diff.y * diff.z) * invCellVolume;
-                                float weightB = ((1.0f - diff.x) * diff.y * diff.z) * invCellVolume;
-                                float weightC = (diff.x * (1.0f - diff.y) * diff.z) * invCellVolume;
-                                float weightD = ((1.0f - diff.x) * (1.0f * diff.y) * diff.z) * invCellVolume;
-                                float weightE = (diff.x * diff.y * (1.0f - diff.z)) * invCellVolume;
-                                float weightF = ((1.0f - diff.x) * diff.y * (1.0f - diff.z)) * invCellVolume;
-                                float weightG = (diff.x * (1.0f - diff.y) * (1.0f - diff.z)) * invCellVolume;
-                                float weightH = ((1.0f - diff.x) * (1.0f - diff.y) * (1.0f - diff.z)) * invCellVolume;
+                                glm::vec3 dirTo0 = cellSHOrigins[0] - UVWorldPos;
+                                float3 dirTo03f = float3{ dirTo0.x, dirTo0.y, dirTo0.z };
+                                float weightA = dot(dirTo03f, uvNormal3f) > 0 ? (diff.x * diff.y * diff.z) * invCellVolume : 0.0f;
+
+                                glm::vec3 dirTo1 = cellSHOrigins[1] - UVWorldPos;
+                                float3 dirTo13f = float3{ dirTo1.x, dirTo1.y, dirTo1.z };
+                                float weightB = dot(dirTo13f, uvNormal3f) > 0 ? ((1.0f - diff.x) * diff.y * diff.z) * invCellVolume : 0.0f;
+
+                                glm::vec3 dirTo2 = cellSHOrigins[2] - UVWorldPos;
+                                float3 dirTo23f = float3{ dirTo2.x, dirTo2.y, dirTo2.z };
+                                float weightC = dot(dirTo23f, uvNormal3f) > 0 ? (diff.x * (1.0f - diff.y) * diff.z) * invCellVolume : 0.0f;
+
+                                glm::vec3 dirTo3 = cellSHOrigins[3] - UVWorldPos;
+                                float3 dirTo33f = float3{ dirTo3.x, dirTo3.y, dirTo3.z };
+                                float weightD = dot(dirTo33f, uvNormal3f) > 0 ? ((1.0f - diff.x) * (1.0f * diff.y) * diff.z) * invCellVolume : 0.0f;
+
+                                glm::vec3 dirTo4 = cellSHOrigins[4] - UVWorldPos;
+                                float3 dirTo43f = float3{ dirTo4.x, dirTo4.y, dirTo4.z };
+                                float weightE = dot(dirTo43f, uvNormal3f) > 0 ? (diff.x * diff.y * (1.0f - diff.z)) * invCellVolume : 0.0f;
+
+                                glm::vec3 dirTo5 = cellSHOrigins[5] - UVWorldPos;
+                                float3 dirTo53f = float3{ dirTo5.x, dirTo5.y, dirTo5.z };
+                                float weightF = dot(dirTo53f, uvNormal3f) > 0 ? ((1.0f - diff.x) * diff.y * (1.0f - diff.z)) * invCellVolume : 0.0f;
+
+                                glm::vec3 dirTo6 = cellSHOrigins[6] - UVWorldPos;
+                                float3 dirTo63f = float3{ dirTo6.x, dirTo6.y, dirTo6.z };
+                                float weightG = dot(dirTo63f, uvNormal3f) > 0 ? (diff.x * (1.0f - diff.y) * (1.0f - diff.z)) * invCellVolume : 0.0f;
+
+                                glm::vec3 dirTo7 = cellSHOrigins[7] - UVWorldPos;
+                                float3 dirTo73f = float3{ dirTo7.x, dirTo7.y, dirTo7.z };
+                                float weightH = dot(dirTo73f, uvNormal3f) > 0 ? ((1.0f - diff.x) * (1.0f - diff.y) * (1.0f - diff.z)) * invCellVolume : 0.0f;
 
                                 // Basis function evaluations
                                 float b0 = Y_0_0();

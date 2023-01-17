@@ -26,7 +26,7 @@
 	// .globl	__closesthit__radiance
 .visible .entry __closesthit__radiance()
 {
-	.reg .f32 	%f<58>;
+	.reg .f32 	%f<57>;
 	.reg .b32 	%r<33>;
 	.reg .b64 	%rd<27>;
 	.loc	1 49 0
@@ -173,22 +173,21 @@
 	div.approx.ftz.f32 	%f45, %f44, %f30;
 	cvt.rn.f32.u32 	%f46, %r32;
 	div.approx.ftz.f32 	%f47, %f46, %f30;
-	.loc	1 94 41
-	.loc	4 620 3, function_name $L__info_string5, inlined_at 1 94 41
-	add.ftz.f32 	%f48, %f31, %f37;
-	add.ftz.f32 	%f49, %f33, %f39;
-	add.ftz.f32 	%f50, %f35, %f41;
-	.loc	1 94 41
-	.loc	4 620 3, function_name $L__info_string5, inlined_at 1 94 41
-	add.ftz.f32 	%f51, %f48, %f43;
-	add.ftz.f32 	%f52, %f49, %f45;
-	add.ftz.f32 	%f53, %f50, %f47;
+	.loc	1 94 69
+	.loc	4 692 3, function_name $L__info_string5, inlined_at 1 94 69
+	mul.ftz.f32 	%f48, %f37, 0f3F000000;
+	mul.ftz.f32 	%f49, %f39, 0f3F000000;
+	mul.ftz.f32 	%f50, %f41, 0f3F000000;
 	.loc	1 94 40
-	.loc	4 719 3, function_name $L__info_string6, inlined_at 1 94 40
-	mov.f32 	%f54, 0f40400000;
-	div.approx.ftz.f32 	%f55, %f51, %f54;
-	div.approx.ftz.f32 	%f56, %f52, %f54;
-	div.approx.ftz.f32 	%f57, %f53, %f54;
+	.loc	4 620 3, function_name $L__info_string6, inlined_at 1 94 40
+	fma.rn.ftz.f32 	%f51, %f31, 0f3ECCCCCD, %f48;
+	fma.rn.ftz.f32 	%f52, %f33, 0f3ECCCCCD, %f49;
+	fma.rn.ftz.f32 	%f53, %f35, 0f3ECCCCCD, %f50;
+	.loc	1 94 40
+	.loc	4 620 3, function_name $L__info_string6, inlined_at 1 94 40
+	fma.rn.ftz.f32 	%f54, %f43, 0f3DCCCCCD, %f51;
+	fma.rn.ftz.f32 	%f55, %f45, 0f3DCCCCCD, %f52;
+	fma.rn.ftz.f32 	%f56, %f47, 0f3DCCCCCD, %f53;
 	.loc	1 96 39
 	.loc	1 39 29, function_name $L__info_string7, inlined_at 1 96 39
 	.loc	2 314 5, function_name $L__info_string8, inlined_at 1 39 29
@@ -208,9 +207,9 @@
 	cvt.u64.u32 	%rd25, %r4;
 	bfi.b64 	%rd26, %rd24, %rd25, 32, 32;
 	.loc	1 97 9
-	st.f32 	[%rd26], %f55;
-	st.f32 	[%rd26+4], %f56;
-	st.f32 	[%rd26+8], %f57;
+	st.f32 	[%rd26], %f54;
+	st.f32 	[%rd26+4], %f55;
+	st.f32 	[%rd26+8], %f56;
 	.loc	1 98 5
 	ret;
 
@@ -367,11 +366,11 @@
 	.loc	1 154 26
 	add.ftz.f32 	%f18, %f16, 0fBF000000;
 	.loc	1 155 15
-	.loc	4 692 3, function_name $L__info_string16, inlined_at 1 155 15
+	.loc	4 692 3, function_name $L__info_string5, inlined_at 1 155 15
 	ld.const.v2.f32 	{%f19, %f20}, [optixLaunchParams+48];
 	ld.const.v2.f32 	{%f23, %f24}, [optixLaunchParams+56];
 	.loc	1 154 43
-	.loc	4 620 3, function_name $L__info_string5, inlined_at 1 154 43
+	.loc	4 620 3, function_name $L__info_string6, inlined_at 1 154 43
 	ld.const.v2.f32 	{%f27, %f28}, [optixLaunchParams+32];
 	fma.rn.ftz.f32 	%f30, %f18, %f19, %f28;
 	ld.const.v2.f32 	{%f31, %f32}, [optixLaunchParams+40];
@@ -380,28 +379,28 @@
 	.loc	1 154 43
 	add.ftz.f32 	%f37, %f17, 0fBF000000;
 	.loc	1 156 15
-	.loc	4 692 3, function_name $L__info_string16, inlined_at 1 156 15
+	.loc	4 692 3, function_name $L__info_string5, inlined_at 1 156 15
 	ld.const.v2.f32 	{%f38, %f39}, [optixLaunchParams+64];
 	.loc	1 154 43
-	.loc	4 620 3, function_name $L__info_string5, inlined_at 1 154 43
+	.loc	4 620 3, function_name $L__info_string6, inlined_at 1 154 43
 	fma.rn.ftz.f32 	%f42, %f37, %f24, %f30;
 	fma.rn.ftz.f32 	%f43, %f37, %f38, %f35;
 	fma.rn.ftz.f32 	%f44, %f37, %f39, %f36;
 	.loc	1 154 28
-	.loc	5 194 10, function_name $L__info_string17, inlined_at 1 154 28
-	.loc	5 88 27, function_name $L__info_string18, inlined_at 5 194 10
-	.loc	5 170 10, function_name $L__info_string19, inlined_at 5 88 27
-	.loc	5 52 21, function_name $L__info_string20, inlined_at 5 170 10
-	.loc	4 710 3, function_name $L__info_string21, inlined_at 5 52 21
+	.loc	5 194 10, function_name $L__info_string16, inlined_at 1 154 28
+	.loc	5 88 27, function_name $L__info_string17, inlined_at 5 194 10
+	.loc	5 170 10, function_name $L__info_string18, inlined_at 5 88 27
+	.loc	5 52 21, function_name $L__info_string19, inlined_at 5 170 10
+	.loc	4 710 3, function_name $L__info_string20, inlined_at 5 52 21
 	mul.ftz.f32 	%f45, %f43, %f43;
-	.loc	5 53 4, function_name $L__info_string20, inlined_at 5 170 10
+	.loc	5 53 4, function_name $L__info_string19, inlined_at 5 170 10
 	fma.rn.ftz.f32 	%f46, %f42, %f42, %f45;
 	fma.rn.ftz.f32 	%f47, %f44, %f44, %f46;
-	.loc	5 88 15, function_name $L__info_string18, inlined_at 5 194 10
-	.loc	6 138 36, function_name $L__info_string22, inlined_at 5 88 15
+	.loc	5 88 15, function_name $L__info_string17, inlined_at 5 194 10
+	.loc	6 138 36, function_name $L__info_string21, inlined_at 5 88 15
 	rsqrt.approx.ftz.f32 	%f48, %f47;
-	.loc	5 88 11, function_name $L__info_string18, inlined_at 5 194 10
-	.loc	4 674 3, function_name $L__info_string23, inlined_at 5 88 11
+	.loc	5 88 11, function_name $L__info_string17, inlined_at 5 194 10
+	.loc	4 674 3, function_name $L__info_string22, inlined_at 5 88 11
 	mul.ftz.f32 	%f4, %f42, %f48;
 	mul.ftz.f32 	%f5, %f43, %f48;
 	mul.ftz.f32 	%f6, %f44, %f48;
@@ -410,7 +409,7 @@
 	.loc	1 161 9
 	ld.const.u64 	%rd1, [optixLaunchParams+120];
 	.loc	1 161 9
-	.loc	2 76 5, function_name $L__info_string24, inlined_at 1 161 9
+	.loc	2 76 5, function_name $L__info_string23, inlined_at 1 161 9
 	mov.f32 	%f8, 0f60AD78EC;
 	mov.u32 	%r40, 255;
 	mov.u32 	%r45, 2;
@@ -474,11 +473,11 @@ $L__info_string4:
 .b8 95,90,78,51,103,108,109,112,108,73,102,76,78,83,95,57,113,117,97,108,105,102,105,101,114,69,48,69,69,69,78,83,95,51,118,101,99,73,76,105
 .b8 50,69,84,95,88,84,48,95,69,69,69,82,75,83,52,95,83,54,95,0
 $L__info_string5:
+.b8 95,90,78,51,103,108,109,109,108,73,102,76,78,83,95,57,113,117,97,108,105,102,105,101,114,69,48,69,69,69,78,83,95,51,118,101,99,73,76,105
+.b8 51,69,84,95,88,84,48,95,69,69,69,83,51,95,82,75,83,52,95,0
+$L__info_string6:
 .b8 95,90,78,51,103,108,109,112,108,73,102,76,78,83,95,57,113,117,97,108,105,102,105,101,114,69,48,69,69,69,78,83,95,51,118,101,99,73,76,105
 .b8 51,69,84,95,88,84,48,95,69,69,69,82,75,83,52,95,83,54,95,0
-$L__info_string6:
-.b8 95,90,78,51,103,108,109,100,118,73,102,76,78,83,95,57,113,117,97,108,105,102,105,101,114,69,48,69,69,69,78,83,95,51,118,101,99,73,76,105
-.b8 51,69,84,95,88,84,48,95,69,69,69,82,75,83,52,95,83,51,95,0
 $L__info_string7:
 .b8 95,90,78,53,48,95,73,78,84,69,82,78,65,76,95,101,57,98,98,98,51,101,99,95,49,57,95,99,97,109,101,114,97,82,97,121,80,114,111,103
 .b8 114,97,109,95,99,117,95,50,102,49,50,48,98,53,55,52,109,99,114,116,54,103,101,116,80,82,68,73,78,51,103,108,109,51,118,101,99,73,76,105
@@ -508,31 +507,28 @@ $L__info_string15:
 .b8 95,90,78,51,103,108,109,100,118,73,102,76,78,83,95,57,113,117,97,108,105,102,105,101,114,69,48,69,69,69,78,83,95,51,118,101,99,73,76,105
 .b8 50,69,84,95,88,84,48,95,69,69,69,82,75,83,52,95,83,54,95,0
 $L__info_string16:
-.b8 95,90,78,51,103,108,109,109,108,73,102,76,78,83,95,57,113,117,97,108,105,102,105,101,114,69,48,69,69,69,78,83,95,51,118,101,99,73,76,105
-.b8 51,69,84,95,88,84,48,95,69,69,69,83,51,95,82,75,83,52,95,0
-$L__info_string17:
 .b8 95,90,78,51,103,108,109,57,110,111,114,109,97,108,105,122,101,73,76,105,51,69,102,76,78,83,95,57,113,117,97,108,105,102,105,101,114,69,48,69
 .b8 69,69,78,83,95,51,118,101,99,73,88,84,95,69,84,48,95,88,84,49,95,69,69,69,82,75,83,52,95,0
-$L__info_string18:
+$L__info_string17:
 .b8 95,90,78,51,103,108,109,54,100,101,116,97,105,108,49,55,99,111,109,112,117,116,101,95,110,111,114,109,97,108,105,122,101,73,76,105,51,69,102,76
 .b8 78,83,95,57,113,117,97,108,105,102,105,101,114,69,48,69,76,98,48,69,69,52,99,97,108,108,69,82,75,78,83,95,51,118,101,99,73,76,105,51
 .b8 69,102,76,83,50,95,48,69,69,69,0
-$L__info_string19:
+$L__info_string18:
 .b8 95,90,78,51,103,108,109,51,100,111,116,73,76,105,51,69,102,76,78,83,95,57,113,117,97,108,105,102,105,101,114,69,48,69,69,69,84,48,95,82
 .b8 75,78,83,95,51,118,101,99,73,88,84,95,69,83,50,95,88,84,49,95,69,69,69,83,54,95,0
-$L__info_string20:
+$L__info_string19:
 .b8 95,90,78,51,103,108,109,54,100,101,116,97,105,108,49,49,99,111,109,112,117,116,101,95,100,111,116,73,78,83,95,51,118,101,99,73,76,105,51,69
 .b8 102,76,78,83,95,57,113,117,97,108,105,102,105,101,114,69,48,69,69,69,102,76,98,48,69,69,52,99,97,108,108,69,82,75,83,52,95,83,55,95
 .b8 0
-$L__info_string21:
+$L__info_string20:
 .b8 95,90,78,51,103,108,109,109,108,73,102,76,78,83,95,57,113,117,97,108,105,102,105,101,114,69,48,69,69,69,78,83,95,51,118,101,99,73,76,105
 .b8 51,69,84,95,88,84,48,95,69,69,69,82,75,83,52,95,83,54,95,0
-$L__info_string22:
+$L__info_string21:
 .b8 95,90,78,51,103,108,109,49,49,105,110,118,101,114,115,101,115,113,114,116,73,102,69,69,84,95,83,49,95,0
-$L__info_string23:
+$L__info_string22:
 .b8 95,90,78,51,103,108,109,109,108,73,102,76,78,83,95,57,113,117,97,108,105,102,105,101,114,69,48,69,69,69,78,83,95,51,118,101,99,73,76,105
 .b8 51,69,84,95,88,84,48,95,69,69,69,82,75,83,52,95,83,51,95,0
-$L__info_string24:
+$L__info_string23:
 .b8 95,90,78,53,48,95,73,78,84,69,82,78,65,76,95,101,57,98,98,98,51,101,99,95,49,57,95,99,97,109,101,114,97,82,97,121,80,114,111,103
 .b8 114,97,109,95,99,117,95,50,102,49,50,48,98,53,55,49,48,111,112,116,105,120,84,114,97,99,101,73,74,106,106,69,69,69,118,121,54,102,108,111
 .b8 97,116,51,83,49,95,102,102,102,106,106,106,106,106,68,112,82,84,95,0
