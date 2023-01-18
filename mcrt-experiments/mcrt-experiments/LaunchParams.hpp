@@ -73,6 +73,31 @@ namespace mcrt {
 		OptixTraversableHandle sceneTraversable;
 	};
 
+	struct LaunchParamsRadianceCellScatterCubeMap
+	{
+		struct {
+			UVWorldData* UVDataBuffer;
+			int size;
+		} uvWorldPositions;
+
+		PixelBuffer currentBounceTexture;
+
+		glm::vec2* uvsInside;
+		int* uvsInsideOffsets;
+		glm::vec3 cellCenter;
+		float cellSize;
+
+		int stratifyResX;
+		int stratifyResY;
+
+		int nonEmptyCellIndex;
+
+		uint32_t* cubeMaps; // A pointer to cubemap faces
+		int cubeMapResolution;
+
+		OptixTraversableHandle sceneTraversable;
+	};
+
 
 
 	/**

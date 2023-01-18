@@ -1,3 +1,4 @@
+#pragma once
 #include <optix_device.h>
 #include "LaunchParams.hpp"
 
@@ -10,13 +11,13 @@ namespace mcrt {
 	
 	static __forceinline__ __device__ void convert_xyz_to_cube_uv(float x, float y, float z, int* index, float* u, float* v)
 	{
-        float maxExtent = max(max(x, y), z);
+        float maxExtent = max(max(abs(x), abs(y)), abs(z));
         int faceIndex;
         float uc;
         float vc;
 
         // X axis is max extent
-        if (maxExtent == x)
+        if (maxExtent == abs(x))
         {
             // Positive X
             if (x > 0)
@@ -33,7 +34,7 @@ namespace mcrt {
             }
         }
         // Y axis is max extent
-        else if (maxExtent == y)
+        else if (maxExtent == abs(y))
         {
             // Positive Y
             if (y > 0)
@@ -50,7 +51,7 @@ namespace mcrt {
             }
         }
         // Z axis is max extent
-        else if (maxExtent == z)
+        else if (maxExtent == abs(z))
         {
             // Positive Z
             if (z > 0)
@@ -68,8 +69,8 @@ namespace mcrt {
         }
 
         // Shift from [-1; 1] to [0; 1]
-        *u = 0.5 * (uc / maxExtent + 1.0);
-        *v = 0.5 * (vc / maxExtent + 1.0);
+        *u = 0.5 * ((uc / maxExtent) + 1.0);
+        *v = 0.5 * ((vc / maxExtent) + 1.0);
         *index = faceIndex;
 	}
 }

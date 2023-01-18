@@ -40,6 +40,15 @@
     <Filter Include="Source Files\Acceleration Structures">
       <UniqueIdentifier>{a5db96c5-eef1-4ba2-b449-1a359900cce1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\GPU\Spherical Harmonics">
+      <UniqueIdentifier>{001df52e-f84a-483c-927e-19ba488cdb42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GPU\Cubemap">
+      <UniqueIdentifier>{44373cc8-3582-42c8-94df-689fedfd5bbb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GPU\Direct Lighting">
+      <UniqueIdentifier>{bc7b925d-b8bf-4352-b8d0-4ffd63ec76c4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -87,20 +96,11 @@
     <ClCompile Include="direct_light_pipeline.cpp">
       <Filter>Source Files\Pipelines</Filter>
     </ClCompile>
-    <ClCompile Include="directLightingShaders_embedded.c">
-      <Filter>Source Files\GPU</Filter>
-    </ClCompile>
-    <ClCompile Include="directLightingShadersGathering_embedded.c">
-      <Filter>Source Files\GPU</Filter>
-    </ClCompile>
     <ClCompile Include="radiance_cell_gather_pipeline.cpp">
       <Filter>Source Files\Pipelines</Filter>
     </ClCompile>
     <ClCompile Include="voxelizer.cpp">
       <Filter>Source Files\Radiance Grid</Filter>
-    </ClCompile>
-    <ClCompile Include="radianceCellGathering_embedded.c">
-      <Filter>Source Files\GPU</Filter>
     </ClCompile>
     <ClCompile Include="gas.cpp">
       <Filter>Source Files\Acceleration Structures</Filter>
@@ -111,14 +111,29 @@
     <ClCompile Include="radiance_cell_scatter_pipeline.cpp">
       <Filter>Source Files\Pipelines</Filter>
     </ClCompile>
-    <ClCompile Include="radianceCellScattering_embedded.c">
-      <Filter>Source Files\GPU</Filter>
-    </ClCompile>
     <ClCompile Include="radiance_cell_gather_cube_map_pipeline.cpp">
       <Filter>Source Files\Pipelines</Filter>
     </ClCompile>
+    <ClCompile Include="radiance_cell_scatter_cube_map_pipeline.cpp">
+      <Filter>Source Files\Pipelines</Filter>
+    </ClCompile>
+    <ClCompile Include="radianceCellScattering_embedded.c">
+      <Filter>Source Files\GPU\Spherical Harmonics</Filter>
+    </ClCompile>
+    <ClCompile Include="radianceCellGathering_embedded.c">
+      <Filter>Source Files\GPU\Spherical Harmonics</Filter>
+    </ClCompile>
     <ClCompile Include="radianceCellGathering_Cubemap_embedded.c">
-      <Filter>Source Files\GPU</Filter>
+      <Filter>Source Files\GPU\Cubemap</Filter>
+    </ClCompile>
+    <ClCompile Include="directLightingShaders_embedded.c">
+      <Filter>Source Files\GPU\Direct Lighting</Filter>
+    </ClCompile>
+    <ClCompile Include="directLightingShadersGathering_embedded.c">
+      <Filter>Source Files\GPU\Direct Lighting</Filter>
+    </ClCompile>
+    <ClCompile Include="radianceCellScattering_Cubemap_embedded.c">
+      <Filter>Source Files\GPU\Cubemap</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -191,48 +206,57 @@
     <ClInclude Include="radiance_cell_gather_cube_map_pipeline.hpp">
       <Filter>Header Files\Pipelines</Filter>
     </ClInclude>
+    <ClInclude Include="radiance_cell_scatter_cube_map_pipeline.hpp">
+      <Filter>Header Files\Pipelines</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="devicePrograms.cu">
-      <Filter>Source Files\GPU</Filter>
-    </None>
-    <None Include="directLightingShaders.cu">
-      <Filter>Source Files\GPU</Filter>
-    </None>
-    <None Include="directLightingShadersGathering.cu">
-      <Filter>Source Files\GPU</Filter>
-    </None>
-    <None Include="radianceCellGathering.cu">
-      <Filter>Source Files\GPU</Filter>
-    </None>
-    <None Include="spherical_harmonics.cuh">
-      <Filter>Source Files\GPU</Filter>
-    </None>
-    <None Include="radianceCellGathering2.cu">
-      <Filter>Source Files\GPU</Filter>
-    </None>
-    <None Include="radianceCellScattering.cu">
-      <Filter>Source Files\GPU</Filter>
-    </None>
-    <None Include="radianceCellGathering3.cu">
-      <Filter>Source Files\GPU</Filter>
-    </None>
-    <None Include="radianceCellScattering_trilinear.cu">
       <Filter>Source Files\GPU</Filter>
     </None>
     <None Include="cameraRayProgram.cu">
       <Filter>Source Files\GPU</Filter>
     </None>
     <None Include="radianceCellScattering_trilinear2.cu">
-      <Filter>Source Files\GPU</Filter>
+      <Filter>Source Files\GPU\Spherical Harmonics</Filter>
+    </None>
+    <None Include="radianceCellScattering.cu">
+      <Filter>Source Files\GPU\Spherical Harmonics</Filter>
     </None>
     <None Include="radianceCellScattering_last.cu">
-      <Filter>Source Files\GPU</Filter>
+      <Filter>Source Files\GPU\Spherical Harmonics</Filter>
     </None>
-    <None Include="radianceCellGathering_Cubemap.cu">
-      <Filter>Source Files\GPU</Filter>
+    <None Include="radianceCellScattering_trilinear.cu">
+      <Filter>Source Files\GPU\Spherical Harmonics</Filter>
+    </None>
+    <None Include="radianceCellGathering.cu">
+      <Filter>Source Files\GPU\Spherical Harmonics</Filter>
+    </None>
+    <None Include="radianceCellGathering2.cu">
+      <Filter>Source Files\GPU\Spherical Harmonics</Filter>
+    </None>
+    <None Include="radianceCellGathering3.cu">
+      <Filter>Source Files\GPU\Spherical Harmonics</Filter>
+    </None>
+    <None Include="spherical_harmonics.cuh">
+      <Filter>Source Files\GPU\Spherical Harmonics</Filter>
     </None>
     <None Include="cube_mapping.cuh">
+      <Filter>Source Files\GPU\Cubemap</Filter>
+    </None>
+    <None Include="radianceCellGathering_Cubemap.cu">
+      <Filter>Source Files\GPU\Cubemap</Filter>
+    </None>
+    <None Include="directLightingShaders.cu">
+      <Filter>Source Files\GPU\Direct Lighting</Filter>
+    </None>
+    <None Include="directLightingShadersGathering.cu">
+      <Filter>Source Files\GPU\Direct Lighting</Filter>
+    </None>
+    <None Include="radianceCellScattering_Cubemap.cu">
+      <Filter>Source Files\GPU\Cubemap</Filter>
+    </None>
+    <None Include="utils.cuh">
       <Filter>Source Files\GPU</Filter>
     </None>
   </ItemGroup>

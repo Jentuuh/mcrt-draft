@@ -140,8 +140,8 @@ namespace mcrt {
                     UVWorldPos = glm::vec3{ UVWorldPos.x + UVNormal.x * 0.0001f, UVWorldPos.y + UVNormal.y * 0.0001f, UVWorldPos.z + UVNormal.z * 0.0001f };
              
                     // Ray destination (Probe origin)
-                    //glm::vec3 rayDestination = { shOrigins[probe].x, shOrigins[probe].y, shOrigins[probe].z };
-                    glm::vec3 rayDestination = glm::vec3{0.45f ,0.45f, 0.85f};
+                    glm::vec3 rayDestination = { shOrigins[probe].x, shOrigins[probe].y, shOrigins[probe].z };
+                    //glm::vec3 rayDestination = glm::vec3{0.45f ,0.45f, 0.85f};
 
                     // Ray direction
                     glm::vec3 rayDir = UVWorldPos - rayDestination;
@@ -195,7 +195,7 @@ namespace mcrt {
                     // No occlusion, we can let the ray contribute (visibility check)
                     if (distanceToProbeSquared < prd.distanceToClosestProxyIntersectionSquared)
                     {
-                        //printf("Contribution! (in cell %d, probe %d, face %d) \n ", nonEmptyCellIndex, probe, faceIndex);
+                         //printf("Contribution! (in cell %d, probe %d, face %d) \n ", nonEmptyCellIndex, probe, faceIndex);
 
                         int uIndex = optixLaunchParams.cubeMapResolution * faceU;
                         int vIndex = optixLaunchParams.cubeMapResolution * faceV;

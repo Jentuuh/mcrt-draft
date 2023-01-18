@@ -8,6 +8,7 @@
 #include "radiance_cell_gather_pipeline.hpp"
 #include "radiance_cell_gather_cube_map_pipeline.hpp"
 #include "radiance_cell_scatter_pipeline.hpp"
+#include "radiance_cell_scatter_cube_map_pipeline.hpp"
 
 #include <stb/stb_image.h>
 
@@ -46,6 +47,8 @@ namespace mcrt {
 		void calculateRadianceCellGatherPass(CUDABuffer& previousPassLightSourceTexture);
 		void calculateRadianceCellGatherPassCubeMap(CUDABuffer& previousPassLightSourceTexture);
 		void calculateRadianceCellScatterPass(int iteration, CUDABuffer& dstTexture);
+		void calculateRadianceCellScatterPassCubeMap(int iteration, CUDABuffer& dstTexture);
+
 
 		void loadLightTexture();
 		void writeWeightsToTxtFile(std::vector<float>& weights, std::vector<int>& numSamples, int amountCells);
@@ -91,6 +94,7 @@ namespace mcrt {
 		std::unique_ptr<RadianceCellGatherPipeline> radianceCellGatherPipeline;
 		std::unique_ptr<RadianceCellGatherCubeMapPipeline> radianceCellGatherCubeMapPipeline;
 		std::unique_ptr<RadianceCellScatterPipeline> radianceCellScatterPipeline;
+		std::unique_ptr<RadianceCellScatterCubeMapPipeline> radianceCellScatterCubeMapPipeline;
 
 		CUDABuffer lightSourceTexture; // UV map with direct light source (to test the SH projection)
 		CUDABuffer colorBuffer;	// Framebuffer we will write to
