@@ -11,7 +11,6 @@
 #include <fstream>
 
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb/stb_image_write.h>
 
 
@@ -593,9 +592,9 @@ namespace mcrt {
             ));
         }
 
-        // Cell 2, probe 6 (as a test)
-        int cellOffset = 2 * 8 * 6 * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution;
-        int probeOffset = 6 * 6 * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution;
+        // Cell 3, probe 2 (as a test)
+        int cellOffset = 3 * 8 * 6 * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution;
+        int probeOffset = 7 * 6 * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution;
 
         for (int f = 0; f < 6; f++)
         {
@@ -674,7 +673,6 @@ namespace mcrt {
 
         // TODO: For now we're using the same texture size as for the direct lighting pass, we can downsample in the future to gain performance
         const int texSize = directLightPipeline->launchParams.directLightingTexture.size;
-
         NonEmptyCells nonEmpties = scene.grid.getNonEmptyCells();
 
         for (int i = 0; i < nonEmpties.nonEmptyCells.size(); i++)
@@ -791,25 +789,27 @@ namespace mcrt {
         const int texSize = directLightPipeline->launchParams.directLightingTexture.size;
         assert( (texSize > 0) && "Direct lighting texture needs to be initialized before preparing UV indices!");
         
-        std::vector<UVWorldData> UVWorldPositions(texSize * texSize, { glm::vec3{-1000.0f, -1000.0f, -1000.0f}, glm::vec3{-1000.0f, -1000.0f, -1000.0f} });    // Scene is scaled within (0;1) so this should not form a problem
-        std::vector<uint32_t> testUVImage(texSize * texSize, 0);
-        for (int i = 0; i < UVWorldPositions.size(); i++)
+        std::vector<UVWorldData> UVData(texSize * texSize, { glm::vec3{-1000.0f, -1000.0f, -1000.0f}, glm::vec3{-1000.0f, -1000.0f, -1000.0f} });    // Scene is scaled within (0;1) so this should not form a problem
+        //std::vector<uint32_t> testUVImage(texSize * texSize, 0);
+        for (int i = 0; i < UVData.size(); i++)
         {
             const float u = float(i % texSize) / float(texSize);
             // (i - i % texSize) / texSize gives us the row number, divided by texSize gives us the V coordinate 
             const float v = (float((i - (i % texSize))) / float(texSize)) / float(texSize);
             glm::vec2 uv = glm::vec2{ u,v };
-            UVWorldPositions[i] = UVto3D(uv);
+            UVData[i] = UVto3D(uv);
            
-            scene.grid.assignUVToCells(uv, UVWorldPositions[i].worldPosition);
+            // Assign this UV to the cell that it belongs to, so in the scattering pass we can operate on local UVs
+            scene.grid.assignUVToCells(uv, UVData[i].worldPosition);
         }
 
         // Upload world positions to the GPU and pass a pointer to this memory into the launch params
-        UVWorldPositionDeviceBuffer.alloc_and_upload(UVWorldPositions);
+        UVWorldPositionDeviceBuffer.alloc_and_upload(UVData);
         directLightPipeline->launchParams.uvWorldPositions.size = texSize * texSize;
         directLightPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
     }
 
+    // Note that this function must be called after "prepareUVWorldPositions", because the UVs have to be assigned to each cell first
     void Renderer::prepareUVsInsideBuffer()
     {
         NonEmptyCells nonEmpties = scene.grid.getNonEmptyCells();
@@ -825,6 +825,9 @@ namespace mcrt {
             cellUVs.insert(cellUVs.end(), nonEmpties.nonEmptyCells[i]->getUVsInside().begin(), nonEmpties.nonEmptyCells[i]->getUVsInside().end());
         }
 
+        // For debugging purposes and visualization only (should be commented out in release)
+        writeUVsPerCellToImage(offsets, cellUVs, 1024);
+
         UVsInsideBuffer.alloc_and_upload(cellUVs);
         radianceCellScatterPipeline->launchParams.uvsInside = (glm::vec2*)UVsInsideBuffer.d_pointer();
         UVsInsideOffsets.alloc_and_upload(offsets);
@@ -832,6 +835,32 @@ namespace mcrt {
 
         radianceCellScatterCubeMapPipeline->launchParams.uvsInside = (glm::vec2*)UVsInsideBuffer.d_pointer();
         radianceCellScatterCubeMapPipeline->launchParams.uvsInsideOffsets = (int*)UVsInsideOffsets.d_pointer();
+    }
+
+    void Renderer::writeUVsPerCellToImage(std::vector<int>& offsets, std::vector<glm::vec2>& uvs, int texRes)
+    {
+        Image outputImage{texRes, texRes};
+        std::vector<glm::vec3> randomColors;
+
+        // Generate an amount of random colors so each cell has its own color
+        for (int i = 0; i < offsets.size() - 1; i++)
+        {
+            randomColors.push_back(generateRandomColor());
+        }
+
+        for (int o = 0; o < offsets.size() - 1; o++)
+        {
+            for (int uv = offsets[o]; uv < offsets[o + 1]; uv++)
+            {
+               glm::vec2 uvCoords = uvs[uv];
+               glm::ivec2 xyCoords = {glm::floor(uvCoords.x * texRes), glm::floor(uvCoords.y * texRes)};
+               float fraction = float(o) / float(offsets.size());
+               char color[3] = {randomColors[o].x * 255.0f, randomColors[o].y * 255.0f, randomColors[o].z * 255.0f };
+               outputImage.writePixel(xyCoords.x, xyCoords.y, color);
+            }
+        }
+        outputImage.flipY();
+        outputImage.saveImage("../textures/uvs_per_cell.png");
     }
 
 
@@ -872,8 +901,10 @@ namespace mcrt {
                 //std::cout << "UV found!" << std::endl;
                 glm::vec3 uvPosition = a1 * g->model->mesh->vertices[triangle[0]] + a2 * g->model->mesh->vertices[triangle[1]] + a3 * g->model->mesh->vertices[triangle[2]];
                 glm::vec3 uvNormal = glm::normalize(a1 * g->model->mesh->normals[triangle[0]] + a2 * g->model->mesh->normals[triangle[1]] + a3 * g->model->mesh->normals[triangle[2]]);
+                glm::vec3 diffuseColor = g->model->mesh->diffuse;
+
                 uvPosition = g->worldTransform.object2World * glm::vec4{ uvPosition, 1.0f };
-                return { uvPosition, uvNormal};
+                return { uvPosition, uvNormal, diffuseColor};
             }
         }
         return { glm::vec3{ -1000.0f, -1000.0f, -1000.0f }, glm::vec3{ -1000.0f, -1000.0f, -1000.0f } };

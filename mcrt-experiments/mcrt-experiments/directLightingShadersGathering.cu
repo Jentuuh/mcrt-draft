@@ -135,6 +135,8 @@ namespace mcrt {
 
         glm::vec3 UVWorldPos = optixLaunchParams.uvWorldPositions.UVDataBuffer[vIndex * optixLaunchParams.directLightingTexture.size + uIndex].worldPosition;
         const glm::vec3 UVNormal = optixLaunchParams.uvWorldPositions.UVDataBuffer[vIndex * optixLaunchParams.directLightingTexture.size + uIndex].worldNormal;
+        const glm::vec3 diffuseColor = optixLaunchParams.uvWorldPositions.UVDataBuffer[vIndex * optixLaunchParams.directLightingTexture.size + uIndex].diffuseColor;
+
         // We apply a small offset of 0.00001f in the direction of the normal to the UV world pos, to 'mitigate' floating point rounding errors causing false occlusions/illuminations
         UVWorldPos = glm::vec3{ UVWorldPos.x + UVNormal.x * 0.00001f, UVWorldPos.y + UVNormal.y * 0.00001f, UVWorldPos.z + UVNormal.z * 0.00001f };
 
@@ -198,14 +200,15 @@ namespace mcrt {
                         prd.resultColor = { __uint_as_float(u6), __uint_as_float(u7), __uint_as_float(u8) };
 
 
-                        // cosine contribution (perpendicular incident directions have a higher contribution)
+                        // Cosine weighted contribution (perpendicular incident directions have a higher contribution)
                         float3 uvNormal3f = float3{ UVNormal.x, UVNormal.y, UVNormal.z };
                         float cosContribution = dot(normalize(rayDir3f), uvNormal3f);
 
                         if (cosContribution > 0.0f)
                         {
+                            // TODO: (Note that BRDF is currently omitted here)
                             float intensity = 255.99f * cosContribution * prd.resultColor.x * lightProperties.power.x;
-                            totalLightContribution += glm::vec3{ intensity, intensity, intensity };
+                            totalLightContribution += intensity * diffuseColor;
                         }
                     }
                 }

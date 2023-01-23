@@ -29,6 +29,7 @@ namespace mcrt {
 	struct UVWorldData {
 		glm::vec3 worldPosition;
 		glm::vec3 worldNormal;
+		glm::vec3 diffuseColor;
 	};
 
 	/**
@@ -184,6 +185,7 @@ namespace mcrt {
 	};
 
 	struct MeshSBTDataDirectLighting {
+		glm::vec3 diffuseColor;
 		glm::vec3* vertex;
 		glm::vec3* normal;
 		glm::vec2* texcoord;

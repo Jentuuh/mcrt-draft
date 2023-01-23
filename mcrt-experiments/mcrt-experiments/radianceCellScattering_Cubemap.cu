@@ -88,6 +88,8 @@ namespace mcrt {
 
         glm::vec3 UVWorldPos = optixLaunchParams.uvWorldPositions.UVDataBuffer[v * optixLaunchParams.uvWorldPositions.size + u].worldPosition;
         const glm::vec3 UVNormal = optixLaunchParams.uvWorldPositions.UVDataBuffer[v * optixLaunchParams.uvWorldPositions.size + u].worldNormal;
+        const glm::vec3 diffuseColor = optixLaunchParams.uvWorldPositions.UVDataBuffer[v * optixLaunchParams.uvWorldPositions.size + u].diffuseColor;
+
         float3 uvNormal3f = float3{ UVNormal.x, UVNormal.y, UVNormal.z };
 
         // We apply a small offset of 0.00001f in the direction of the normal to the UV world pos, to 'mitigate' floating point rounding errors causing false occlusions/illuminations
@@ -127,7 +129,7 @@ namespace mcrt {
         glm::vec3 cellProbeOrigins[8] = { ogProbe0, ogProbe1, ogProbe2, ogProbe3, ogProbe4, ogProbe5, ogProbe6, ogProbe7 };
 
         // Radiance accumulator
-        float totalRadiance = 0.0f;
+        glm::vec3 totalRadiance = glm::vec3{0.0f, 0.0f, 0.0f};
         // Number of samples accumulator
         int numSamples = 0;
 
@@ -220,18 +222,44 @@ namespace mcrt {
                                 float faceU, faceV;
                                 int cubeMapFaceIndex;
 
-                                // ==================================================================================
-                                // For each probe on the facing face, sample cube map to retrieve incoming radiance
-                                // ==================================================================================
-                                for (int p = 0; p < 4; p++)
+                                //// ==================================================================================
+                                //// For each probe on the facing face, sample cube map to retrieve incoming radiance
+                                //// ==================================================================================
+                                //for (int p = 0; p < 4; p++)
+                                //{
+                                //    glm::vec3 probeSampleDirection = distantProjectedPoint - cellProbeOrigins[faceProbeIndices[p]];
+                                //    convert_xyz_to_cube_uv(probeSampleDirection.x, probeSampleDirection.y, probeSampleDirection.z, &cubeMapFaceIndex, &faceU, &faceV);
+
+                                //    int uIndex = optixLaunchParams.cubeMapResolution * faceU;
+                                //    int vIndex = optixLaunchParams.cubeMapResolution * faceV;
+                                //    int uvOffset = vIndex * optixLaunchParams.cubeMapResolution + uIndex;
+                                //    int probeOffset = (nonEmptyCellIndex * 8 * 6 + faceProbeIndices[p] * 6) * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution);
+
+                                //    uint32_t incomingRadiance = optixLaunchParams.cubeMaps[(probeOffset + cubeMapFaceIndex * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution)) + uvOffset];
+
+                                //    // Extract rgb values from light source texture pixel
+                                //    uint32_t r = 0x000000ff & (incomingRadiance);
+                                //    uint32_t g = (0x0000ff00 & (incomingRadiance)) >> 8;
+                                //    uint32_t b = (0x00ff0000 & (incomingRadiance)) >> 16;
+                                //    glm::vec3 rgbNormalizedSpectrum = glm::vec3{ r, g, b} / 255.0f;
+
+                                //    // Convert to grayscale (for now we assume 1 color channel)
+                                //    // const float grayscale = (0.3 * r + 0.59 * g + 0.11 * b) / 255.0f;
+
+                                //    // Cosine weighted contribution
+                                //    totalRadiance += rgbNormalizedSpectrum * dot(uvNormal3f, rayDir3f);
+                                //    numSamples++;
+                                //}
+
+                                for (int p = 0; p < 8; p++)
                                 {
-                                    glm::vec3 probeSampleDirection = distantProjectedPoint - cellProbeOrigins[faceProbeIndices[p]];
+                                    glm::vec3 probeSampleDirection = distantProjectedPoint - cellProbeOrigins[p];
                                     convert_xyz_to_cube_uv(probeSampleDirection.x, probeSampleDirection.y, probeSampleDirection.z, &cubeMapFaceIndex, &faceU, &faceV);
 
                                     int uIndex = optixLaunchParams.cubeMapResolution * faceU;
                                     int vIndex = optixLaunchParams.cubeMapResolution * faceV;
                                     int uvOffset = vIndex * optixLaunchParams.cubeMapResolution + uIndex;
-                                    int probeOffset = (nonEmptyCellIndex * 8 * 6 + faceProbeIndices[p] * 6) * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution);
+                                    int probeOffset = (nonEmptyCellIndex * 8 * 6 + p * 6) * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution);
 
                                     uint32_t incomingRadiance = optixLaunchParams.cubeMaps[(probeOffset + cubeMapFaceIndex * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution)) + uvOffset];
 
@@ -239,12 +267,16 @@ namespace mcrt {
                                     uint32_t r = 0x000000ff & (incomingRadiance);
                                     uint32_t g = (0x0000ff00 & (incomingRadiance)) >> 8;
                                     uint32_t b = (0x00ff0000 & (incomingRadiance)) >> 16;
+                                    glm::vec3 rgbNormalizedSpectrum = glm::vec3{ r, g, b} / 255.0f;
 
                                     // Convert to grayscale (for now we assume 1 color channel)
-                                    const float grayscale = (0.3 * r + 0.59 * g + 0.11 * b) / 255.0f;
+                                    const float intensity = (0.3 * r + 0.59 * g + 0.11 * b) / 255.0f;
 
-                                    numSamples++;
-                                    totalRadiance += grayscale * dot(uvNormal3f, rayDir3f);
+                                    if (intensity > 0.05f) {
+                                        // Cosine weighted contribution
+                                        totalRadiance += rgbNormalizedSpectrum * dot(uvNormal3f, rayDir3f);
+                                        numSamples++;
+                                    }
                                 }
                                 
                                 //glm::vec3 probeSampleDirection = distantProjectedPoint - cellProbeOrigins[minDistanceIndex];
@@ -273,9 +305,9 @@ namespace mcrt {
             }
         }
 
-        const int r = int(255.99 * (totalRadiance / float(numSamples)));
-        const int g = int(255.99 * (totalRadiance / float(numSamples)));
-        const int b = int(255.99 * (totalRadiance / float(numSamples)));
+        const int r = int(255.99 * (totalRadiance.x / float(numSamples)));
+        const int g = int(255.99 * (totalRadiance.y / float(numSamples)));
+        const int b = int(255.99 * (totalRadiance.z / float(numSamples)));
 
         // convert to 32-bit rgba value (we explicitly set alpha to 0xff
         // to make stb_image_write happy ...

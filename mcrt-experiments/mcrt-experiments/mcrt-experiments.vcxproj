@@ -146,6 +146,7 @@
     <ClCompile Include="gas.cpp" />
     <ClCompile Include="GLFWindow.cpp" />
     <ClCompile Include="ias.cpp" />
+    <ClCompile Include="image.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mcrt_pipeline.cpp" />
     <ClCompile Include="model.cpp" />
@@ -175,6 +176,7 @@
     <ClInclude Include="GLFWindow.hpp" />
     <ClInclude Include="helpers.hpp" />
     <ClInclude Include="ias.hpp" />
+    <ClInclude Include="image.hpp" />
     <ClInclude Include="LaunchParams.hpp" />
     <ClInclude Include="mcrt_pipeline.hpp" />
     <ClInclude Include="model.hpp" />

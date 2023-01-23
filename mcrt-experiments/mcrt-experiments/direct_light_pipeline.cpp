@@ -213,6 +213,7 @@ namespace mcrt {
             HitgroupRecordDirect rec;
             OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec));
 
+            rec.data.diffuseColor = mesh->diffuse;
             rec.data.vertex = (glm::vec3*)geometryBuffers.vertices[i].d_pointer();
             rec.data.index = (glm::ivec3*)geometryBuffers.indices[i].d_pointer();
             rec.data.normal = (glm::vec3*)geometryBuffers.normals[i].d_pointer();

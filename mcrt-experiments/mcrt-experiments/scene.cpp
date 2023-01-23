@@ -1,3 +1,4 @@
+#pragma once
 #include "scene.hpp"
 #include "glm/gtx/string_cast.hpp"
 #include "helpers.hpp"
@@ -5,7 +6,6 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
-#define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
 #include <set>
@@ -254,7 +254,7 @@ namespace mcrt {
                         addVertex(mesh, attributes, idx2, knownVertices));
                     mesh->indices.push_back(idx);
                     mesh->diffuse = (const glm::vec3&)materials[materialID].diffuse;
-                    mesh->diffuse = generateRandomColor();
+                    //mesh->diffuse = generateRandomColor();
                     mesh->diffuseTextureID = loadTexture(knownTextures,
                         materials[materialID].diffuse_texname,
                         modelDir);

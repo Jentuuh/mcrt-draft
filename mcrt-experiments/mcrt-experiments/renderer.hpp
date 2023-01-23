@@ -2,7 +2,9 @@
 #include "CUDABuffer.hpp"
 #include "LaunchParams.hpp"
 #include "camera.hpp"
+#include "image.hpp"
 #include "scene.hpp"
+#include "helpers.hpp"
 #include "default_pipeline.hpp"
 #include "direct_light_pipeline.hpp"
 #include "radiance_cell_gather_pipeline.hpp"
@@ -59,6 +61,7 @@ namespace mcrt {
 		// Helpers
 		float area(glm::vec2 a, glm::vec2 b, glm::vec2 c);
 		UVWorldData UVto3D(glm::vec2 uv);
+		void writeUVsPerCellToImage(std::vector<int>& offsets, std::vector<glm::vec2>& uvs, int texRes);
 
 
 	protected:

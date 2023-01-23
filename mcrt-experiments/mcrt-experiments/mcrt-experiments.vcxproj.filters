@@ -49,6 +49,9 @@
     <Filter Include="Source Files\GPU\Direct Lighting">
       <UniqueIdentifier>{bc7b925d-b8bf-4352-b8d0-4ffd63ec76c4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Utils">
+      <UniqueIdentifier>{afcc83f1-30eb-4b56-a68b-13b21ae18c12}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -135,6 +138,9 @@
     <ClCompile Include="radianceCellScattering_Cubemap_embedded.c">
       <Filter>Source Files\GPU\Cubemap</Filter>
     </ClCompile>
+    <ClCompile Include="image.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="renderer.hpp">
@@ -208,6 +214,9 @@
     </ClInclude>
     <ClInclude Include="radiance_cell_scatter_cube_map_pipeline.hpp">
       <Filter>Header Files\Pipelines</Filter>
+    </ClInclude>
+    <ClInclude Include="image.hpp">
+      <Filter>Header Files\Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
