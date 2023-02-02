@@ -2,7 +2,7 @@
 #include "mcrt_pipeline.hpp"
 
 namespace mcrt {
-	class RadianceCellScatterCubeMapPipeline :public McrtPipeline
+	class RadianceCellScatterCubeMapPipeline : public McrtPipeline
 	{
 	public:
 		RadianceCellScatterCubeMapPipeline(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene);

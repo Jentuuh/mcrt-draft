@@ -32,7 +32,7 @@
 	call (%rd1), _optix_get_sbt_data_ptr_64, ();
 	// end inline asm
 	.loc	1 49 32
-	ld.u64 	%rd2, [%rd1+16];
+	ld.u64 	%rd2, [%rd1+24];
 	mul.wide.s32 	%rd3, %r1, 12;
 	add.s64 	%rd4, %rd2, %rd3;
 	ld.u32 	%r18, [%rd4];

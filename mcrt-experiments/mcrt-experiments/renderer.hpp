@@ -11,13 +11,21 @@
 #include "radiance_cell_gather_cube_map_pipeline.hpp"
 #include "radiance_cell_scatter_pipeline.hpp"
 #include "radiance_cell_scatter_cube_map_pipeline.hpp"
+#include "radiance_cell_scatter_unbiased_pipeline.hpp"
 
 #include <stb/stb_image.h>
 
 namespace mcrt {
+	
+	enum BIAS_MODE {
+		UNBIASED,
+		BIASED_PROBES
+	};
+
 	enum PROBE_MODE {
 		CUBE_MAP,
-		SPHERICAL_HARMONICS
+		SPHERICAL_HARMONICS,
+		NA
 	};
 
 	class Renderer {
@@ -41,15 +49,16 @@ namespace mcrt {
 	private:
 		void writeToImage(std::string fileName, int resX, int resY, void* data);
 		void initLightingTextures(int size);
-		void initLightProbeCubeMaps(int resolution, int amount);
+		void initLightProbeCubeMaps(int resolution, int gridRes);
 		void calculateDirectLighting();
-		void calculateIndirectLighting(PROBE_MODE mode);
+		void calculateIndirectLighting(BIAS_MODE bias, PROBE_MODE mode);
 		void initSHWeightsBuffer(int amountNonEmptyCells);
 		void initSHAccumulators(int divisionResolution, int amountNonEmptyCells);
 		void calculateRadianceCellGatherPass(CUDABuffer& previousPassLightSourceTexture);
 		void calculateRadianceCellGatherPassCubeMap(CUDABuffer& previousPassLightSourceTexture);
 		void calculateRadianceCellScatterPass(int iteration, CUDABuffer& dstTexture);
 		void calculateRadianceCellScatterPassCubeMap(int iteration, CUDABuffer& dstTexture);
+		void calculateRadianceCellScatterUnbiased(int iteration, CUDABuffer& prevBounceTexture, CUDABuffer& dstTexture);
 
 
 		void loadLightTexture();
@@ -98,6 +107,7 @@ namespace mcrt {
 		std::unique_ptr<RadianceCellGatherCubeMapPipeline> radianceCellGatherCubeMapPipeline;
 		std::unique_ptr<RadianceCellScatterPipeline> radianceCellScatterPipeline;
 		std::unique_ptr<RadianceCellScatterCubeMapPipeline> radianceCellScatterCubeMapPipeline;
+		std::unique_ptr<RadianceCellScatterUnbiasedPipeline> radianceCellScatterUnbiasedPipeline;
 
 		CUDABuffer lightSourceTexture; // UV map with direct light source (to test the SH projection)
 		CUDABuffer colorBuffer;	// Framebuffer we will write to

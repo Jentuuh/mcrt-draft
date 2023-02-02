@@ -159,9 +159,11 @@
     <ClCompile Include="radiance_cell_gather_pipeline.cpp" />
     <ClCompile Include="radiance_cell_scatter_cube_map_pipeline.cpp" />
     <ClCompile Include="radiance_cell_scatter_pipeline.cpp" />
+    <ClCompile Include="radiance_cell_scatter_unbiased_pipeline.cpp" />
     <ClCompile Include="radiance_grid.cpp" />
     <ClCompile Include="renderer.cpp" />
     <ClCompile Include="scene.cpp" />
+    <ClCompile Include="unbiasedScattering_embedded.c" />
     <ClCompile Include="voxelizer.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -185,6 +187,7 @@
     <ClInclude Include="radiance_cell_gather_pipeline.hpp" />
     <ClInclude Include="radiance_cell_scatter_cube_map_pipeline.hpp" />
     <ClInclude Include="radiance_cell_scatter_pipeline.hpp" />
+    <ClInclude Include="radiance_cell_scatter_unbiased_pipeline.hpp" />
     <ClInclude Include="radiance_grid.hpp" />
     <ClInclude Include="renderer.hpp" />
     <ClInclude Include="optix7.hpp" />
@@ -199,14 +202,19 @@
     <None Include="cameraRayProgram.cu" />
     <None Include="radianceCellGathering3.cu" />
     <None Include="radianceCellGathering_Cubemap.cu" />
+    <None Include="radianceCellGathering_Cubemap2.cu" />
     <None Include="radianceCellScattering.cu" />
     <None Include="radianceCellGathering2.cu" />
     <None Include="radianceCellScattering_Cubemap.cu" />
+    <None Include="radianceCellScattering_Cubemap2.cu" />
+    <None Include="radianceCellScattering_Cubemap3.cu" />
     <None Include="radianceCellScattering_last.cu" />
     <None Include="radianceCellScattering_trilinear.cu" />
     <None Include="radianceCellScattering_trilinear2.cu" />
     <None Include="spherical_harmonics.cuh" />
     <None Include="radianceCellGathering.cu" />
+    <None Include="unbiasedScattering.cu" />
+    <None Include="unbiasedScattering2.cu" />
     <None Include="utils.cuh" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

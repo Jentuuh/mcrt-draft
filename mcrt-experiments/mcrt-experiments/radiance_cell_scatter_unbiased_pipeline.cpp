@@ -1,7 +1,7 @@
-#include "radiance_cell_scatter_cube_map_pipeline.hpp"
+#include "radiance_cell_scatter_unbiased_pipeline.hpp"
 
 namespace mcrt {
-    extern "C" char embedded_ptx_code_radiance_cell_scattering_cube_map[];
+    extern "C" char embedded_ptx_code_radiance_cell_scattering_unbiased[];
 
     // SBT record for a raygen program
     struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) RaygenRecordRadianceCellScatter
@@ -31,7 +31,7 @@ namespace mcrt {
     };
 
     // TODO: We build GAS for each pipeline separately now, while most pipelines use the same, can't we reuse that one?
-    RadianceCellScatterCubeMapPipeline::RadianceCellScatterCubeMapPipeline(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene) : McrtPipeline(context, geometryBuffers, scene)
+    RadianceCellScatterUnbiasedPipeline::RadianceCellScatterUnbiasedPipeline(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene) : McrtPipeline(context, geometryBuffers, scene)
     {
         init(context, geometryBuffers, scene);
 
@@ -48,12 +48,12 @@ namespace mcrt {
         launchParamsBuffer.alloc(sizeof(launchParams));
     }
 
-    void RadianceCellScatterCubeMapPipeline::uploadLaunchParams()
+    void RadianceCellScatterUnbiasedPipeline::uploadLaunchParams()
     {
         launchParamsBuffer.upload(&launchParams, 1);
     }
 
-    void RadianceCellScatterCubeMapPipeline::buildModule(OptixDeviceContext& context)
+    void RadianceCellScatterUnbiasedPipeline::buildModule(OptixDeviceContext& context)
     {
         moduleCompileOptions.maxRegisterCount = 50;
         moduleCompileOptions.optLevel = OPTIX_COMPILE_OPTIMIZATION_DEFAULT;
@@ -70,7 +70,7 @@ namespace mcrt {
         // Max # of ray bounces
         pipelineLinkOptions.maxTraceDepth = 3;
 
-        const std::string ptxCode = embedded_ptx_code_radiance_cell_scattering_cube_map;
+        const std::string ptxCode = embedded_ptx_code_radiance_cell_scattering_unbiased;
 
         char log[2048];
         size_t sizeof_log = sizeof(log);
@@ -88,7 +88,7 @@ namespace mcrt {
         }
     }
 
-    void RadianceCellScatterCubeMapPipeline::buildDevicePrograms(OptixDeviceContext& context)
+    void RadianceCellScatterUnbiasedPipeline::buildDevicePrograms(OptixDeviceContext& context)
     {
         //---------------------------------------
         //  RAYGEN PROGRAMS
@@ -99,7 +99,7 @@ namespace mcrt {
         OptixProgramGroupDesc pgDescRaygen = {};
         pgDescRaygen.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
         pgDescRaygen.raygen.module = module;
-        pgDescRaygen.raygen.entryFunctionName = "__raygen__renderFrame__cell__scattering";
+        pgDescRaygen.raygen.entryFunctionName = "__raygen__renderFrame__cell__scattering__unbiased";
 
         // OptixProgramGroup raypg;
         char log[2048];
@@ -126,7 +126,7 @@ namespace mcrt {
         OptixProgramGroupDesc pgDescMiss = {};
         pgDescMiss.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
         pgDescMiss.miss.module = module;
-        pgDescMiss.miss.entryFunctionName = "__miss__radiance__cell__scattering";
+        pgDescMiss.miss.entryFunctionName = "__miss__radiance__cell__scattering__unbiased";
 
         OPTIX_CHECK(optixProgramGroupCreate(context,
             &pgDescMiss,
@@ -153,8 +153,8 @@ namespace mcrt {
         pgDescHitgroupScene.hitgroup.moduleCH = module;
         pgDescHitgroupScene.hitgroup.moduleAH = module;
 
-        pgDescHitgroupScene.hitgroup.entryFunctionNameCH = "__closesthit__radiance__cell__scattering__scene";
-        pgDescHitgroupScene.hitgroup.entryFunctionNameAH = "__anyhit__radiance__cell__scattering__scene";
+        pgDescHitgroupScene.hitgroup.entryFunctionNameCH = "__closesthit__radiance__cell__scattering__scene__unbiased";
+        pgDescHitgroupScene.hitgroup.entryFunctionNameAH = "__anyhit__radiance__cell__scattering__scene__unbiased";
 
         OPTIX_CHECK(optixProgramGroupCreate(context,
             &pgDescHitgroupScene,
@@ -165,7 +165,7 @@ namespace mcrt {
         ));
     }
 
-    void RadianceCellScatterCubeMapPipeline::buildSBT(GeometryBufferHandle& geometryBuffers, Scene& scene)
+    void RadianceCellScatterUnbiasedPipeline::buildSBT(GeometryBufferHandle& geometryBuffers, Scene& scene)
     {
         // ----------------------------------------
       // Build raygen records
@@ -217,6 +217,7 @@ namespace mcrt {
             rec.data.index = (glm::ivec3*)geometryBuffers.indices[i].d_pointer();
             rec.data.normal = (glm::vec3*)geometryBuffers.normals[i].d_pointer();
             rec.data.texcoord = (glm::vec2*)geometryBuffers.texCoords[i].d_pointer();
+
             hitgroupRecords.push_back(rec);
         }
 
@@ -228,7 +229,7 @@ namespace mcrt {
         sbt.hitgroupRecordCount = (int)hitgroupRecords.size();
     }
 
-    void RadianceCellScatterCubeMapPipeline::buildPipeline(OptixDeviceContext& context)
+    void RadianceCellScatterUnbiasedPipeline::buildPipeline(OptixDeviceContext& context)
     {
         // Gather all program groups
         std::vector<OptixProgramGroup> programGroups;
@@ -271,12 +272,8 @@ namespace mcrt {
             2))
     }
 
-    OptixTraversableHandle RadianceCellScatterCubeMapPipeline::buildAccelerationStructure(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene)
+    OptixTraversableHandle RadianceCellScatterUnbiasedPipeline::buildAccelerationStructure(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene)
     {
         return NULL;
     }
-
-
-
-
 }

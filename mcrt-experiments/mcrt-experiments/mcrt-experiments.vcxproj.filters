@@ -52,6 +52,9 @@
     <Filter Include="Source Files\Utils">
       <UniqueIdentifier>{afcc83f1-30eb-4b56-a68b-13b21ae18c12}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\GPU\Unbiased">
+      <UniqueIdentifier>{45e3a936-fad3-4759-8b5d-c1810bd19a83}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -141,6 +144,12 @@
     <ClCompile Include="image.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
+    <ClCompile Include="radiance_cell_scatter_unbiased_pipeline.cpp">
+      <Filter>Source Files\Pipelines</Filter>
+    </ClCompile>
+    <ClCompile Include="unbiasedScattering_embedded.c">
+      <Filter>Source Files\GPU\Unbiased</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="renderer.hpp">
@@ -218,6 +227,9 @@
     <ClInclude Include="image.hpp">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
+    <ClInclude Include="radiance_cell_scatter_unbiased_pipeline.hpp">
+      <Filter>Header Files\Pipelines</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="devicePrograms.cu">
@@ -267,6 +279,21 @@
     </None>
     <None Include="utils.cuh">
       <Filter>Source Files\GPU</Filter>
+    </None>
+    <None Include="radianceCellGathering_Cubemap2.cu">
+      <Filter>Source Files\GPU\Cubemap</Filter>
+    </None>
+    <None Include="radianceCellScattering_Cubemap2.cu">
+      <Filter>Source Files\GPU\Cubemap</Filter>
+    </None>
+    <None Include="radianceCellScattering_Cubemap3.cu">
+      <Filter>Source Files\GPU\Cubemap</Filter>
+    </None>
+    <None Include="unbiasedScattering.cu">
+      <Filter>Source Files\GPU\Unbiased</Filter>
+    </None>
+    <None Include="unbiasedScattering2.cu">
+      <Filter>Source Files\GPU\Unbiased</Filter>
     </None>
   </ItemGroup>
 </Project>

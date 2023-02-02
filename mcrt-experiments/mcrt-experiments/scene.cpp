@@ -64,7 +64,7 @@ namespace mcrt {
 	void Scene::addGameObject(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale, std::shared_ptr<Model> model)
 	{
 
-		std::shared_ptr<GameObject> newObj = std::make_shared<GameObject>( Transform{position, rotation, scale}, model );
+		std::shared_ptr<GameObject> newObj = std::make_shared<GameObject>( Transform{position, rotation, scale}, model);
 		gameObjects.push_back(newObj);
 
 		// Record scene bounds (for normalization afterwards)
@@ -102,9 +102,13 @@ namespace mcrt {
 	{
 		std::cout << "Normalizing scene..." << std::endl;
 
-		float scaleX = 0.99f/abs(sceneMax.x - sceneMin.x);
-		float scaleY = 0.99f /abs(sceneMax.y - sceneMin.y);
-		float scaleZ = 0.99f /abs(sceneMax.z - sceneMin.z);
+		float scaleX = 0.99f / abs(sceneMax.x - sceneMin.x);
+		float scaleY = 0.99f / abs(sceneMax.y - sceneMin.y);
+		float scaleZ = 0.99f / abs(sceneMax.z - sceneMin.z);
+
+        //float scaleX = 1.0f / abs(sceneMax.x - sceneMin.x);
+        //float scaleY = 1.0f / abs(sceneMax.y - sceneMin.y);
+        //float scaleZ = 1.0f / abs(sceneMax.z - sceneMin.z);
 
 		// We need to assure uniform scaling (otherwise objects will be deformed, 
 		// so we take the largest downscale factor as our uniform scaling factor.
@@ -131,7 +135,6 @@ namespace mcrt {
         // LightData{origin, du, dv, normal, power, width, height}
         //lights.push_back(AreaLight{ false, LightData{{0.4f, 0.4f, 0.88f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}, {0.8f, 0.8f, 0.8f}, 0.2f, 0.2f} });
         lights.push_back(AreaLight{ false, LightData{{0.45f, 0.965f, 0.45f }, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.1f, 0.1f} });
-
     }
 
 

@@ -4,7 +4,7 @@
 #include <iostream>
 
 namespace mcrt {
-	RadianceCell::RadianceCell(glm::ivec3 coord, glm::ivec3 res, float scale)
+	RadianceCell::RadianceCell(glm::ivec3 coord, glm::ivec3 res, float scale): coord{coord}
 	{
         int order = (coord.y * res.x) + (coord.z * res.x * res.y) + coord.x;
 

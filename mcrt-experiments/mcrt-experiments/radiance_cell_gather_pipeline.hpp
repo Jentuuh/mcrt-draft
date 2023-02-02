@@ -2,7 +2,7 @@
 #include "mcrt_pipeline.hpp"
 
 namespace mcrt {
-	class RadianceCellGatherPipeline: public McrtPipeline
+	class RadianceCellGatherPipeline : public McrtPipeline
 	{
 	public:
 		RadianceCellGatherPipeline(OptixDeviceContext& context, GeometryBufferHandle& radianceCellGeometry, GeometryBufferHandle& proxyGeometry, Scene& scene);

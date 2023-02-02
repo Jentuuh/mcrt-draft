@@ -216,6 +216,7 @@ namespace mcrt {
             rec.data.vertex = (glm::vec3*)geometryBuffers.vertices[i].d_pointer();
             rec.data.index = (glm::ivec3*)geometryBuffers.indices[i].d_pointer();
             rec.data.normal = (glm::vec3*)geometryBuffers.normals[i].d_pointer();
+            rec.data.texcoord = (glm::vec2*)geometryBuffers.texCoords[i].d_pointer();
             hitgroupRecords.push_back(rec);
         }
 

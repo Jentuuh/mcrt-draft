@@ -45,6 +45,7 @@ namespace mcrt {
 	struct MeshSBTDataRadianceCellScatter{
 		glm::vec3* vertex;
 		glm::vec3* normal;
+		glm::vec2* texcoord;
 		glm::ivec3* index;
 
 		int cellIndex;
@@ -88,13 +89,37 @@ namespace mcrt {
 		glm::vec3 cellCenter;
 		float cellSize;
 
-		int stratifyResX;
-		int stratifyResY;
-
+		glm::ivec3 cellCoords;
+		int probeWidthRes;	// Amount of probes in the x-direction
+		int probeHeightRes;	// Amount of probes in the y-direction
 		int nonEmptyCellIndex;
 
 		uint32_t* cubeMaps; // A pointer to cubemap faces
 		int cubeMapResolution;
+
+		OptixTraversableHandle sceneTraversable;
+	};
+
+
+	struct RadianceCellScatterUnbiasedPRD {
+		glm::vec3 resultColor;
+	};
+
+	struct LaunchParamsRadianceCellScatterUnbiased
+	{
+		struct {
+			UVWorldData* UVDataBuffer;
+			int size;
+		} uvWorldPositions;
+
+		PixelBuffer prevBounceTexture;
+		PixelBuffer currentBounceTexture;
+
+		glm::vec2* uvsInside;
+		int* uvsInsideOffsets;
+		glm::vec3 cellCenter;
+		float cellSize;
+		int nonEmptyCellIndex;
 
 		OptixTraversableHandle sceneTraversable;
 	};
@@ -126,14 +151,16 @@ namespace mcrt {
 			int size;
 		} uvWorldPositions;
 
-		struct {
-			glm::vec3* centers;
-			int size;
-		} nonEmptyCells;
+		//struct {
+		//	glm::vec3* centers;
+		//	int size;
+		//} nonEmptyCells;
 
 		float cellSize;
-		int nonEmptyCellIndex;
 		int divisionResolution;		// The amount of cells the light source texture is divided in both dimensions
+
+		glm::vec3 probePosition;
+		int probeOffset;
 
 		PixelBuffer lightSourceTexture;
 

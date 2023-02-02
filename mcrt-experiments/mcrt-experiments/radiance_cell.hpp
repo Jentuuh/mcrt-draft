@@ -18,7 +18,8 @@ namespace mcrt {
 
 		bool intersects(Voxel v);
 		bool contains(glm::vec3 coord);
-
+		
+		glm::ivec3 getCellCoords() { return coord; };
 		std::vector<glm::vec3>& getVertices() { return vertices; };
 		std::vector<glm::ivec3>& getIndices() { return indices; };
 		glm::vec3 getCenter() { return min + 0.5f * (max - min); };
@@ -29,6 +30,7 @@ namespace mcrt {
 		glm::vec3 min;
 		glm::vec3 max;
 	private:
+		glm::ivec3 coord;
 		std::vector<std::shared_ptr<GameObject>> objectsInside;
 		std::vector<glm::vec2> uvsInside;
 
