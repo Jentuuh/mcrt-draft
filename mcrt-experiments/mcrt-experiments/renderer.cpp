@@ -219,7 +219,7 @@ namespace mcrt {
 
         // Light bounce textures
         tutorialPipeline->launchParams.lightTexture.colorBuffer = (uint32_t*)directLightingTexture.d_pointer();
-        tutorialPipeline->launchParams.lightTexture.size = 1024;
+        tutorialPipeline->launchParams.lightTexture.size = directLightPipeline->launchParams.directLightingTexture.size;
         tutorialPipeline->launchParams.lightTextureSecondBounce.colorBuffer = (uint32_t*)secondBounceTexture.d_pointer();
         tutorialPipeline->launchParams.lightTextureSecondBounce.size = 1024;
         tutorialPipeline->launchParams.lightTextureThirdBounce.colorBuffer = (uint32_t*)thirdBounceTexture.d_pointer();
@@ -984,7 +984,7 @@ namespace mcrt {
                 return { uvPosition, uvNormal, diffuseColor};
             }
         }
-        return { glm::vec3{ -1000.0f, -1000.0f, -1000.0f }, glm::vec3{ -1000.0f, -1000.0f, -1000.0f } };
+        return { glm::vec3{ -1000.0f, -1000.0f, -1000.0f }, glm::vec3{ -1000.0f, -1000.0f, -1000.0f }, glm::vec3{0.0f, 0.0f, 0.0f} };
     }
 
 

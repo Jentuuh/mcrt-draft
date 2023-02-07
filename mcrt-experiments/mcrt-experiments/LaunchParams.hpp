@@ -120,6 +120,8 @@ namespace mcrt {
 		glm::vec3 cellCenter;
 		float cellSize;
 		int nonEmptyCellIndex;
+		int lightSrcU;
+		int lightSrcV;
 
 		OptixTraversableHandle sceneTraversable;
 	};

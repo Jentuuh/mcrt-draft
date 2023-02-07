@@ -12,7 +12,7 @@
 
 #define PI 3.14159265358979323846f
 #define EPSILON 0.0000000000002f
-#define NUM_DIRECTION_SAMPLES 200
+#define NUM_DIRECTION_SAMPLES 400
 #define PI_OVER_4 0.785398163397425f
 #define PI_OVER_2 1.5707963267945f
 
@@ -102,14 +102,13 @@ namespace mcrt {
         const int u = int(uv.x * optixLaunchParams.uvWorldPositions.size);
         const int v = int(uv.y * optixLaunchParams.uvWorldPositions.size);
 
-        /*if (nonEmptyCellIndex == 0)
-        {
-            printf("(%f, %f)\n", uv.x, uv.y);
-        }*/
 
         glm::vec3 UVWorldPos = optixLaunchParams.uvWorldPositions.UVDataBuffer[v * optixLaunchParams.uvWorldPositions.size + u].worldPosition;
         const glm::vec3 UVNormal = optixLaunchParams.uvWorldPositions.UVDataBuffer[v * optixLaunchParams.uvWorldPositions.size + u].worldNormal;
         const glm::vec3 diffuseColor = optixLaunchParams.uvWorldPositions.UVDataBuffer[v * optixLaunchParams.uvWorldPositions.size + u].diffuseColor;
+
+        // Small offset to world position to 'mitigate' floating point errors
+        UVWorldPos = glm::vec3{ UVWorldPos.x + UVNormal.x * 0.00001f, UVWorldPos.y + UVNormal.y * 0.00001f, UVWorldPos.z + UVNormal.z * 0.00001f };
 
         float3 rayOrigin3f = float3{ UVWorldPos.x, UVWorldPos.y, UVWorldPos.z };
         float3 uvNormal3f = float3{ UVNormal.x, UVNormal.y, UVNormal.z };
@@ -134,9 +133,6 @@ namespace mcrt {
         //    rotationMatrix = glm::mat3x3{ {1.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f, -1.0f} };
         //}
 
-        // We apply a small offset of 0.00001f in the direction of the normal to the UV world pos, to 'mitigate' floating point rounding errors causing false occlusions/illuminations
-        UVWorldPos = glm::vec3{ UVWorldPos.x + UVNormal.x * 0.0000001f, UVWorldPos.y + UVNormal.y * 0.0000001f, UVWorldPos.z + UVNormal.z * 0.0000001f };
-
         // ======================================
         // Radiance + num of samples accumulators
         // ======================================
@@ -145,33 +141,33 @@ namespace mcrt {
 
         for (int i = 0; i < NUM_DIRECTION_SAMPLES; i++)
         {
-            //// =============================================================================================================================================================================
-            //// Random direction generation (equal-area projection of sphere onto rectangle)  : https://math.stackexchange.com/questions/44689/how-to-find-a-random-axis-or-unit-vector-in-3d
-            //// =============================================================================================================================================================================
-            //float2 uniformRandoms = float2{ rnd(seed), rnd(seed) };
-            //float randomTheta = uniformRandoms.x * 2 * PI;
-            //float randomZ = (uniformRandoms.y * 2.0f) - 1.0f;
-            //float3 randomDir = float3{ sqrtf(1 - (randomZ * randomZ)) * cos(randomTheta), sqrtf(1 - (randomZ * randomZ)) * sin(randomTheta), randomZ };
-
-            //// If the generated random direction is not in the oriented hemisphere, invert it
-            //if (dot(randomDir, uvNormal3f) < 0)
-            //{
-            //    randomDir = float3{-randomDir.x, -randomDir.y, -randomDir.z};
-            //}
-
-            // =================================================================================================================================================================================
-            // Random direction generation (uniform direction generation with spherical coords)  : https://math.stackexchange.com/questions/44689/how-to-find-a-random-axis-or-unit-vector-in-3d
-            // =================================================================================================================================================================================
+            // =============================================================================================================================================================================
+            // Random direction generation (equal-area projection of sphere onto rectangle)  : https://math.stackexchange.com/questions/44689/how-to-find-a-random-axis-or-unit-vector-in-3d
+            // =============================================================================================================================================================================
             float2 uniformRandoms = float2{ rnd(seed), rnd(seed) };
-            float theta = acos(1.0f - (2.0f * uniformRandoms.x));
-            float phi = 2 * PI * uniformRandoms.y;
-            float3 randomDir = float3{ sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta) };
-            
+            float randomTheta = uniformRandoms.x * 2 * PI;
+            float randomZ = (uniformRandoms.y * 2.0f) - 1.0f;
+            float3 randomDir = float3{ sqrtf(1 - (randomZ * randomZ)) * cos(randomTheta), sqrtf(1 - (randomZ * randomZ)) * sin(randomTheta), randomZ };
+
             // If the generated random direction is not in the oriented hemisphere, invert it
             if (dot(randomDir, uvNormal3f) < 0)
             {
                 randomDir = float3{-randomDir.x, -randomDir.y, -randomDir.z};
             }
+
+            //// =================================================================================================================================================================================
+            //// Random direction generation (uniform direction generation with spherical coords)  : https://math.stackexchange.com/questions/44689/how-to-find-a-random-axis-or-unit-vector-in-3d
+            //// =================================================================================================================================================================================
+            //float2 uniformRandoms = float2{ rnd(seed), rnd(seed) };
+            //float theta = acos(1.0f - (2.0f * uniformRandoms.x));
+            //float phi = 2 * PI * uniformRandoms.y;
+            //float3 randomDir = float3{ sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta) };
+            //
+            //// If the generated random direction is not in the oriented hemisphere, invert it
+            //if (dot(normalize(randomDir), normalize(uvNormal3f)) < 0)
+            //{
+            //    randomDir = float3{-randomDir.x, -randomDir.y, -randomDir.z};
+            //}
 
 
 
@@ -226,26 +222,20 @@ namespace mcrt {
 
             prd.resultColor = glm::vec3{__uint_as_float(u0), __uint_as_float(u1), __uint_as_float(u2)};
 
-            float intensity = prd.resultColor.x * prd.resultColor.x + prd.resultColor.y * prd.resultColor.y + prd.resultColor.z * prd.resultColor.z;
-            if (intensity > 0.1f)
-            {
+            //float intensity = prd.resultColor.x * prd.resultColor.x + prd.resultColor.y * prd.resultColor.y + prd.resultColor.z * prd.resultColor.z;
+            //if (intensity > 0.001f)   // Don't let 'black rays' contribute
+            //{
                 // Cosine weighted contribution
-                float cosContribution = dot(randomDir, uvNormal3f);
+                float cosContribution = dot(normalize(randomDir), normalize(uvNormal3f));
                 totalRadiance += glm::vec3{ cosContribution * prd.resultColor.x, cosContribution * prd.resultColor.y, cosContribution * prd.resultColor.z };
                 ++numSamples;
-            }
+            //}
         }
 
         // TODO: add Monte Carlo weight (although how do we get the exact pdf that we are sampling from...?)
-        const int r_result = int((totalRadiance.x / (float(numSamples) * PI)));
-        const int g_result = int((totalRadiance.y / (float(numSamples) * PI)));
-        const int b_result = int((totalRadiance.z / (float(numSamples) * PI)));
-
-        //if (totalRadiance.x > 0.0f || totalRadiance.y > 0.0f || totalRadiance.z > 0.0f)
-        //{
-        //    printf("Total contribution: %d, %d, %d\n", r_result, g_result, b_result);
-        //}
-
+        const int r_result = int((totalRadiance.x / (float(numSamples))));
+        const int g_result = int((totalRadiance.y / (float(numSamples))));
+        const int b_result = int((totalRadiance.z / (float(numSamples))));
 
         // convert to 32-bit rgba value (we explicitly set alpha to 0xff
         // to make stb_image_write happy ...

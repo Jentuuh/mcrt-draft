@@ -295,5 +295,8 @@
     <None Include="unbiasedScattering2.cu">
       <Filter>Source Files\GPU\Unbiased</Filter>
     </None>
+    <None Include="unbiasedScattering3.cu">
+      <Filter>Source Files\GPU\Unbiased</Filter>
+    </None>
   </ItemGroup>
 </Project>
