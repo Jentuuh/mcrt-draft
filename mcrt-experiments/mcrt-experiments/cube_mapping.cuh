@@ -8,70 +8,79 @@ using namespace mcrt;
 namespace mcrt {
 
 
-	
+    // ============================================
+	// https://en.wikipedia.org/wiki/Cube_mapping
+    // ============================================
 	static __forceinline__ __device__ void convert_xyz_to_cube_uv(float x, float y, float z, int* index, float* u, float* v)
 	{
-        float maxExtent = max(max(abs(x), abs(y)), abs(z));
-        int faceIndex;
-        float uc;
-        float vc;
+        float absX = fabs(x);
+        float absY = fabs(y);
+        float absZ = fabs(z);
 
-        // X axis is max extent
-        if (maxExtent == abs(x))
-        {
-            // Positive X
-            if (x > 0)
-            {
-                faceIndex = 0;
-                uc = -z;
-                vc = y;
-            }
-            // Negative X
-            else {
-                faceIndex = 1;
-                uc = z;
-                vc = y;
-            }
+        int isXPositive = x > 0 ? 1 : 0;
+        int isYPositive = y > 0 ? 1 : 0;
+        int isZPositive = z > 0 ? 1 : 0;
+
+        float maxAxis, uc, vc;
+
+        // POSITIVE X
+        if (isXPositive && absX >= absY && absX >= absZ) {
+            // u (0 to 1) goes from +z to -z
+            // v (0 to 1) goes from -y to +y
+            maxAxis = absX;
+            uc = -z;
+            vc = y;
+            *index = 0;
         }
-        // Y axis is max extent
-        else if (maxExtent == abs(y))
-        {
-            // Positive Y
-            if (y > 0)
-            {
-                uc = x;
-                vc = -z;
-                faceIndex = 2;
-            }
-            // Negative Y
-            else {
-                uc = x;
-                vc = z;
-                faceIndex = 3;
-            }
+        // NEGATIVE X
+        if (!isXPositive && absX >= absY && absX >= absZ) {
+            // u (0 to 1) goes from -z to +z
+            // v (0 to 1) goes from -y to +y
+            maxAxis = absX;
+            uc = z;
+            vc = y;
+            *index = 1;
         }
-        // Z axis is max extent
-        else if (maxExtent == abs(z))
-        {
-            // Positive Z
-            if (z > 0)
-            {
-                uc = x;
-                vc = y;
-                faceIndex = 4;
-            }
-            // Negative Z
-            else {
-                uc = -x;
-                vc = y;
-                faceIndex = 5;
-            }
+        // POSITIVE Y
+        if (isYPositive && absY >= absX && absY >= absZ) {
+            // u (0 to 1) goes from -x to +x
+            // v (0 to 1) goes from +z to -z
+            maxAxis = absY;
+            uc = x;
+            vc = -z;
+            *index = 2;
+        }
+        // NEGATIVE Y
+        if (!isYPositive && absY >= absX && absY >= absZ) {
+            // u (0 to 1) goes from -x to +x
+            // v (0 to 1) goes from -z to +z
+            maxAxis = absY;
+            uc = x;
+            vc = z;
+            *index = 3;
+        }
+        // POSITIVE Z
+        if (isZPositive && absZ >= absX && absZ >= absY) {
+            // u (0 to 1) goes from -x to +x
+            // v (0 to 1) goes from -y to +y
+            maxAxis = absZ;
+            uc = x;
+            vc = y;
+            *index = 4;
+        }
+        // NEGATIVE Z
+        if (!isZPositive && absZ >= absX && absZ >= absY) {
+            // u (0 to 1) goes from +x to -x
+            // v (0 to 1) goes from -y to +y
+            maxAxis = absZ;
+            uc = -x;
+            vc = y;
+            *index = 5;
         }
 
-        // Shift from [-1; 1] to [0; 1]
-        *u = 0.5 * ((uc / maxExtent) + 1.0);
-        *v = 0.5 * ((vc / maxExtent) + 1.0);
-        *index = faceIndex;
+        // Convert range from -1 to 1 to 0 to 1
+        *u = 0.5f * (uc / maxAxis + 1.0f);
+        *v = 0.5f * (vc / maxAxis + 1.0f);
 	}
 
 

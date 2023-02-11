@@ -787,10 +787,10 @@ namespace mcrt {
         const int texSize = directLightPipeline->launchParams.directLightingTexture.size;
         NonEmptyCells nonEmpties = scene.grid.getNonEmptyCells();
 
-        for (int i = 0; i < nonEmpties.nonEmptyCells.size(); i++)
-        {
-            radianceCellScatterCubeMapPipeline->launchParams.nonEmptyCellIndex = i;
-            radianceCellScatterCubeMapPipeline->launchParams.cellCoords = nonEmpties.nonEmptyCells[i]->getCellCoords();
+        //for (int i = 0; i < nonEmpties.nonEmptyCells.size(); i++)
+        //{
+            radianceCellScatterCubeMapPipeline->launchParams.nonEmptyCellIndex = 12;
+            radianceCellScatterCubeMapPipeline->launchParams.cellCoords = nonEmpties.nonEmptyCells[12]->getCellCoords();
             radianceCellScatterCubeMapPipeline->launchParams.probeWidthRes = scene.grid.resolution.x + 1;
             radianceCellScatterCubeMapPipeline->launchParams.probeHeightRes = scene.grid.resolution.y + 1;
 
@@ -803,11 +803,11 @@ namespace mcrt {
             radianceCellScatterCubeMapPipeline->launchParams.prevBounceTexture.colorBuffer = (uint32_t*)prevBounceTexture.d_pointer();
 
             // Load uvs per cell 
-            std::vector<glm::vec2> cellUVs = nonEmpties.nonEmptyCells[i]->getUVsInside();
-            std::cout << "Iteration " << i << ": UVs in this cell: " << cellUVs.size() << std::endl;
+            //std::vector<glm::vec2> cellUVs = nonEmpties.nonEmptyCells[i]->getUVsInside();
+            //std::cout << "Iteration " << i << ": UVs in this cell: " << cellUVs.size() << std::endl;
 
             // Radiance cell data
-            radianceCellScatterCubeMapPipeline->launchParams.cellCenter = nonEmpties.nonEmptyCells[i]->getCenter();
+            radianceCellScatterCubeMapPipeline->launchParams.cellCenter = nonEmpties.nonEmptyCells[12]->getCenter();
             radianceCellScatterCubeMapPipeline->launchParams.cellSize = scene.grid.getCellSize();
 
             // UV world position data
@@ -821,14 +821,14 @@ namespace mcrt {
                 radianceCellScatterCubeMapPipeline->launchParamsBuffer.d_pointer(),
                 radianceCellScatterCubeMapPipeline->launchParamsBuffer.sizeInBytes,
                 &radianceCellScatterCubeMapPipeline->sbt,
-                cellUVs.size(),                     // dimension X: amount of UV texels in the cell
+                1,                                  // dimension X: amount of UV texels in the cell
                 1,                                  // dimension Y: 1
                 1                                   // dimension Z: 1
                 // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
             ));
 
             CUDA_SYNC_CHECK();
-        }
+    /*    }*/
         // Download resulting texture from GPU
         std::vector<uint32_t> current_bounce_result(radianceCellScatterCubeMapPipeline->launchParams.currentBounceTexture.size * radianceCellScatterCubeMapPipeline->launchParams.currentBounceTexture.size);
         dstTexture.download(current_bounce_result.data(),

@@ -62,43 +62,96 @@ namespace mcrt {
 	//	*dst = projection;;
 	//}
 
-	// Finds projected point onto scene bounds, which we can use as a 'distant point' along a ray
-	static __forceinline__ __device__ void find_distant_point_along_direction(glm::vec3 o, glm::vec3 dir, glm::vec3* dst)
+	//// Finds projected point onto scene bounds, which we can use as a 'distant point' along a ray
+	//static __forceinline__ __device__ void find_distant_point_along_direction(glm::vec3 o, glm::vec3 dir, glm::vec3* dst)
+	//{
+	//	double max_projections[3] = {
+	//		fabs(dir.x),
+	//		fabs(dir.y),
+	//		fabs(dir.z)
+	//	};
+
+	//	int max_index = 0;
+	//	for (int i = 1; i < 3; i++) {
+	//		if (max_projections[i] > max_projections[max_index]) {
+	//			max_index = i;
+	//		}
+	//	}
+
+	//	switch (max_index) {
+	//	case 0:
+	//		dst->x = dir.x > 0 ? 1 : 0;
+	//		dst->y = o.y + (dst->x - o.x) * dir.y / dir.x;
+	//		dst->z = o.z + (dst->x - o.x) * dir.z / dir.x;
+	//		break;
+	//	case 1:
+	//		dst->y = dir.y > 0 ? 1 : 0;
+	//		dst->x = o.x + (dst->y - o.y) * dir.x / dir.y;
+	//		dst->z = o.z + (dst->y - o.y) * dir.z / dir.y;
+	//		break;
+	//	case 2:
+	//		dst->z = dir.z > 0 ? 1 : 0;
+	//		dst->x = o.x + (dst->z - o.z) * dir.x / dir.z;
+	//		dst->y = o.y + (dst->z - o.z) * dir.y / dir.z;
+	//		break;
+	//	}
+
+	//	// Clamp the result to the boundaries of the unit cube
+	//	dst->x = clamp(dst->x, 0.0, 1.0);
+	//	dst->y = clamp(dst->y, 0.0, 1.0);
+	//	dst->z = clamp(dst->z, 0.0, 1.0);
+	//}
+
+	template<typename T>
+	static __forceinline__ __device__ void swap(T* v1, T* v2)
 	{
-		double max_projections[3] = {
-			fabs(dir.x),
-			fabs(dir.y),
-			fabs(dir.z)
-		};
+		T temp = *v1;
+		*v1 = *v2;
+		*v2 = temp;
+	}
 
-		int max_index = 0;
-		for (int i = 1; i < 3; i++) {
-			if (max_projections[i] > max_projections[max_index]) {
-				max_index = i;
-			}
+	// Finds projected point onto scene bounds, which we can use as a 'distant point' along a ray
+	static __forceinline__ __device__ void find_distant_point_along_direction(glm::vec3 o, glm::vec3 dir, glm::vec3 cubeMin, glm::vec3 cubeMax, double* t_min, double* t_max)
+	{
+		double t_min_x = (cubeMin.x - o.x) / dir.x;
+		double t_min_y = (cubeMin.y - o.y) / dir.y;
+		double t_min_z = (cubeMin.z - o.z) / dir.z;
+
+		double t_max_x = (cubeMax.x - o.x) / dir.x;
+		double t_max_y = (cubeMax.y - o.y) / dir.y;
+		double t_max_z = (cubeMax.z - o.z) / dir.z;
+
+		printf("IN FUNCTION: minX %f minY %f minZ %f maxX %f maxY %f maxZ %f \n", t_min_x, t_min_y, t_min_z, t_max_x, t_max_y, t_max_z);
+
+		if (t_min_x > t_max_x) swap(&t_min_x, &t_max_x);
+		if (t_min_y > t_max_y) swap(&t_min_y, &t_max_y);
+
+		if ((t_min_x > t_max_y) || (t_min_y > t_max_x)) {
+			*t_min = NAN;
+			*t_max = NAN;
+			return;
 		}
 
-		switch (max_index) {
-		case 0:
-			dst->x = dir.x > 0 ? 1 : 0;
-			dst->y = o.y + (dst->x - o.x) * dir.y / dir.x;
-			dst->z = o.z + (dst->x - o.x) * dir.z / dir.x;
-			break;
-		case 1:
-			dst->y = dir.y > 0 ? 1 : 0;
-			dst->x = o.x + (dst->y - o.y) * dir.x / dir.y;
-			dst->z = o.z + (dst->y - o.y) * dir.z / dir.y;
-			break;
-		case 2:
-			dst->z = dir.z > 0 ? 1 : 0;
-			dst->x = o.x + (dst->z - o.z) * dir.x / dir.z;
-			dst->y = o.y + (dst->z - o.z) * dir.y / dir.z;
-			break;
+		if (t_min_y > t_min_x)
+			*t_min = t_min_y;
+
+		if (t_max_y < t_max_x)
+			*t_max = t_max_y;
+
+		if (t_min_z > t_max_z) swap(&t_min_z, &t_max_z);
+
+
+		if ((*t_min > t_max_z) || (t_min_z > *t_max)) {
+			*t_min = NAN;
+			*t_max = NAN;
+			return;
 		}
 
-		// Clamp the result to the boundaries of the unit cube
-		dst->x = clamp(dst->x, 0.0, 1.0);
-		dst->y = clamp(dst->y, 0.0, 1.0);
-		dst->z = clamp(dst->z, 0.0, 1.0);
+		if (t_min_z > *t_min)
+			*t_min = t_min_z;
+
+		if (t_max_z < *t_max)
+			*t_max = t_max_z;
+
 	}
 }

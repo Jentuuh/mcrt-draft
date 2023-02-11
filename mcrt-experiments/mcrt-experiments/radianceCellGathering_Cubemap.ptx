@@ -278,12 +278,12 @@
 	.loc	1 102 25
 	ld.const.u32 	%r5, [optixLaunchParams+36];
 	.loc	1 106 9
-	.loc	5 81 18, function_name $L__info_string15, inlined_at 1 106 9
+	.loc	5 90 18, function_name $L__info_string15, inlined_at 1 106 9
 	fma.rn.ftz.f32 	%f43, %f17, 0f40000000, 0fBF800000;
 	mov.f32 	%f41, 0fBF800000;
-	.loc	5 82 18, function_name $L__info_string15, inlined_at 1 106 9
+	.loc	5 91 18, function_name $L__info_string15, inlined_at 1 106 9
 	fma.rn.ftz.f32 	%f5, %f19, 0f40000000, 0fBF800000;
-	.loc	5 83 9, function_name $L__info_string15, inlined_at 1 106 9
+	.loc	5 92 9, function_name $L__info_string15, inlined_at 1 106 9
 	setp.gt.s32 	%p1, %r14, 2;
 	@%p1 bra 	$L__BB3_3;
 	bra.uni 	$L__BB3_1;
@@ -301,14 +301,14 @@ $L__BB3_3:
 
 	.loc	5 0 9
 	mov.f32 	%f20, 0f3F800000;
-	.loc	5 89 46, function_name $L__info_string15, inlined_at 1 106 9
+	.loc	5 98 46, function_name $L__info_string15, inlined_at 1 106 9
 	mov.f32 	%f41, %f43;
 	mov.f32 	%f42, %f5;
 	mov.f32 	%f43, %f20;
 	bra.uni 	$L__BB3_11;
 
 $L__BB3_1:
-	.loc	5 83 9, function_name $L__info_string15, inlined_at 1 106 9
+	.loc	5 92 9, function_name $L__info_string15, inlined_at 1 106 9
 	setp.eq.s32 	%p5, %r14, 0;
 	@%p5 bra 	$L__BB3_10;
 
@@ -318,10 +318,10 @@ $L__BB3_1:
 	bra.uni 	$L__BB3_11;
 
 $L__BB3_8:
-	.loc	5 87 37, function_name $L__info_string15, inlined_at 1 106 9
+	.loc	5 96 37, function_name $L__info_string15, inlined_at 1 106 9
 	neg.ftz.f32 	%f6, %f5;
 	mov.f32 	%f42, 0f3F800000;
-	.loc	5 87 47, function_name $L__info_string15, inlined_at 1 106 9
+	.loc	5 96 47, function_name $L__info_string15, inlined_at 1 106 9
 	mov.f32 	%f41, %f43;
 	mov.f32 	%f43, %f6;
 	bra.uni 	$L__BB3_11;
@@ -329,21 +329,21 @@ $L__BB3_8:
 $L__BB3_7:
 	.loc	5 0 47
 	mov.f32 	%f42, 0fBF800000;
-	.loc	5 88 47, function_name $L__info_string15, inlined_at 1 106 9
+	.loc	5 97 47, function_name $L__info_string15, inlined_at 1 106 9
 	mov.f32 	%f41, %f43;
 	mov.f32 	%f43, %f5;
 	bra.uni 	$L__BB3_11;
 
 $L__BB3_9:
-	.loc	5 90 17, function_name $L__info_string15, inlined_at 1 106 9
+	.loc	5 99 17, function_name $L__info_string15, inlined_at 1 106 9
 	neg.ftz.f32 	%f41, %f43;
 	mov.f32 	%f43, 0fBF800000;
-	.loc	5 90 48, function_name $L__info_string15, inlined_at 1 106 9
+	.loc	5 99 48, function_name $L__info_string15, inlined_at 1 106 9
 	mov.f32 	%f42, %f5;
 	bra.uni 	$L__BB3_11;
 
 $L__BB3_10:
-	.loc	5 85 37, function_name $L__info_string15, inlined_at 1 106 9
+	.loc	5 94 37, function_name $L__info_string15, inlined_at 1 106 9
 	neg.ftz.f32 	%f43, %f43;
 	mov.f32 	%f41, 0f3F800000;
 	mov.f32 	%f42, %f5;

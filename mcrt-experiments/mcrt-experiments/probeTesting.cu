@@ -80,24 +80,46 @@ namespace mcrt {
         const int probeResWidth = optixLaunchParams.probeWidthRes;
         const int probeResHeight = optixLaunchParams.probeHeightRes;
 
+        glm::vec3 cell_1_min = optixLaunchParams.cellCenter - glm::vec3{ 0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize };
+        glm::vec3 cell_1_max = optixLaunchParams.cellCenter + glm::vec3{ 0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize };
+        glm::vec3 cell_2_min = optixLaunchParams.cellCenter + glm::vec3{ 2 * optixLaunchParams.cellSize, 0.0f, 0.0f } - glm::vec3{ 0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize };
+        glm::vec3 cell_2_max = optixLaunchParams.cellCenter + glm::vec3{ 2 * optixLaunchParams.cellSize, 0.0f, 0.0f } + glm::vec3{ 0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize };
+        printf("Cell 1 min: %f %f %f \n", cell_1_min.x, cell_1_min.y, cell_1_min.z);
+        printf("Cell 1 max: %f %f %f \n", cell_1_max.x, cell_1_max.y, cell_1_max.z);
+        printf("Cell 2 min: %f %f %f \n", cell_2_min.x, cell_2_min.y, cell_2_min.z);
+        printf("Cell 2 max: %f %f %f \n", cell_2_max.x, cell_2_max.y, cell_2_max.z);
+
         glm::vec3 probePos1 = optixLaunchParams.cellCenter;
         glm::vec3 probePos2 = optixLaunchParams.cellCenter + glm::vec3{ 2 * optixLaunchParams.cellSize, 0.0f, 0.0f };
 
         int probeOffset1 = ((1 * probeResWidth * probeResHeight) + (1 * probeResWidth) + 0) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution);
         int probeOffset2 = ((1 * probeResWidth * probeResHeight) + (1 * probeResWidth) + 2) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution);
 
-        glm::vec3 UVWorldPos = optixLaunchParams.uvWorldPositions.UVDataBuffer[557 * optixLaunchParams.uvWorldPositions.size + 650].worldPosition;
+        glm::vec3 UVWorldPos = optixLaunchParams.uvWorldPositions.UVDataBuffer[570 * optixLaunchParams.uvWorldPositions.size + 570].worldPosition;
+
+ /*       glm::vec3 rayDir1 = glm::normalize(UVWorldPos - probePos1);
+        glm::vec3 rayDir2 = glm::normalize(UVWorldPos - probePos2);*/
 
         glm::vec3 rayDir1 = UVWorldPos - probePos1;
         glm::vec3 rayDir2 = UVWorldPos - probePos2;
+        printf("Probe 1 Pos: %f %f %f Probe 1 dir: %f %f %f \n", probePos1.x, probePos1.y, probePos1.z, rayDir1.x, rayDir1.y, rayDir1.z);
+        printf("Probe 2 Pos: %f %f %f Probe 2 dir: %f %f %f \n", probePos2.x, probePos2.y, probePos2.z, rayDir2.x, rayDir2.y, rayDir2.z);
 
-        glm::vec3 distantProjectedPoint1;
-        find_distant_point_along_direction(probePos1, rayDir1, &distantProjectedPoint1);
-        glm::vec3 distantProjectedPoint2;
-        find_distant_point_along_direction(probePos2, rayDir2, &distantProjectedPoint2);
+        double t_min_1;
+        double t_max_1;
+        find_distant_point_along_direction(probePos1, rayDir1, cell_1_min, cell_1_max, &t_min_1, &t_max_1);
+        glm::vec3 distantProjectedPoint1 = probePos1 + (glm::vec3{ rayDir1.x * t_max_1,  rayDir1.y * t_max_1,  rayDir1.z * t_max_1 });
+
+        double t_min_2;
+        double t_max_2;
+        find_distant_point_along_direction(probePos2, rayDir2, cell_2_min, cell_2_max, &t_min_2, &t_max_2);
+        glm::vec3 distantProjectedPoint2 = probePos2 + (glm::vec3{ rayDir2.x * t_max_2,  rayDir2.y * t_max_2,  rayDir2.z * t_max_2 });
 
         printf("Distant project point 1: %f %f %f \n", distantProjectedPoint1.x, distantProjectedPoint1.y, distantProjectedPoint1.z);
         printf("Distant project point 2: %f %f %f \n", distantProjectedPoint2.x, distantProjectedPoint2.y, distantProjectedPoint2.z);
+
+        //printf("t values probe 1: %f %f \n", t_min_1, t_max_1);
+        //printf("t values probe 2: %f %f \n", t_min_2, t_max_2);
         printf("UV world pos: %f %f %f \n", UVWorldPos.x, UVWorldPos.y, UVWorldPos.z);
 
 
@@ -105,7 +127,9 @@ namespace mcrt {
         int cubeMapFaceIndex1, cubeMapFaceIndex2;
 
         convert_xyz_to_cube_uv(rayDir1.x, rayDir1.y, rayDir1.z, &cubeMapFaceIndex1, &faceU1, &faceV1);
+        printf("Probe 1: Face index: %d, faceU: %f, faceV: %f \n", cubeMapFaceIndex1, faceU1, faceV1);
         convert_xyz_to_cube_uv(rayDir2.x, rayDir2.y, rayDir2.z, &cubeMapFaceIndex2, &faceU2, &faceV2);
+        printf("Probe 2: Face index: %d, faceU: %f, faceV: %f \n", cubeMapFaceIndex2, faceU2, faceV2);
 
         int uIndex1 = optixLaunchParams.cubeMapResolution * faceU1;
         int vIndex1 = optixLaunchParams.cubeMapResolution * faceV1;
