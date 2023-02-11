@@ -56,9 +56,11 @@ namespace mcrt {
 		void initSHAccumulators(int divisionResolution, int amountNonEmptyCells);
 		void calculateRadianceCellGatherPass(CUDABuffer& previousPassLightSourceTexture);
 		void calculateRadianceCellGatherPassCubeMap(CUDABuffer& previousPassLightSourceTexture);
+		void calculateRadianceCellGatherPassCubeMapAlt(CUDABuffer& previousPassLightSourceTexture);
 		void calculateRadianceCellScatterPass(int iteration, CUDABuffer& dstTexture);
-		void calculateRadianceCellScatterPassCubeMap(int iteration, CUDABuffer& dstTexture);
+		void calculateRadianceCellScatterPassCubeMap(int iteration, CUDABuffer& prevBounceTexture, CUDABuffer& dstTexture);
 		void calculateRadianceCellScatterUnbiased(int iteration, CUDABuffer& prevBounceTexture, CUDABuffer& dstTexture);
+		void lightProbeTest(int iteration, CUDABuffer& prevBounceTexture, CUDABuffer& dstTexture);
 
 
 		void loadLightTexture();

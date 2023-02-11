@@ -200,14 +200,17 @@
     <None Include="directLightingShaders.cu" />
     <None Include="directLightingShadersGathering.cu" />
     <None Include="cameraRayProgram.cu" />
+    <None Include="probeTesting.cu" />
     <None Include="radianceCellGathering3.cu" />
     <None Include="radianceCellGathering_Cubemap.cu" />
     <None Include="radianceCellGathering_Cubemap2.cu" />
+    <None Include="radianceCellGathering_Cubemap3.cu" />
     <None Include="radianceCellScattering.cu" />
     <None Include="radianceCellGathering2.cu" />
     <None Include="radianceCellScattering_Cubemap.cu" />
     <None Include="radianceCellScattering_Cubemap2.cu" />
     <None Include="radianceCellScattering_Cubemap3.cu" />
+    <None Include="radianceCellScattering_Cubemap_hybrid.cu" />
     <None Include="radianceCellScattering_last.cu" />
     <None Include="radianceCellScattering_trilinear.cu" />
     <None Include="radianceCellScattering_trilinear2.cu" />
@@ -215,7 +218,6 @@
     <None Include="radianceCellGathering.cu" />
     <None Include="unbiasedScattering.cu" />
     <None Include="unbiasedScattering2.cu" />
-    <None Include="unbiasedScattering3.cu" />
     <None Include="utils.cuh" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

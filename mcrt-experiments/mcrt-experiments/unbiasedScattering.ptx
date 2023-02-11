@@ -535,14 +535,14 @@ $L__BB3_1:
 	fma.rn.ftz.f32 	%f125, %f119, %f108, %f85;
 	.loc	4 250 3, function_name $L__info_string24, inlined_at 1 230 17
 	fma.rn.ftz.f32 	%f124, %f119, %f109, %f86;
-	.loc	1 142 35
+	.loc	1 142 34
 	add.s32 	%r238, %r238, 2;
 	.loc	1 142 9
-	setp.ne.s32 	%p3, %r238, 1000;
+	setp.ne.s32 	%p3, %r238, 400;
 	@%p3 bra 	$L__BB3_1;
 
 	.loc	1 236 28
-	mov.f32 	%f120, 0f447A0000;
+	mov.f32 	%f120, 0f43C80000;
 	div.approx.ftz.f32 	%f121, %f126, %f120;
 	cvt.rzi.ftz.s32.f32 	%r228, %f121;
 	.loc	1 237 28

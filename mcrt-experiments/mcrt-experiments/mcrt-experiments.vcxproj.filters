@@ -295,8 +295,14 @@
     <None Include="unbiasedScattering2.cu">
       <Filter>Source Files\GPU\Unbiased</Filter>
     </None>
-    <None Include="unbiasedScattering3.cu">
-      <Filter>Source Files\GPU\Unbiased</Filter>
+    <None Include="radianceCellScattering_Cubemap_hybrid.cu">
+      <Filter>Source Files\GPU\Cubemap</Filter>
+    </None>
+    <None Include="probeTesting.cu">
+      <Filter>Source Files\GPU\Cubemap</Filter>
+    </None>
+    <None Include="radianceCellGathering_Cubemap3.cu">
+      <Filter>Source Files\GPU\Cubemap</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -78,7 +78,7 @@ namespace mcrt {
         pipelineCompileOptions = {};
         pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY;
         pipelineCompileOptions.usesMotionBlur = false;
-        pipelineCompileOptions.numPayloadValues = 4;
+        pipelineCompileOptions.numPayloadValues = 3;
         pipelineCompileOptions.numAttributeValues = 2;
         pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE;
         pipelineCompileOptions.pipelineLaunchParamsVariableName = "optixLaunchParams";
@@ -261,23 +261,13 @@ namespace mcrt {
             rec_scene.data.vertex = (glm::vec3*)proxyGeometry.vertices[i].d_pointer();
             rec_scene.data.index = (glm::ivec3*)proxyGeometry.indices[i].d_pointer();
             rec_scene.data.normal = (glm::vec3*)proxyGeometry.normals[i].d_pointer();
+            rec_scene.data.texcoord = (glm::vec2*)proxyGeometry.texCoords[i].d_pointer();
+
             hitgroupRecords.push_back(rec_scene);
         }
 
         NonEmptyCells nonEmptyCells = scene.grid.getNonEmptyCells();
         int numNonEmptyCells = nonEmptyCells.nonEmptyCells.size();
-
-        //// Radiance grid geometry
-        //for (int i = 0; i < numNonEmptyCells; i++) {
-
-        //    HitgroupRecordRadianceCellGather rec_grid;
-        //    OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[1], &rec_grid));
-
-        //    rec_grid.data.cellIndex = i;
-        //    rec_grid.data.vertex = (glm::vec3*)radianceCellGeometry.vertices[nonEmptyCells.nonEmptyCellIndices[i]].d_pointer();     // Kan ik deze niet ook 1 keer opslaan en ter plekke hier transformeren?
-        //    rec_grid.data.index = (glm::ivec3*)radianceCellGeometry.indices[nonEmptyCells.nonEmptyCellIndices[i]].d_pointer();
-        //    hitgroupRecords.push_back(rec_grid);
-        //}
 
         // Upload records to device
         hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);

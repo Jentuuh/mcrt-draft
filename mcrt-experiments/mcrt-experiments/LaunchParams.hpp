@@ -42,6 +42,11 @@ namespace mcrt {
 		glm::vec3 rayOrigin;
 	};
 
+	struct RadianceCellScatterPRDHybrid {
+		int hitFound;
+		glm::vec3 resultColor;
+	};
+
 	struct MeshSBTDataRadianceCellScatter{
 		glm::vec3* vertex;
 		glm::vec3* normal;
@@ -82,6 +87,7 @@ namespace mcrt {
 			int size;
 		} uvWorldPositions;
 
+		PixelBuffer prevBounceTexture;
 		PixelBuffer currentBounceTexture;
 
 		glm::vec2* uvsInside;
@@ -139,10 +145,15 @@ namespace mcrt {
 		glm::vec3 rayOrigin;
 	};
 
+	struct RadianceCellGatherPRDAlt {
+		glm::vec3 resultColor;
+	};
+
 	struct MeshSBTDataRadianceCellGather {
 		glm::vec3* vertex;
 		glm::vec3* normal;
 		glm::ivec3* index;
+		glm::vec2* texcoord;
 
 		int cellIndex;
 	};

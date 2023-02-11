@@ -21,6 +21,7 @@ namespace mcrt {
 		void assignUVToCells(glm::vec2 uv, glm::vec3 UVWorldCoord);
 		NonEmptyCells getNonEmptyCells();
 
+		int getAmountCells() { return grid.size(); };
 		int getCellIndex(std::shared_ptr<RadianceCell> cell);
 		float getCellSize() { return cellSize; };
 		RadianceCell& getCell(glm::ivec3 coord);

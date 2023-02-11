@@ -38,7 +38,7 @@ namespace mcrt {
 	void App::loadScene()
 	{
 		//scene.loadModelFromOBJ("../models/sponza/sponza.obj");
-		scene.loadModelFromOBJ("../models/cornell/cornell.obj");
+		scene.loadModelFromOBJ("../models/cornell/cornell-empty.obj");
 		std::cout << "Loaded scene: " << scene.amountVertices() << " vertices. Scene Max: " << glm::to_string(scene.maxCoord()) << " Scene Min: " << glm::to_string(scene.minCoord()) << std::endl;
 		
 		// Normalize scene to be contained within [0;1] in each dimension
@@ -51,10 +51,10 @@ namespace mcrt {
 		scene.loadLights();
 
 		// Build radiance grid that is contained within the scene
-		scene.buildRadianceGrid(.33f);
+		scene.buildRadianceGrid(.3333333333f);
 
-		// For each radiance cell, check which objects are (partially) in it
-		scene.grid.assignObjectsToCells(scene.getVoxelizers());
+		//// For each radiance cell, check which objects are (partially) in it
+		//scene.grid.assignObjectsToCells(scene.getVoxelizers());
 	}
 
 }
