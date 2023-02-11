@@ -113,30 +113,30 @@ namespace mcrt {
 	// Finds projected point onto scene bounds, which we can use as a 'distant point' along a ray
 	static __forceinline__ __device__ void find_distant_point_along_direction(glm::vec3 o, glm::vec3 dir, glm::vec3 cubeMin, glm::vec3 cubeMax, double* t_min, double* t_max)
 	{
-		double t_min_x = (cubeMin.x - o.x) / dir.x;
+		*t_min = (cubeMin.x - o.x) / dir.x;
+		*t_max = (cubeMax.x - o.x) / dir.x;
+
+
 		double t_min_y = (cubeMin.y - o.y) / dir.y;
-		double t_min_z = (cubeMin.z - o.z) / dir.z;
-
-		double t_max_x = (cubeMax.x - o.x) / dir.x;
 		double t_max_y = (cubeMax.y - o.y) / dir.y;
-		double t_max_z = (cubeMax.z - o.z) / dir.z;
 
-		printf("IN FUNCTION: minX %f minY %f minZ %f maxX %f maxY %f maxZ %f \n", t_min_x, t_min_y, t_min_z, t_max_x, t_max_y, t_max_z);
-
-		if (t_min_x > t_max_x) swap(&t_min_x, &t_max_x);
+		if (*t_min > *t_max) swap(t_min, t_max);
 		if (t_min_y > t_max_y) swap(&t_min_y, &t_max_y);
 
-		if ((t_min_x > t_max_y) || (t_min_y > t_max_x)) {
+		if ((*t_min > t_max_y) || (t_min_y > *t_max)) {
 			*t_min = NAN;
 			*t_max = NAN;
 			return;
 		}
 
-		if (t_min_y > t_min_x)
+		if (t_min_y > *t_min)
 			*t_min = t_min_y;
 
-		if (t_max_y < t_max_x)
+		if (t_max_y < *t_max)
 			*t_max = t_max_y;
+
+		double t_min_z = (cubeMin.z - o.z) / dir.z;
+		double t_max_z = (cubeMax.z - o.z) / dir.z;
 
 		if (t_min_z > t_max_z) swap(&t_min_z, &t_max_z);
 
@@ -152,6 +152,7 @@ namespace mcrt {
 
 		if (t_max_z < *t_max)
 			*t_max = t_max_z;
-
+		printf("IN FUNCTION: minX %f minY %f minZ %f maxX %f maxY %f maxZ %f \n", *t_min, t_min_y, t_min_z, *t_max, t_max_y, t_max_z);
+		printf("IN FUNCTION: t-min %f t-max %f \n", *t_min,  *t_max);
 	}
 }

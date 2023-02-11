@@ -80,14 +80,17 @@ namespace mcrt {
         const int probeResWidth = optixLaunchParams.probeWidthRes;
         const int probeResHeight = optixLaunchParams.probeHeightRes;
 
-        glm::vec3 cell_1_min = optixLaunchParams.cellCenter - glm::vec3{ 0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize };
-        glm::vec3 cell_1_max = optixLaunchParams.cellCenter + glm::vec3{ 0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize };
-        glm::vec3 cell_2_min = optixLaunchParams.cellCenter + glm::vec3{ 2 * optixLaunchParams.cellSize, 0.0f, 0.0f } - glm::vec3{ 0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize };
-        glm::vec3 cell_2_max = optixLaunchParams.cellCenter + glm::vec3{ 2 * optixLaunchParams.cellSize, 0.0f, 0.0f } + glm::vec3{ 0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize };
-        printf("Cell 1 min: %f %f %f \n", cell_1_min.x, cell_1_min.y, cell_1_min.z);
-        printf("Cell 1 max: %f %f %f \n", cell_1_max.x, cell_1_max.y, cell_1_max.z);
-        printf("Cell 2 min: %f %f %f \n", cell_2_min.x, cell_2_min.y, cell_2_min.z);
-        printf("Cell 2 max: %f %f %f \n", cell_2_max.x, cell_2_max.y, cell_2_max.z);
+        glm::vec3 cubeMin = { 0.0f, 0.0f ,0.0f };
+        glm::vec3 cubeMax = { 1.0f, 1.0f ,1.0f };
+
+        //glm::vec3 cell_1_min = optixLaunchParams.cellCenter - glm::vec3{ 0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize };
+        //glm::vec3 cell_1_max = optixLaunchParams.cellCenter + glm::vec3{ 0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize };
+        //glm::vec3 cell_2_min = optixLaunchParams.cellCenter + glm::vec3{ 2 * optixLaunchParams.cellSize, 0.0f, 0.0f } - glm::vec3{ 0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize };
+        //glm::vec3 cell_2_max = optixLaunchParams.cellCenter + glm::vec3{ 2 * optixLaunchParams.cellSize, 0.0f, 0.0f } + glm::vec3{ 0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize,0.5f * optixLaunchParams.cellSize };
+        //printf("Cell 1 min: %f %f %f \n", cell_1_min.x, cell_1_min.y, cell_1_min.z);
+        //printf("Cell 1 max: %f %f %f \n", cell_1_max.x, cell_1_max.y, cell_1_max.z);
+        //printf("Cell 2 min: %f %f %f \n", cell_2_min.x, cell_2_min.y, cell_2_min.z);
+        //printf("Cell 2 max: %f %f %f \n", cell_2_max.x, cell_2_max.y, cell_2_max.z);
 
         glm::vec3 probePos1 = optixLaunchParams.cellCenter;
         glm::vec3 probePos2 = optixLaunchParams.cellCenter + glm::vec3{ 2 * optixLaunchParams.cellSize, 0.0f, 0.0f };
@@ -107,12 +110,12 @@ namespace mcrt {
 
         double t_min_1;
         double t_max_1;
-        find_distant_point_along_direction(probePos1, rayDir1, cell_1_min, cell_1_max, &t_min_1, &t_max_1);
+        find_distant_point_along_direction(probePos1, rayDir1, cubeMin, cubeMax, &t_min_1, &t_max_1);
         glm::vec3 distantProjectedPoint1 = probePos1 + (glm::vec3{ rayDir1.x * t_max_1,  rayDir1.y * t_max_1,  rayDir1.z * t_max_1 });
 
         double t_min_2;
         double t_max_2;
-        find_distant_point_along_direction(probePos2, rayDir2, cell_2_min, cell_2_max, &t_min_2, &t_max_2);
+        find_distant_point_along_direction(probePos2, rayDir2, cubeMin, cubeMax, &t_min_2, &t_max_2);
         glm::vec3 distantProjectedPoint2 = probePos2 + (glm::vec3{ rayDir2.x * t_max_2,  rayDir2.y * t_max_2,  rayDir2.z * t_max_2 });
 
         printf("Distant project point 1: %f %f %f \n", distantProjectedPoint1.x, distantProjectedPoint1.y, distantProjectedPoint1.z);
