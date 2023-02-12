@@ -23,12 +23,15 @@
 .global .align 1 .b8 $str$2[36] = {68, 105, 115, 116, 97, 110, 116, 32, 112, 114, 111, 106, 101, 99, 116, 32, 112, 111, 105, 110, 116, 32, 49, 58, 32, 37, 102, 32, 37, 102, 32, 37, 102, 32, 10, 0};
 .global .align 1 .b8 $str$3[36] = {68, 105, 115, 116, 97, 110, 116, 32, 112, 114, 111, 106, 101, 99, 116, 32, 112, 111, 105, 110, 116, 32, 50, 58, 32, 37, 102, 32, 37, 102, 32, 37, 102, 32, 10, 0};
 .global .align 1 .b8 $str$4[25] = {85, 86, 32, 119, 111, 114, 108, 100, 32, 112, 111, 115, 58, 32, 37, 102, 32, 37, 102, 32, 37, 102, 32, 10, 0};
-.global .align 1 .b8 $str$5[48] = {80, 114, 111, 98, 101, 32, 49, 58, 32, 70, 97, 99, 101, 32, 105, 110, 100, 101, 120, 58, 32, 37, 100, 44, 32, 102, 97, 99, 101, 85, 58, 32, 37, 102, 44, 32, 102, 97, 99, 101, 86, 58, 32, 37, 102, 32, 10, 0};
-.global .align 1 .b8 $str$6[48] = {80, 114, 111, 98, 101, 32, 50, 58, 32, 70, 97, 99, 101, 32, 105, 110, 100, 101, 120, 58, 32, 37, 100, 44, 32, 102, 97, 99, 101, 85, 58, 32, 37, 102, 44, 32, 102, 97, 99, 101, 86, 58, 32, 37, 102, 32, 10, 0};
-.global .align 1 .b8 $str$7[31] = {80, 114, 111, 98, 101, 32, 114, 101, 97, 100, 32, 118, 97, 108, 117, 101, 32, 49, 58, 32, 37, 100, 32, 37, 100, 32, 37, 100, 32, 10, 0};
-.global .align 1 .b8 $str$8[31] = {80, 114, 111, 98, 101, 32, 114, 101, 97, 100, 32, 118, 97, 108, 117, 101, 32, 50, 58, 32, 37, 100, 32, 37, 100, 32, 37, 100, 32, 10, 0};
-.global .align 1 .b8 $str$9[63] = {73, 78, 32, 70, 85, 78, 67, 84, 73, 79, 78, 58, 32, 109, 105, 110, 88, 32, 37, 102, 32, 109, 105, 110, 89, 32, 37, 102, 32, 109, 105, 110, 90, 32, 37, 102, 32, 109, 97, 120, 88, 32, 37, 102, 32, 109, 97, 120, 89, 32, 37, 102, 32, 109, 97, 120, 90, 32, 37, 102, 32, 10, 0};
-.global .align 1 .b8 $str$10[33] = {73, 78, 32, 70, 85, 78, 67, 84, 73, 79, 78, 58, 32, 116, 45, 109, 105, 110, 32, 37, 102, 32, 116, 45, 109, 97, 120, 32, 37, 102, 32, 10, 0};
+.global .align 1 .b8 $str$5[17] = {99, 117, 98, 101, 77, 97, 112, 82, 101, 115, 58, 32, 37, 100, 32, 10, 0};
+.global .align 1 .b8 $str$6[48] = {80, 114, 111, 98, 101, 32, 49, 58, 32, 70, 97, 99, 101, 32, 105, 110, 100, 101, 120, 58, 32, 37, 100, 44, 32, 102, 97, 99, 101, 85, 58, 32, 37, 100, 44, 32, 102, 97, 99, 101, 86, 58, 32, 37, 100, 32, 10, 0};
+.global .align 1 .b8 $str$7[48] = {80, 114, 111, 98, 101, 32, 50, 58, 32, 70, 97, 99, 101, 32, 105, 110, 100, 101, 120, 58, 32, 37, 100, 44, 32, 102, 97, 99, 101, 85, 58, 32, 37, 100, 44, 32, 102, 97, 99, 101, 86, 58, 32, 37, 100, 32, 10, 0};
+.global .align 1 .b8 $str$8[22] = {80, 114, 111, 98, 101, 32, 49, 58, 85, 86, 32, 40, 37, 100, 44, 32, 37, 100, 41, 32, 10, 0};
+.global .align 1 .b8 $str$9[22] = {80, 114, 111, 98, 101, 32, 50, 58, 85, 86, 32, 40, 37, 100, 44, 32, 37, 100, 41, 32, 10, 0};
+.global .align 1 .b8 $str$10[31] = {80, 114, 111, 98, 101, 32, 114, 101, 97, 100, 32, 118, 97, 108, 117, 101, 32, 49, 58, 32, 37, 100, 32, 37, 100, 32, 37, 100, 32, 10, 0};
+.global .align 1 .b8 $str$11[31] = {80, 114, 111, 98, 101, 32, 114, 101, 97, 100, 32, 118, 97, 108, 117, 101, 32, 50, 58, 32, 37, 100, 32, 37, 100, 32, 37, 100, 32, 10, 0};
+.global .align 1 .b8 $str$12[63] = {73, 78, 32, 70, 85, 78, 67, 84, 73, 79, 78, 58, 32, 109, 105, 110, 88, 32, 37, 102, 32, 109, 105, 110, 89, 32, 37, 102, 32, 109, 105, 110, 90, 32, 37, 102, 32, 109, 97, 120, 88, 32, 37, 102, 32, 109, 97, 120, 89, 32, 37, 102, 32, 109, 97, 120, 90, 32, 37, 102, 32, 10, 0};
+.global .align 1 .b8 $str$13[33] = {73, 78, 32, 70, 85, 78, 67, 84, 73, 79, 78, 58, 32, 116, 45, 109, 105, 110, 32, 37, 102, 32, 116, 45, 109, 97, 120, 32, 37, 102, 32, 10, 0};
 
 .visible .entry __closesthit__radiance__cell__scattering__scene()
 {
@@ -201,9 +204,9 @@
 	.reg .b64 	%SPL;
 	.reg .pred 	%p<77>;
 	.reg .f32 	%f<117>;
-	.reg .b32 	%r<56>;
+	.reg .b32 	%r<59>;
 	.reg .f64 	%fd<72>;
-	.reg .b64 	%rd<48>;
+	.reg .b64 	%rd<54>;
 	.loc	1 77 0
 
 
@@ -215,8 +218,8 @@
 	ld.const.v2.f32 	{%f19, %f20}, [optixLaunchParams+72];
 	mov.b32 	%r4, %f19;
 	ld.const.v2.f32 	{%f22, %f23}, [optixLaunchParams+64];
-	.loc	1 96 31
-	.loc	3 620 3, function_name $L__info_string4, inlined_at 1 96 31
+	.loc	1 87 31
+	.loc	3 620 3, function_name $L__info_string4, inlined_at 1 87 31
 	fma.rn.ftz.f32 	%f4, %f20, 0f40000000, %f22;
 	add.ftz.f32 	%f5, %f23, 0f00000000;
 	mov.f32 	%f24, 0f00000000;
@@ -228,10 +231,10 @@
 	ld.const.u32 	%r7, [optixLaunchParams+96];
 	.loc	1 80 33
 	ld.const.u32 	%r8, [optixLaunchParams+92];
-	.loc	1 98 26
+	.loc	1 89 26
 	mad.lo.s32 	%r1, %r7, %r8, %r8;
 	ld.const.u32 	%r2, [optixLaunchParams+112];
-	.loc	1 101 30
+	.loc	1 92 30
 	ld.const.u64 	%rd6, [optixLaunchParams];
 	cvta.to.global.u64 	%rd7, %rd6;
 	ld.const.u32 	%r9, [optixLaunchParams+8];
@@ -239,23 +242,23 @@
 	mul.wide.s32 	%rd8, %r10, 36;
 	add.s64 	%rd9, %rd7, %rd8;
 	ld.global.f32 	%f7, [%rd9+20520];
-	.loc	1 106 29
-	.loc	3 665 3, function_name $L__info_string15, inlined_at 1 106 29
+	.loc	1 94 29
+	.loc	3 665 3, function_name $L__info_string15, inlined_at 1 94 29
 	sub.ftz.f32 	%f8, %f7, %f22;
-	.loc	1 101 30
+	.loc	1 92 30
 	ld.global.f32 	%f9, [%rd9+20524];
-	.loc	3 665 3, function_name $L__info_string15, inlined_at 1 106 29
+	.loc	3 665 3, function_name $L__info_string15, inlined_at 1 94 29
 	sub.ftz.f32 	%f10, %f9, %f23;
-	.loc	1 101 30
+	.loc	1 92 30
 	ld.global.f32 	%f11, [%rd9+20528];
-	.loc	3 665 3, function_name $L__info_string15, inlined_at 1 106 29
+	.loc	3 665 3, function_name $L__info_string15, inlined_at 1 94 29
 	sub.ftz.f32 	%f12, %f11, %f19;
-	.loc	1 107 29
-	.loc	3 665 3, function_name $L__info_string15, inlined_at 1 107 29
+	.loc	1 95 29
+	.loc	3 665 3, function_name $L__info_string15, inlined_at 1 95 29
 	sub.ftz.f32 	%f13, %f7, %f4;
 	sub.ftz.f32 	%f14, %f9, %f5;
 	sub.ftz.f32 	%f15, %f11, %f6;
-	.loc	1 108 9
+	.loc	1 96 9
 	cvt.ftz.f64.f32 	%fd1, %f8;
 	cvt.ftz.f64.f32 	%fd2, %f10;
 	cvt.ftz.f64.f32 	%fd3, %f12;
@@ -282,7 +285,7 @@
 	);
 	ld.param.b32 	%r11, [retval0+0];
 	} // callseq 0
-	.loc	1 109 9
+	.loc	1 97 9
 	cvt.ftz.f64.f32 	%fd4, %f13;
 	cvt.ftz.f64.f32 	%fd5, %f14;
 	cvt.ftz.f64.f32 	%fd6, %f15;
@@ -309,33 +312,33 @@
 	);
 	ld.param.b32 	%r12, [retval0+0];
 	} // callseq 1
-	.loc	1 113 9
-	.loc	4 116 3, function_name $L__info_string16, inlined_at 1 113 9
+	.loc	1 101 9
+	.loc	4 116 3, function_name $L__info_string16, inlined_at 1 101 9
 	sub.ftz.f32 	%f26, %f24, %f22;
 	div.approx.ftz.f32 	%f27, %f26, %f8;
 	cvt.ftz.f64.f32 	%fd34, %f27;
-	.loc	4 117 3, function_name $L__info_string16, inlined_at 1 113 9
+	.loc	4 117 3, function_name $L__info_string16, inlined_at 1 101 9
 	mov.f32 	%f28, 0f3F800000;
 	sub.ftz.f32 	%f29, %f28, %f22;
 	div.approx.ftz.f32 	%f30, %f29, %f8;
 	cvt.ftz.f64.f32 	%fd35, %f30;
-	.loc	4 120 18, function_name $L__info_string16, inlined_at 1 113 9
+	.loc	4 120 18, function_name $L__info_string16, inlined_at 1 101 9
 	sub.ftz.f32 	%f31, %f24, %f23;
 	div.approx.ftz.f32 	%f32, %f31, %f10;
 	cvt.ftz.f64.f32 	%fd36, %f32;
-	.loc	4 121 18, function_name $L__info_string16, inlined_at 1 113 9
+	.loc	4 121 18, function_name $L__info_string16, inlined_at 1 101 9
 	sub.ftz.f32 	%f33, %f28, %f23;
 	div.approx.ftz.f32 	%f34, %f33, %f10;
 	cvt.ftz.f64.f32 	%fd37, %f34;
-	.loc	4 123 3, function_name $L__info_string16, inlined_at 1 113 9
+	.loc	4 123 3, function_name $L__info_string16, inlined_at 1 101 9
 	setp.gt.ftz.f32 	%p1, %f27, %f30;
 	selp.f64 	%fd7, %fd34, %fd35, %p1;
 	selp.f64 	%fd8, %fd35, %fd34, %p1;
-	.loc	4 124 3, function_name $L__info_string16, inlined_at 1 113 9
+	.loc	4 124 3, function_name $L__info_string16, inlined_at 1 101 9
 	setp.gt.ftz.f32 	%p2, %f32, %f34;
 	selp.f64 	%fd9, %fd36, %fd37, %p2;
 	selp.f64 	%fd10, %fd37, %fd36, %p2;
-	.loc	4 126 3, function_name $L__info_string16, inlined_at 1 113 9
+	.loc	4 126 3, function_name $L__info_string16, inlined_at 1 101 9
 	setp.gt.f64 	%p3, %fd8, %fd9;
 	setp.gt.f64 	%p4, %fd10, %fd7;
 	or.pred  	%p5, %p3, %p4;
@@ -345,25 +348,25 @@
 	mov.f64 	%fd70, %fd71;
 	@%p5 bra 	$L__BB3_3;
 
-	.loc	4 132 3, function_name $L__info_string16, inlined_at 1 113 9
+	.loc	4 132 3, function_name $L__info_string16, inlined_at 1 101 9
 	setp.gt.f64 	%p6, %fd10, %fd8;
 	selp.f64 	%fd11, %fd10, %fd8, %p6;
-	.loc	4 135 3, function_name $L__info_string16, inlined_at 1 113 9
+	.loc	4 135 3, function_name $L__info_string16, inlined_at 1 101 9
 	setp.lt.f64 	%p7, %fd9, %fd7;
 	selp.f64 	%fd12, %fd9, %fd7, %p7;
-	.loc	4 138 18, function_name $L__info_string16, inlined_at 1 113 9
+	.loc	4 138 18, function_name $L__info_string16, inlined_at 1 101 9
 	sub.ftz.f32 	%f38, %f24, %f19;
 	div.approx.ftz.f32 	%f39, %f38, %f12;
 	cvt.ftz.f64.f32 	%fd39, %f39;
-	.loc	4 139 18, function_name $L__info_string16, inlined_at 1 113 9
+	.loc	4 139 18, function_name $L__info_string16, inlined_at 1 101 9
 	sub.ftz.f32 	%f41, %f28, %f19;
 	div.approx.ftz.f32 	%f42, %f41, %f12;
 	cvt.ftz.f64.f32 	%fd40, %f42;
-	.loc	4 141 3, function_name $L__info_string16, inlined_at 1 113 9
+	.loc	4 141 3, function_name $L__info_string16, inlined_at 1 101 9
 	setp.gt.ftz.f32 	%p8, %f39, %f42;
 	selp.f64 	%fd13, %fd39, %fd40, %p8;
 	selp.f64 	%fd14, %fd40, %fd39, %p8;
-	.loc	4 144 3, function_name $L__info_string16, inlined_at 1 113 9
+	.loc	4 144 3, function_name $L__info_string16, inlined_at 1 101 9
 	setp.gt.f64 	%p9, %fd11, %fd13;
 	setp.gt.f64 	%p10, %fd14, %fd12;
 	or.pred  	%p11, %p9, %p10;
@@ -371,26 +374,26 @@
 	@%p11 bra 	$L__BB3_3;
 
 	.loc	4 0 3
-	add.u64 	%rd46, %SP, 0;
-	.loc	4 150 3, function_name $L__info_string16, inlined_at 1 113 9
+	add.u64 	%rd52, %SP, 0;
+	.loc	4 150 3, function_name $L__info_string16, inlined_at 1 101 9
 	setp.gt.f64 	%p12, %fd14, %fd11;
-	.loc	4 153 3, function_name $L__info_string16, inlined_at 1 113 9
+	.loc	4 153 3, function_name $L__info_string16, inlined_at 1 101 9
 	setp.lt.f64 	%p13, %fd13, %fd12;
 	selp.f64 	%fd70, %fd13, %fd12, %p13;
-	.loc	4 150 3, function_name $L__info_string16, inlined_at 1 113 9
+	.loc	4 150 3, function_name $L__info_string16, inlined_at 1 101 9
 	selp.f64 	%fd41, %fd14, %fd11, %p12;
-	.loc	4 155 3, function_name $L__info_string16, inlined_at 1 113 9
+	.loc	4 155 3, function_name $L__info_string16, inlined_at 1 101 9
 	st.local.v2.f64 	[%rd2], {%fd41, %fd10};
 	st.local.v2.f64 	[%rd2+16], {%fd14, %fd70};
 	st.local.v2.f64 	[%rd2+32], {%fd9, %fd13};
-	mov.u64 	%rd14, $str$9;
+	mov.u64 	%rd14, $str$12;
 	cvta.global.u64 	%rd15, %rd14;
 	{ // callseq 2, 0
 	.reg .b32 temp_param_reg;
 	.param .b64 param0;
 	st.param.b64 	[param0+0], %rd15;
 	.param .b64 param1;
-	st.param.b64 	[param1+0], %rd46;
+	st.param.b64 	[param1+0], %rd52;
 	.param .b32 retval0;
 	call.uni (retval0), 
 	vprintf, 
@@ -400,16 +403,16 @@
 	);
 	ld.param.b32 	%r13, [retval0+0];
 	} // callseq 2
-	.loc	4 156 3, function_name $L__info_string16, inlined_at 1 113 9
+	.loc	4 156 3, function_name $L__info_string16, inlined_at 1 101 9
 	st.local.v2.f64 	[%rd2], {%fd41, %fd70};
-	mov.u64 	%rd17, $str$10;
+	mov.u64 	%rd17, $str$13;
 	cvta.global.u64 	%rd18, %rd17;
 	{ // callseq 3, 0
 	.reg .b32 temp_param_reg;
 	.param .b64 param0;
 	st.param.b64 	[param0+0], %rd18;
 	.param .b64 param1;
-	st.param.b64 	[param1+0], %rd46;
+	st.param.b64 	[param1+0], %rd52;
 	.param .b32 retval0;
 	call.uni (retval0), 
 	vprintf, 
@@ -421,79 +424,79 @@
 	} // callseq 3
 
 $L__BB3_3:
-	.loc	1 98 26
-	mul.lo.s32 	%r15, %r2, %r1;
+	.loc	1 89 26
+	mul.lo.s32 	%r15, %r1, %r2;
 	mul.lo.s32 	%r3, %r15, 6;
-	.loc	1 114 42
+	.loc	1 102 42
 	mul.f64 	%fd43, %fd70, %fd1;
-	.loc	1 114 42
-	.loc	3 56 5, function_name $L__info_string17, inlined_at 1 114 42
+	.loc	1 102 42
+	.loc	3 56 5, function_name $L__info_string17, inlined_at 1 102 42
 	cvt.rn.ftz.f32.f64 	%f45, %fd43;
-	.loc	1 114 42
+	.loc	1 102 42
 	mul.f64 	%fd44, %fd70, %fd2;
-	.loc	3 57 5, function_name $L__info_string17, inlined_at 1 114 42
+	.loc	3 57 5, function_name $L__info_string17, inlined_at 1 102 42
 	cvt.rn.ftz.f32.f64 	%f46, %fd44;
-	.loc	1 114 42
+	.loc	1 102 42
 	mul.f64 	%fd45, %fd70, %fd3;
-	.loc	3 58 5, function_name $L__info_string17, inlined_at 1 114 42
+	.loc	3 58 5, function_name $L__info_string17, inlined_at 1 102 42
 	cvt.rn.ftz.f32.f64 	%f47, %fd45;
-	.loc	1 114 44
-	.loc	3 620 3, function_name $L__info_string4, inlined_at 1 114 44
+	.loc	1 102 44
+	.loc	3 620 3, function_name $L__info_string4, inlined_at 1 102 44
 	add.ftz.f32 	%f16, %f22, %f45;
 	add.ftz.f32 	%f17, %f23, %f46;
 	add.ftz.f32 	%f18, %f19, %f47;
-	.loc	1 118 9
-	.loc	4 116 3, function_name $L__info_string16, inlined_at 1 118 9
+	.loc	1 106 9
+	.loc	4 116 3, function_name $L__info_string16, inlined_at 1 106 9
 	sub.ftz.f32 	%f49, %f24, %f4;
 	div.approx.ftz.f32 	%f50, %f49, %f13;
 	cvt.ftz.f64.f32 	%fd46, %f50;
-	.loc	4 117 3, function_name $L__info_string16, inlined_at 1 118 9
+	.loc	4 117 3, function_name $L__info_string16, inlined_at 1 106 9
 	sub.ftz.f32 	%f52, %f28, %f4;
 	div.approx.ftz.f32 	%f53, %f52, %f13;
 	cvt.ftz.f64.f32 	%fd47, %f53;
-	.loc	4 120 18, function_name $L__info_string16, inlined_at 1 118 9
+	.loc	4 120 18, function_name $L__info_string16, inlined_at 1 106 9
 	sub.ftz.f32 	%f54, %f24, %f5;
 	div.approx.ftz.f32 	%f55, %f54, %f14;
 	cvt.ftz.f64.f32 	%fd48, %f55;
-	.loc	4 121 18, function_name $L__info_string16, inlined_at 1 118 9
+	.loc	4 121 18, function_name $L__info_string16, inlined_at 1 106 9
 	sub.ftz.f32 	%f56, %f28, %f5;
 	div.approx.ftz.f32 	%f57, %f56, %f14;
 	cvt.ftz.f64.f32 	%fd49, %f57;
-	.loc	4 123 3, function_name $L__info_string16, inlined_at 1 118 9
+	.loc	4 123 3, function_name $L__info_string16, inlined_at 1 106 9
 	setp.gt.ftz.f32 	%p14, %f50, %f53;
 	selp.f64 	%fd17, %fd47, %fd46, %p14;
 	selp.f64 	%fd18, %fd46, %fd47, %p14;
-	.loc	4 124 3, function_name $L__info_string16, inlined_at 1 118 9
+	.loc	4 124 3, function_name $L__info_string16, inlined_at 1 106 9
 	setp.gt.ftz.f32 	%p15, %f55, %f57;
 	selp.f64 	%fd19, %fd48, %fd49, %p15;
 	selp.f64 	%fd20, %fd49, %fd48, %p15;
-	.loc	4 126 3, function_name $L__info_string16, inlined_at 1 118 9
+	.loc	4 126 3, function_name $L__info_string16, inlined_at 1 106 9
 	setp.gt.f64 	%p16, %fd17, %fd19;
 	setp.gt.f64 	%p17, %fd20, %fd18;
 	or.pred  	%p18, %p16, %p17;
 	@%p18 bra 	$L__BB3_6;
 
-	.loc	4 132 3, function_name $L__info_string16, inlined_at 1 118 9
+	.loc	4 132 3, function_name $L__info_string16, inlined_at 1 106 9
 	setp.gt.f64 	%p19, %fd20, %fd17;
 	selp.f64 	%fd21, %fd20, %fd17, %p19;
-	.loc	4 135 3, function_name $L__info_string16, inlined_at 1 118 9
+	.loc	4 135 3, function_name $L__info_string16, inlined_at 1 106 9
 	setp.lt.f64 	%p20, %fd19, %fd18;
 	selp.f64 	%fd22, %fd19, %fd18, %p20;
-	.loc	4 138 18, function_name $L__info_string16, inlined_at 1 118 9
+	.loc	4 138 18, function_name $L__info_string16, inlined_at 1 106 9
 	mov.f32 	%f60, 0f00000000;
 	sub.ftz.f32 	%f61, %f60, %f6;
 	div.approx.ftz.f32 	%f62, %f61, %f15;
 	cvt.ftz.f64.f32 	%fd51, %f62;
-	.loc	4 139 18, function_name $L__info_string16, inlined_at 1 118 9
+	.loc	4 139 18, function_name $L__info_string16, inlined_at 1 106 9
 	mov.f32 	%f63, 0f3F800000;
 	sub.ftz.f32 	%f64, %f63, %f6;
 	div.approx.ftz.f32 	%f65, %f64, %f15;
 	cvt.ftz.f64.f32 	%fd52, %f65;
-	.loc	4 141 3, function_name $L__info_string16, inlined_at 1 118 9
+	.loc	4 141 3, function_name $L__info_string16, inlined_at 1 106 9
 	setp.gt.ftz.f32 	%p21, %f62, %f65;
 	selp.f64 	%fd23, %fd51, %fd52, %p21;
 	selp.f64 	%fd24, %fd52, %fd51, %p21;
-	.loc	4 144 3, function_name $L__info_string16, inlined_at 1 118 9
+	.loc	4 144 3, function_name $L__info_string16, inlined_at 1 106 9
 	setp.gt.f64 	%p22, %fd21, %fd23;
 	setp.gt.f64 	%p23, %fd24, %fd22;
 	or.pred  	%p24, %p22, %p23;
@@ -503,26 +506,26 @@ $L__BB3_3:
 	@%p24 bra 	$L__BB3_6;
 
 	.loc	4 0 3
-	add.u64 	%rd47, %SP, 0;
-	.loc	4 150 3, function_name $L__info_string16, inlined_at 1 118 9
+	add.u64 	%rd53, %SP, 0;
+	.loc	4 150 3, function_name $L__info_string16, inlined_at 1 106 9
 	setp.gt.f64 	%p25, %fd24, %fd21;
-	.loc	4 153 3, function_name $L__info_string16, inlined_at 1 118 9
+	.loc	4 153 3, function_name $L__info_string16, inlined_at 1 106 9
 	setp.lt.f64 	%p26, %fd23, %fd22;
 	selp.f64 	%fd71, %fd23, %fd22, %p26;
-	.loc	4 150 3, function_name $L__info_string16, inlined_at 1 118 9
+	.loc	4 150 3, function_name $L__info_string16, inlined_at 1 106 9
 	selp.f64 	%fd53, %fd24, %fd21, %p25;
-	.loc	4 155 3, function_name $L__info_string16, inlined_at 1 118 9
+	.loc	4 155 3, function_name $L__info_string16, inlined_at 1 106 9
 	st.local.v2.f64 	[%rd2], {%fd53, %fd20};
 	st.local.v2.f64 	[%rd2+16], {%fd24, %fd71};
 	st.local.v2.f64 	[%rd2+32], {%fd19, %fd23};
-	mov.u64 	%rd19, $str$9;
+	mov.u64 	%rd19, $str$12;
 	cvta.global.u64 	%rd20, %rd19;
 	{ // callseq 4, 0
 	.reg .b32 temp_param_reg;
 	.param .b64 param0;
 	st.param.b64 	[param0+0], %rd20;
 	.param .b64 param1;
-	st.param.b64 	[param1+0], %rd47;
+	st.param.b64 	[param1+0], %rd53;
 	.param .b32 retval0;
 	call.uni (retval0), 
 	vprintf, 
@@ -532,16 +535,16 @@ $L__BB3_3:
 	);
 	ld.param.b32 	%r16, [retval0+0];
 	} // callseq 4
-	.loc	4 156 3, function_name $L__info_string16, inlined_at 1 118 9
+	.loc	4 156 3, function_name $L__info_string16, inlined_at 1 106 9
 	st.local.v2.f64 	[%rd2], {%fd53, %fd71};
-	mov.u64 	%rd22, $str$10;
+	mov.u64 	%rd22, $str$13;
 	cvta.global.u64 	%rd23, %rd22;
 	{ // callseq 5, 0
 	.reg .b32 temp_param_reg;
 	.param .b64 param0;
 	st.param.b64 	[param0+0], %rd23;
 	.param .b64 param1;
-	st.param.b64 	[param1+0], %rd47;
+	st.param.b64 	[param1+0], %rd53;
 	.param .b32 retval0;
 	call.uni (retval0), 
 	vprintf, 
@@ -554,26 +557,26 @@ $L__BB3_3:
 
 $L__BB3_6:
 	.loc	4 0 3
-	add.u64 	%rd45, %SP, 48;
-	.loc	1 119 42
+	add.u64 	%rd51, %SP, 48;
+	.loc	1 107 42
 	mul.f64 	%fd54, %fd71, %fd4;
-	.loc	1 119 42
-	.loc	3 56 5, function_name $L__info_string17, inlined_at 1 119 42
+	.loc	1 107 42
+	.loc	3 56 5, function_name $L__info_string17, inlined_at 1 107 42
 	cvt.rn.ftz.f32.f64 	%f68, %fd54;
-	.loc	1 119 42
+	.loc	1 107 42
 	mul.f64 	%fd55, %fd71, %fd5;
-	.loc	3 57 5, function_name $L__info_string17, inlined_at 1 119 42
+	.loc	3 57 5, function_name $L__info_string17, inlined_at 1 107 42
 	cvt.rn.ftz.f32.f64 	%f69, %fd55;
-	.loc	1 119 42
+	.loc	1 107 42
 	mul.f64 	%fd56, %fd71, %fd6;
-	.loc	3 58 5, function_name $L__info_string17, inlined_at 1 119 42
+	.loc	3 58 5, function_name $L__info_string17, inlined_at 1 107 42
 	cvt.rn.ftz.f32.f64 	%f70, %fd56;
-	.loc	1 119 44
-	.loc	3 620 3, function_name $L__info_string4, inlined_at 1 119 44
+	.loc	1 107 44
+	.loc	3 620 3, function_name $L__info_string4, inlined_at 1 107 44
 	add.ftz.f32 	%f71, %f4, %f68;
 	add.ftz.f32 	%f72, %f5, %f69;
 	add.ftz.f32 	%f73, %f6, %f70;
-	.loc	1 121 9
+	.loc	1 109 9
 	cvt.ftz.f64.f32 	%fd57, %f17;
 	cvt.ftz.f64.f32 	%fd58, %f16;
 	st.local.v2.f64 	[%rd1], {%fd58, %fd57};
@@ -586,7 +589,7 @@ $L__BB3_6:
 	.param .b64 param0;
 	st.param.b64 	[param0+0], %rd25;
 	.param .b64 param1;
-	st.param.b64 	[param1+0], %rd45;
+	st.param.b64 	[param1+0], %rd51;
 	.param .b32 retval0;
 	call.uni (retval0), 
 	vprintf, 
@@ -596,7 +599,7 @@ $L__BB3_6:
 	);
 	ld.param.b32 	%r18, [retval0+0];
 	} // callseq 6
-	.loc	1 122 9
+	.loc	1 110 9
 	cvt.ftz.f64.f32 	%fd60, %f73;
 	cvt.ftz.f64.f32 	%fd61, %f72;
 	cvt.ftz.f64.f32 	%fd62, %f71;
@@ -609,7 +612,7 @@ $L__BB3_6:
 	.param .b64 param0;
 	st.param.b64 	[param0+0], %rd28;
 	.param .b64 param1;
-	st.param.b64 	[param1+0], %rd45;
+	st.param.b64 	[param1+0], %rd51;
 	.param .b32 retval0;
 	call.uni (retval0), 
 	vprintf, 
@@ -619,7 +622,7 @@ $L__BB3_6:
 	);
 	ld.param.b32 	%r19, [retval0+0];
 	} // callseq 7
-	.loc	1 126 9
+	.loc	1 112 9
 	cvt.ftz.f64.f32 	%fd63, %f9;
 	cvt.ftz.f64.f32 	%fd64, %f7;
 	st.local.v2.f64 	[%rd1], {%fd64, %fd63};
@@ -632,7 +635,7 @@ $L__BB3_6:
 	.param .b64 param0;
 	st.param.b64 	[param0+0], %rd30;
 	.param .b64 param1;
-	st.param.b64 	[param1+0], %rd45;
+	st.param.b64 	[param1+0], %rd51;
 	.param .b32 retval0;
 	call.uni (retval0), 
 	vprintf, 
@@ -642,88 +645,8 @@ $L__BB3_6:
 	);
 	ld.param.b32 	%r20, [retval0+0];
 	} // callseq 8
-	.loc	1 132 9
-	.loc	5 17 22, function_name $L__info_string18, inlined_at 1 132 9
-	.loc	6 117 12, function_name $L__info_string19, inlined_at 5 17 22
-	abs.ftz.f32 	%f74, %f10;
-	.loc	5 16 22, function_name $L__info_string18, inlined_at 1 132 9
-	.loc	6 117 12, function_name $L__info_string19, inlined_at 5 16 22
-	abs.ftz.f32 	%f75, %f8;
-	.loc	5 36 9, function_name $L__info_string18, inlined_at 1 132 9
-	setp.ge.ftz.f32 	%p27, %f75, %f74;
-	.loc	5 20 25, function_name $L__info_string18, inlined_at 1 132 9
-	setp.leu.ftz.f32 	%p28, %f8, 0f00000000;
-	.loc	5 36 9, function_name $L__info_string18, inlined_at 1 132 9
-	and.pred  	%p29, %p28, %p27;
-	.loc	5 18 22, function_name $L__info_string18, inlined_at 1 132 9
-	.loc	6 117 12, function_name $L__info_string19, inlined_at 5 18 22
-	abs.ftz.f32 	%f76, %f12;
-	.loc	5 36 9, function_name $L__info_string18, inlined_at 1 132 9
-	setp.ge.ftz.f32 	%p30, %f75, %f76;
-	and.pred  	%p31, %p29, %p30;
-	selp.u32 	%r21, 1, 0, %p31;
-	.loc	5 31 13, function_name $L__info_string18, inlined_at 1 132 9
-	neg.ftz.f32 	%f77, %f12;
-	.loc	5 36 9, function_name $L__info_string18, inlined_at 1 132 9
-	selp.f32 	%f78, %f12, %f77, %p31;
-	.loc	5 45 9, function_name $L__info_string18, inlined_at 1 132 9
-	setp.ge.ftz.f32 	%p32, %f74, %f75;
-	.loc	5 21 25, function_name $L__info_string18, inlined_at 1 132 9
-	setp.gt.ftz.f32 	%p33, %f10, 0f00000000;
-	.loc	5 45 9, function_name $L__info_string18, inlined_at 1 132 9
-	and.pred  	%p34, %p33, %p32;
-	setp.ge.ftz.f32 	%p35, %f74, %f76;
-	and.pred  	%p36, %p34, %p35;
-	selp.b32 	%r22, 2, %r21, %p36;
-	selp.f32 	%f79, %f77, %f10, %p36;
-	.loc	5 21 25, function_name $L__info_string18, inlined_at 1 132 9
-	setp.leu.ftz.f32 	%p37, %f10, 0f00000000;
-	.loc	5 54 9, function_name $L__info_string18, inlined_at 1 132 9
-	and.pred  	%p38, %p32, %p37;
-	or.pred  	%p39, %p38, %p34;
-	and.pred  	%p40, %p38, %p35;
-	selp.b32 	%r23, 3, %r22, %p40;
-	and.pred  	%p41, %p39, %p35;
-	selp.f32 	%f80, %f74, %f75, %p41;
-	selp.f32 	%f81, %f12, %f79, %p40;
-	.loc	5 63 9, function_name $L__info_string18, inlined_at 1 132 9
-	setp.ge.ftz.f32 	%p42, %f76, %f75;
-	.loc	5 22 25, function_name $L__info_string18, inlined_at 1 132 9
-	setp.gt.ftz.f32 	%p43, %f12, 0f00000000;
-	.loc	5 63 9, function_name $L__info_string18, inlined_at 1 132 9
-	and.pred  	%p44, %p43, %p42;
-	setp.ge.ftz.f32 	%p45, %f76, %f74;
-	and.pred  	%p46, %p45, %p44;
-	selp.b32 	%r24, 4, %r23, %p46;
-	or.pred  	%p47, %p46, %p41;
-	selp.f32 	%f82, %f8, %f78, %p47;
-	.loc	5 22 25, function_name $L__info_string18, inlined_at 1 132 9
-	setp.leu.ftz.f32 	%p48, %f12, 0f00000000;
-	.loc	5 72 9, function_name $L__info_string18, inlined_at 1 132 9
-	and.pred  	%p49, %p42, %p48;
-	and.pred  	%p50, %p45, %p49;
-	selp.b32 	%r25, 5, %r24, %p50;
-	or.pred  	%p51, %p50, %p46;
-	selp.f32 	%f83, %f76, %f80, %p51;
-	.loc	5 76 13, function_name $L__info_string18, inlined_at 1 132 9
-	neg.ftz.f32 	%f84, %f8;
-	.loc	5 72 9, function_name $L__info_string18, inlined_at 1 132 9
-	selp.f32 	%f85, %f84, %f82, %p50;
-	selp.f32 	%f86, %f10, %f81, %p51;
-	.loc	5 82 9, function_name $L__info_string18, inlined_at 1 132 9
-	div.approx.ftz.f32 	%f87, %f85, %f83;
-	add.ftz.f32 	%f88, %f87, 0f3F800000;
-	mul.ftz.f32 	%f89, %f88, 0f3F000000;
-	.loc	5 83 9, function_name $L__info_string18, inlined_at 1 132 9
-	div.approx.ftz.f32 	%f90, %f86, %f83;
-	add.ftz.f32 	%f91, %f90, 0f3F800000;
-	mul.ftz.f32 	%f92, %f91, 0f3F000000;
-	.loc	1 133 9
-	cvt.ftz.f64.f32 	%fd66, %f89;
-	cvt.ftz.f64.f32 	%fd67, %f92;
-	st.local.u32 	[%rd1], %r25;
-	st.local.f64 	[%rd1+8], %fd66;
-	st.local.f64 	[%rd1+16], %fd67;
+	.loc	1 114 9
+	st.local.u32 	[%rd1], %r2;
 	mov.u64 	%rd31, $str$5;
 	cvta.global.u64 	%rd32, %rd31;
 	{ // callseq 9, 0
@@ -731,7 +654,7 @@ $L__BB3_6:
 	.param .b64 param0;
 	st.param.b64 	[param0+0], %rd32;
 	.param .b64 param1;
-	st.param.b64 	[param1+0], %rd45;
+	st.param.b64 	[param1+0], %rd51;
 	.param .b32 retval0;
 	call.uni (retval0), 
 	vprintf, 
@@ -739,90 +662,93 @@ $L__BB3_6:
 	param0, 
 	param1
 	);
-	ld.param.b32 	%r26, [retval0+0];
+	ld.param.b32 	%r21, [retval0+0];
 	} // callseq 9
-	.loc	1 134 9
-	.loc	5 17 22, function_name $L__info_string18, inlined_at 1 134 9
+	.loc	1 119 9
+	.loc	5 17 22, function_name $L__info_string18, inlined_at 1 119 9
 	.loc	6 117 12, function_name $L__info_string19, inlined_at 5 17 22
-	abs.ftz.f32 	%f93, %f14;
-	.loc	5 16 22, function_name $L__info_string18, inlined_at 1 134 9
+	abs.ftz.f32 	%f74, %f10;
+	.loc	5 16 22, function_name $L__info_string18, inlined_at 1 119 9
 	.loc	6 117 12, function_name $L__info_string19, inlined_at 5 16 22
-	abs.ftz.f32 	%f94, %f13;
-	.loc	5 36 9, function_name $L__info_string18, inlined_at 1 134 9
-	setp.ge.ftz.f32 	%p52, %f94, %f93;
-	.loc	5 20 25, function_name $L__info_string18, inlined_at 1 134 9
-	setp.leu.ftz.f32 	%p53, %f13, 0f00000000;
-	.loc	5 36 9, function_name $L__info_string18, inlined_at 1 134 9
-	and.pred  	%p54, %p53, %p52;
-	.loc	5 18 22, function_name $L__info_string18, inlined_at 1 134 9
+	abs.ftz.f32 	%f75, %f8;
+	.loc	5 36 9, function_name $L__info_string18, inlined_at 1 119 9
+	setp.ge.ftz.f32 	%p27, %f75, %f74;
+	.loc	5 20 25, function_name $L__info_string18, inlined_at 1 119 9
+	setp.leu.ftz.f32 	%p28, %f8, 0f00000000;
+	.loc	5 36 9, function_name $L__info_string18, inlined_at 1 119 9
+	and.pred  	%p29, %p28, %p27;
+	.loc	5 18 22, function_name $L__info_string18, inlined_at 1 119 9
 	.loc	6 117 12, function_name $L__info_string19, inlined_at 5 18 22
-	abs.ftz.f32 	%f95, %f15;
-	.loc	5 36 9, function_name $L__info_string18, inlined_at 1 134 9
-	setp.ge.ftz.f32 	%p55, %f94, %f95;
-	and.pred  	%p56, %p54, %p55;
-	selp.u32 	%r27, 1, 0, %p56;
-	.loc	5 31 13, function_name $L__info_string18, inlined_at 1 134 9
-	neg.ftz.f32 	%f96, %f15;
-	.loc	5 36 9, function_name $L__info_string18, inlined_at 1 134 9
-	selp.f32 	%f97, %f15, %f96, %p56;
-	.loc	5 45 9, function_name $L__info_string18, inlined_at 1 134 9
-	setp.ge.ftz.f32 	%p57, %f93, %f94;
-	.loc	5 21 25, function_name $L__info_string18, inlined_at 1 134 9
-	setp.gt.ftz.f32 	%p58, %f14, 0f00000000;
-	.loc	5 45 9, function_name $L__info_string18, inlined_at 1 134 9
-	and.pred  	%p59, %p58, %p57;
-	setp.ge.ftz.f32 	%p60, %f93, %f95;
-	and.pred  	%p61, %p59, %p60;
-	selp.b32 	%r28, 2, %r27, %p61;
-	selp.f32 	%f98, %f96, %f14, %p61;
-	.loc	5 21 25, function_name $L__info_string18, inlined_at 1 134 9
-	setp.leu.ftz.f32 	%p62, %f14, 0f00000000;
-	.loc	5 54 9, function_name $L__info_string18, inlined_at 1 134 9
-	and.pred  	%p63, %p57, %p62;
-	or.pred  	%p64, %p63, %p59;
-	and.pred  	%p65, %p63, %p60;
-	selp.b32 	%r29, 3, %r28, %p65;
-	and.pred  	%p66, %p64, %p60;
-	selp.f32 	%f99, %f93, %f94, %p66;
-	selp.f32 	%f100, %f15, %f98, %p65;
-	.loc	5 63 9, function_name $L__info_string18, inlined_at 1 134 9
-	setp.ge.ftz.f32 	%p67, %f95, %f94;
-	.loc	5 22 25, function_name $L__info_string18, inlined_at 1 134 9
-	setp.gt.ftz.f32 	%p68, %f15, 0f00000000;
-	.loc	5 63 9, function_name $L__info_string18, inlined_at 1 134 9
-	and.pred  	%p69, %p68, %p67;
-	setp.ge.ftz.f32 	%p70, %f95, %f93;
-	and.pred  	%p71, %p70, %p69;
-	selp.b32 	%r30, 4, %r29, %p71;
-	or.pred  	%p72, %p71, %p66;
-	selp.f32 	%f101, %f13, %f97, %p72;
-	.loc	5 22 25, function_name $L__info_string18, inlined_at 1 134 9
-	setp.leu.ftz.f32 	%p73, %f15, 0f00000000;
-	.loc	5 72 9, function_name $L__info_string18, inlined_at 1 134 9
-	and.pred  	%p74, %p67, %p73;
-	and.pred  	%p75, %p70, %p74;
-	selp.b32 	%r31, 5, %r30, %p75;
-	or.pred  	%p76, %p75, %p71;
-	selp.f32 	%f102, %f95, %f99, %p76;
-	.loc	5 76 13, function_name $L__info_string18, inlined_at 1 134 9
-	neg.ftz.f32 	%f103, %f13;
-	.loc	5 72 9, function_name $L__info_string18, inlined_at 1 134 9
-	selp.f32 	%f104, %f103, %f101, %p75;
-	selp.f32 	%f105, %f14, %f100, %p76;
-	.loc	5 82 9, function_name $L__info_string18, inlined_at 1 134 9
-	div.approx.ftz.f32 	%f106, %f104, %f102;
-	add.ftz.f32 	%f107, %f106, 0f3F800000;
-	mul.ftz.f32 	%f108, %f107, 0f3F000000;
-	.loc	5 83 9, function_name $L__info_string18, inlined_at 1 134 9
-	div.approx.ftz.f32 	%f109, %f105, %f102;
-	add.ftz.f32 	%f110, %f109, 0f3F800000;
-	mul.ftz.f32 	%f111, %f110, 0f3F000000;
-	.loc	1 135 9
-	cvt.ftz.f64.f32 	%fd68, %f108;
-	cvt.ftz.f64.f32 	%fd69, %f111;
-	st.local.u32 	[%rd1], %r31;
-	st.local.f64 	[%rd1+8], %fd68;
-	st.local.f64 	[%rd1+16], %fd69;
+	abs.ftz.f32 	%f76, %f12;
+	.loc	5 36 9, function_name $L__info_string18, inlined_at 1 119 9
+	setp.ge.ftz.f32 	%p30, %f75, %f76;
+	and.pred  	%p31, %p29, %p30;
+	selp.u32 	%r22, 1, 0, %p31;
+	.loc	5 31 13, function_name $L__info_string18, inlined_at 1 119 9
+	neg.ftz.f32 	%f77, %f12;
+	.loc	5 36 9, function_name $L__info_string18, inlined_at 1 119 9
+	selp.f32 	%f78, %f12, %f77, %p31;
+	.loc	5 45 9, function_name $L__info_string18, inlined_at 1 119 9
+	setp.ge.ftz.f32 	%p32, %f74, %f75;
+	.loc	5 21 25, function_name $L__info_string18, inlined_at 1 119 9
+	setp.gt.ftz.f32 	%p33, %f10, 0f00000000;
+	.loc	5 45 9, function_name $L__info_string18, inlined_at 1 119 9
+	and.pred  	%p34, %p33, %p32;
+	setp.ge.ftz.f32 	%p35, %f74, %f76;
+	and.pred  	%p36, %p34, %p35;
+	selp.b32 	%r23, 2, %r22, %p36;
+	selp.f32 	%f79, %f77, %f10, %p36;
+	.loc	5 21 25, function_name $L__info_string18, inlined_at 1 119 9
+	setp.leu.ftz.f32 	%p37, %f10, 0f00000000;
+	.loc	5 54 9, function_name $L__info_string18, inlined_at 1 119 9
+	and.pred  	%p38, %p32, %p37;
+	or.pred  	%p39, %p38, %p34;
+	and.pred  	%p40, %p38, %p35;
+	selp.b32 	%r24, 3, %r23, %p40;
+	and.pred  	%p41, %p39, %p35;
+	selp.f32 	%f80, %f74, %f75, %p41;
+	selp.f32 	%f81, %f12, %f79, %p40;
+	.loc	5 63 9, function_name $L__info_string18, inlined_at 1 119 9
+	setp.ge.ftz.f32 	%p42, %f76, %f75;
+	.loc	5 22 25, function_name $L__info_string18, inlined_at 1 119 9
+	setp.gt.ftz.f32 	%p43, %f12, 0f00000000;
+	.loc	5 63 9, function_name $L__info_string18, inlined_at 1 119 9
+	and.pred  	%p44, %p43, %p42;
+	setp.ge.ftz.f32 	%p45, %f76, %f74;
+	and.pred  	%p46, %p45, %p44;
+	selp.b32 	%r25, 4, %r24, %p46;
+	or.pred  	%p47, %p46, %p41;
+	selp.f32 	%f82, %f8, %f78, %p47;
+	.loc	5 22 25, function_name $L__info_string18, inlined_at 1 119 9
+	setp.leu.ftz.f32 	%p48, %f12, 0f00000000;
+	.loc	5 72 9, function_name $L__info_string18, inlined_at 1 119 9
+	and.pred  	%p49, %p42, %p48;
+	and.pred  	%p50, %p45, %p49;
+	selp.b32 	%r26, 5, %r25, %p50;
+	or.pred  	%p51, %p50, %p46;
+	selp.f32 	%f83, %f76, %f80, %p51;
+	.loc	5 76 13, function_name $L__info_string18, inlined_at 1 119 9
+	neg.ftz.f32 	%f84, %f8;
+	.loc	5 72 9, function_name $L__info_string18, inlined_at 1 119 9
+	selp.f32 	%f85, %f84, %f82, %p50;
+	selp.f32 	%f86, %f10, %f81, %p51;
+	.loc	5 82 9, function_name $L__info_string18, inlined_at 1 119 9
+	div.approx.ftz.f32 	%f87, %f85, %f83;
+	add.ftz.f32 	%f88, %f87, 0f3F800000;
+	mul.ftz.f32 	%f89, %f88, 0f3F000000;
+	.loc	5 83 9, function_name $L__info_string18, inlined_at 1 119 9
+	div.approx.ftz.f32 	%f90, %f86, %f83;
+	add.ftz.f32 	%f91, %f90, 0f3F800000;
+	mul.ftz.f32 	%f92, %f91, 0f3F000000;
+	.loc	1 120 9
+	cvt.rn.f32.s32 	%f93, %r2;
+	mul.ftz.f32 	%f94, %f89, %f93;
+	cvt.ftz.f64.f32 	%fd66, %f94;
+	mul.ftz.f32 	%f95, %f92, %f93;
+	cvt.ftz.f64.f32 	%fd67, %f95;
+	st.local.u32 	[%rd1], %r26;
+	st.local.f64 	[%rd1+8], %fd66;
+	st.local.f64 	[%rd1+16], %fd67;
 	mov.u64 	%rd33, $str$6;
 	cvta.global.u64 	%rd34, %rd33;
 	{ // callseq 10, 0
@@ -830,7 +756,7 @@ $L__BB3_6:
 	.param .b64 param0;
 	st.param.b64 	[param0+0], %rd34;
 	.param .b64 param1;
-	st.param.b64 	[param1+0], %rd45;
+	st.param.b64 	[param1+0], %rd51;
 	.param .b32 retval0;
 	call.uni (retval0), 
 	vprintf, 
@@ -838,66 +764,100 @@ $L__BB3_6:
 	param0, 
 	param1
 	);
-	ld.param.b32 	%r32, [retval0+0];
+	ld.param.b32 	%r27, [retval0+0];
 	} // callseq 10
-	.loc	1 137 21
-	cvt.rn.f32.s32 	%f112, %r2;
-	mul.ftz.f32 	%f113, %f89, %f112;
-	cvt.rzi.ftz.s32.f32 	%r33, %f113;
-	.loc	1 138 21
-	mul.ftz.f32 	%f114, %f92, %f112;
-	cvt.rzi.ftz.s32.f32 	%r34, %f114;
-	.loc	1 141 21
-	mul.ftz.f32 	%f115, %f108, %f112;
-	cvt.rzi.ftz.s32.f32 	%r35, %f115;
-	.loc	1 142 21
-	mul.ftz.f32 	%f116, %f111, %f112;
-	cvt.rzi.ftz.s32.f32 	%r36, %f116;
-	.loc	1 145 36
-	ld.const.u64 	%rd35, [optixLaunchParams+104];
-	cvta.to.global.u64 	%rd36, %rd35;
-	mul.lo.s32 	%r37, %r2, %r25;
-	mad.lo.s32 	%r38, %r3, %r2, %r33;
-	.loc	1 139 23
-	mad.lo.s32 	%r39, %r34, %r2, %r38;
-	.loc	1 145 36
-	mad.lo.s32 	%r40, %r37, %r2, %r39;
-	mul.wide.s32 	%rd37, %r40, 4;
-	add.s64 	%rd38, %rd36, %rd37;
-	ld.global.u32 	%r41, [%rd38];
-	.loc	1 146 21
-	and.b32  	%r42, %r41, 255;
-	.loc	1 147 21
-	bfe.u32 	%r43, %r41, 8, 8;
-	.loc	1 148 21
-	bfe.u32 	%r44, %r41, 16, 8;
-	.loc	1 150 36
-	mul.lo.s32 	%r45, %r2, %r31;
-	.loc	1 99 26
-	mad.lo.s32 	%r46, %r2, 12, %r3;
-	.loc	1 150 36
-	mad.lo.s32 	%r47, %r46, %r2, %r35;
-	.loc	1 143 23
-	mad.lo.s32 	%r48, %r36, %r2, %r47;
-	.loc	1 150 36
-	mad.lo.s32 	%r49, %r45, %r2, %r48;
-	mul.wide.s32 	%rd39, %r49, 4;
-	add.s64 	%rd40, %rd36, %rd39;
-	ld.global.u32 	%r50, [%rd40];
-	.loc	1 153 21
-	bfe.u32 	%r51, %r50, 16, 8;
-	.loc	1 156 9
-	st.local.u32 	[%rd1], %r42;
-	st.local.u32 	[%rd1+4], %r43;
-	st.local.u32 	[%rd1+8], %r44;
-	mov.u64 	%rd41, $str$7;
-	cvta.global.u64 	%rd42, %rd41;
+	.loc	1 121 9
+	.loc	5 17 22, function_name $L__info_string18, inlined_at 1 121 9
+	.loc	6 117 12, function_name $L__info_string19, inlined_at 5 17 22
+	abs.ftz.f32 	%f96, %f14;
+	.loc	5 16 22, function_name $L__info_string18, inlined_at 1 121 9
+	.loc	6 117 12, function_name $L__info_string19, inlined_at 5 16 22
+	abs.ftz.f32 	%f97, %f13;
+	.loc	5 36 9, function_name $L__info_string18, inlined_at 1 121 9
+	setp.ge.ftz.f32 	%p52, %f97, %f96;
+	.loc	5 20 25, function_name $L__info_string18, inlined_at 1 121 9
+	setp.leu.ftz.f32 	%p53, %f13, 0f00000000;
+	.loc	5 36 9, function_name $L__info_string18, inlined_at 1 121 9
+	and.pred  	%p54, %p53, %p52;
+	.loc	5 18 22, function_name $L__info_string18, inlined_at 1 121 9
+	.loc	6 117 12, function_name $L__info_string19, inlined_at 5 18 22
+	abs.ftz.f32 	%f98, %f15;
+	.loc	5 36 9, function_name $L__info_string18, inlined_at 1 121 9
+	setp.ge.ftz.f32 	%p55, %f97, %f98;
+	and.pred  	%p56, %p54, %p55;
+	selp.u32 	%r28, 1, 0, %p56;
+	.loc	5 31 13, function_name $L__info_string18, inlined_at 1 121 9
+	neg.ftz.f32 	%f99, %f15;
+	.loc	5 36 9, function_name $L__info_string18, inlined_at 1 121 9
+	selp.f32 	%f100, %f15, %f99, %p56;
+	.loc	5 45 9, function_name $L__info_string18, inlined_at 1 121 9
+	setp.ge.ftz.f32 	%p57, %f96, %f97;
+	.loc	5 21 25, function_name $L__info_string18, inlined_at 1 121 9
+	setp.gt.ftz.f32 	%p58, %f14, 0f00000000;
+	.loc	5 45 9, function_name $L__info_string18, inlined_at 1 121 9
+	and.pred  	%p59, %p58, %p57;
+	setp.ge.ftz.f32 	%p60, %f96, %f98;
+	and.pred  	%p61, %p59, %p60;
+	selp.b32 	%r29, 2, %r28, %p61;
+	selp.f32 	%f101, %f99, %f14, %p61;
+	.loc	5 21 25, function_name $L__info_string18, inlined_at 1 121 9
+	setp.leu.ftz.f32 	%p62, %f14, 0f00000000;
+	.loc	5 54 9, function_name $L__info_string18, inlined_at 1 121 9
+	and.pred  	%p63, %p57, %p62;
+	or.pred  	%p64, %p63, %p59;
+	and.pred  	%p65, %p63, %p60;
+	selp.b32 	%r30, 3, %r29, %p65;
+	and.pred  	%p66, %p64, %p60;
+	selp.f32 	%f102, %f96, %f97, %p66;
+	selp.f32 	%f103, %f15, %f101, %p65;
+	.loc	5 63 9, function_name $L__info_string18, inlined_at 1 121 9
+	setp.ge.ftz.f32 	%p67, %f98, %f97;
+	.loc	5 22 25, function_name $L__info_string18, inlined_at 1 121 9
+	setp.gt.ftz.f32 	%p68, %f15, 0f00000000;
+	.loc	5 63 9, function_name $L__info_string18, inlined_at 1 121 9
+	and.pred  	%p69, %p68, %p67;
+	setp.ge.ftz.f32 	%p70, %f98, %f96;
+	and.pred  	%p71, %p70, %p69;
+	selp.b32 	%r31, 4, %r30, %p71;
+	or.pred  	%p72, %p71, %p66;
+	selp.f32 	%f104, %f13, %f100, %p72;
+	.loc	5 22 25, function_name $L__info_string18, inlined_at 1 121 9
+	setp.leu.ftz.f32 	%p73, %f15, 0f00000000;
+	.loc	5 72 9, function_name $L__info_string18, inlined_at 1 121 9
+	and.pred  	%p74, %p67, %p73;
+	and.pred  	%p75, %p70, %p74;
+	selp.b32 	%r32, 5, %r31, %p75;
+	or.pred  	%p76, %p75, %p71;
+	selp.f32 	%f105, %f98, %f102, %p76;
+	.loc	5 76 13, function_name $L__info_string18, inlined_at 1 121 9
+	neg.ftz.f32 	%f106, %f13;
+	.loc	5 72 9, function_name $L__info_string18, inlined_at 1 121 9
+	selp.f32 	%f107, %f106, %f104, %p75;
+	selp.f32 	%f108, %f14, %f103, %p76;
+	.loc	5 82 9, function_name $L__info_string18, inlined_at 1 121 9
+	div.approx.ftz.f32 	%f109, %f107, %f105;
+	add.ftz.f32 	%f110, %f109, 0f3F800000;
+	mul.ftz.f32 	%f111, %f110, 0f3F000000;
+	.loc	5 83 9, function_name $L__info_string18, inlined_at 1 121 9
+	div.approx.ftz.f32 	%f112, %f108, %f105;
+	add.ftz.f32 	%f113, %f112, 0f3F800000;
+	mul.ftz.f32 	%f114, %f113, 0f3F000000;
+	.loc	1 122 9
+	mul.ftz.f32 	%f115, %f111, %f93;
+	cvt.ftz.f64.f32 	%fd68, %f115;
+	mul.ftz.f32 	%f116, %f114, %f93;
+	cvt.ftz.f64.f32 	%fd69, %f116;
+	st.local.u32 	[%rd1], %r32;
+	st.local.f64 	[%rd1+8], %fd68;
+	st.local.f64 	[%rd1+16], %fd69;
+	mov.u64 	%rd35, $str$7;
+	cvta.global.u64 	%rd36, %rd35;
 	{ // callseq 11, 0
 	.reg .b32 temp_param_reg;
 	.param .b64 param0;
-	st.param.b64 	[param0+0], %rd42;
+	st.param.b64 	[param0+0], %rd36;
 	.param .b64 param1;
-	st.param.b64 	[param1+0], %rd45;
+	st.param.b64 	[param1+0], %rd51;
 	.param .b32 retval0;
 	call.uni (retval0), 
 	vprintf, 
@@ -905,23 +865,99 @@ $L__BB3_6:
 	param0, 
 	param1
 	);
-	ld.param.b32 	%r52, [retval0+0];
+	ld.param.b32 	%r33, [retval0+0];
 	} // callseq 11
-	.loc	1 152 21
-	bfe.u32 	%r53, %r50, 8, 8;
-	.loc	1 151 21
-	and.b32  	%r54, %r50, 255;
-	.loc	1 157 9
-	st.local.v2.u32 	[%rd1], {%r54, %r53};
-	st.local.u32 	[%rd1+8], %r51;
-	mov.u64 	%rd43, $str$8;
-	cvta.global.u64 	%rd44, %rd43;
+	.loc	1 124 21
+	cvt.rzi.ftz.s32.f32 	%r34, %f94;
+	.loc	1 125 21
+	cvt.rzi.ftz.s32.f32 	%r35, %f95;
+	.loc	1 126 9
+	st.local.u32 	[%rd1], %r34;
+	st.local.u32 	[%rd1+4], %r35;
+	mov.u64 	%rd37, $str$8;
+	cvta.global.u64 	%rd38, %rd37;
 	{ // callseq 12, 0
 	.reg .b32 temp_param_reg;
 	.param .b64 param0;
-	st.param.b64 	[param0+0], %rd44;
+	st.param.b64 	[param0+0], %rd38;
 	.param .b64 param1;
-	st.param.b64 	[param1+0], %rd45;
+	st.param.b64 	[param1+0], %rd51;
+	.param .b32 retval0;
+	call.uni (retval0), 
+	vprintf, 
+	(
+	param0, 
+	param1
+	);
+	ld.param.b32 	%r36, [retval0+0];
+	} // callseq 12
+	.loc	1 132 21
+	cvt.rzi.ftz.s32.f32 	%r37, %f116;
+	.loc	1 131 21
+	cvt.rzi.ftz.s32.f32 	%r38, %f115;
+	.loc	1 134 9
+	st.local.v2.u32 	[%rd1], {%r38, %r37};
+	mov.u64 	%rd39, $str$9;
+	cvta.global.u64 	%rd40, %rd39;
+	{ // callseq 13, 0
+	.reg .b32 temp_param_reg;
+	.param .b64 param0;
+	st.param.b64 	[param0+0], %rd40;
+	.param .b64 param1;
+	st.param.b64 	[param1+0], %rd51;
+	.param .b32 retval0;
+	call.uni (retval0), 
+	vprintf, 
+	(
+	param0, 
+	param1
+	);
+	ld.param.b32 	%r39, [retval0+0];
+	} // callseq 13
+	.loc	1 136 36
+	ld.const.u64 	%rd41, [optixLaunchParams+104];
+	cvta.to.global.u64 	%rd42, %rd41;
+	mul.lo.s32 	%r40, %r2, %r26;
+	mad.lo.s32 	%r41, %r3, %r2, %r34;
+	.loc	1 129 23
+	mad.lo.s32 	%r42, %r2, %r35, %r41;
+	.loc	1 136 36
+	mad.lo.s32 	%r43, %r40, %r2, %r42;
+	mul.wide.s32 	%rd43, %r43, 4;
+	add.s64 	%rd44, %rd42, %rd43;
+	ld.global.u32 	%r44, [%rd44];
+	.loc	1 139 21
+	bfe.u32 	%r45, %r44, 16, 8;
+	.loc	1 141 36
+	mul.lo.s32 	%r46, %r2, %r32;
+	.loc	1 90 26
+	mad.lo.s32 	%r47, %r2, 12, %r3;
+	.loc	1 141 36
+	mad.lo.s32 	%r48, %r47, %r2, %r38;
+	.loc	1 133 23
+	mad.lo.s32 	%r49, %r37, %r2, %r48;
+	.loc	1 141 36
+	mad.lo.s32 	%r50, %r46, %r2, %r49;
+	mul.wide.s32 	%rd45, %r50, 4;
+	add.s64 	%rd46, %rd42, %rd45;
+	ld.global.u32 	%r51, [%rd46];
+	.loc	1 144 21
+	bfe.u32 	%r52, %r51, 16, 8;
+	.loc	1 138 21
+	bfe.u32 	%r53, %r44, 8, 8;
+	.loc	1 137 21
+	and.b32  	%r54, %r44, 255;
+	.loc	1 147 9
+	st.local.v2.u32 	[%rd1], {%r54, %r53};
+	st.local.u32 	[%rd1+8], %r45;
+	mov.u64 	%rd47, $str$10;
+	cvta.global.u64 	%rd48, %rd47;
+	{ // callseq 14, 0
+	.reg .b32 temp_param_reg;
+	.param .b64 param0;
+	st.param.b64 	[param0+0], %rd48;
+	.param .b64 param1;
+	st.param.b64 	[param1+0], %rd51;
 	.param .b32 retval0;
 	call.uni (retval0), 
 	vprintf, 
@@ -930,8 +966,32 @@ $L__BB3_6:
 	param1
 	);
 	ld.param.b32 	%r55, [retval0+0];
-	} // callseq 12
-	.loc	1 158 5
+	} // callseq 14
+	.loc	1 143 21
+	bfe.u32 	%r56, %r51, 8, 8;
+	.loc	1 142 21
+	and.b32  	%r57, %r51, 255;
+	.loc	1 148 9
+	st.local.v2.u32 	[%rd1], {%r57, %r56};
+	st.local.u32 	[%rd1+8], %r52;
+	mov.u64 	%rd49, $str$11;
+	cvta.global.u64 	%rd50, %rd49;
+	{ // callseq 15, 0
+	.reg .b32 temp_param_reg;
+	.param .b64 param0;
+	st.param.b64 	[param0+0], %rd50;
+	.param .b64 param1;
+	st.param.b64 	[param1+0], %rd51;
+	.param .b32 retval0;
+	call.uni (retval0), 
+	vprintf, 
+	(
+	param0, 
+	param1
+	);
+	ld.param.b32 	%r58, [retval0+0];
+	} // callseq 15
+	.loc	1 149 5
 	ret;
 
 }
