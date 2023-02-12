@@ -152,7 +152,7 @@ namespace mcrt {
 
 		if (t_max_z < *t_max)
 			*t_max = t_max_z;
-		printf("IN FUNCTION: minX %f minY %f minZ %f maxX %f maxY %f maxZ %f \n", *t_min, t_min_y, t_min_z, *t_max, t_max_y, t_max_z);
-		printf("IN FUNCTION: t-min %f t-max %f \n", *t_min,  *t_max);
+		//printf("IN FUNCTION: minX %f minY %f minZ %f maxX %f maxY %f maxZ %f \n", *t_min, t_min_y, t_min_z, *t_max, t_max_y, t_max_z);
+		//printf("IN FUNCTION: t-min %f t-max %f \n", *t_min,  *t_max);
 	}
 }

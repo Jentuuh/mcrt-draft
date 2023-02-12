@@ -86,8 +86,9 @@ namespace mcrt {
         glm::vec3 probePos1 = optixLaunchParams.cellCenter;
         glm::vec3 probePos2 = optixLaunchParams.cellCenter + glm::vec3{ 2 * optixLaunchParams.cellSize, 0.0f, 0.0f };
 
-        int probeOffset1 = ((1 * probeResWidth * probeResHeight) + (1 * probeResWidth) + 0) * (6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution));
-        int probeOffset2 = ((1 * probeResWidth * probeResHeight) + (1 * probeResWidth) + 2) * (6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution));
+        printf("probe res width: %d probe res height: %d \n", probeResWidth, probeResHeight);
+        int probeOffset1 = ((optixLaunchParams.cellCoords.z * probeResWidth * probeResHeight) + (optixLaunchParams.cellCoords.y * probeResWidth) + (optixLaunchParams.cellCoords.x)) * 6 * optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution;
+        int probeOffset2 = ((optixLaunchParams.cellCoords.z * probeResWidth * probeResHeight) + (optixLaunchParams.cellCoords.y * probeResWidth) + (optixLaunchParams.cellCoords.x + 2)) * 6 * optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution;
 
         glm::vec3 UVWorldPos = optixLaunchParams.uvWorldPositions.UVDataBuffer[570 * optixLaunchParams.uvWorldPositions.size + 570].worldPosition;
 
@@ -117,9 +118,9 @@ namespace mcrt {
         int cubeMapFaceIndex1, cubeMapFaceIndex2;
 
         convert_xyz_to_cube_uv(rayDir1.x, rayDir1.y, rayDir1.z, &cubeMapFaceIndex1, &faceU1, &faceV1);
-        printf("Probe 1: Face index: %f, faceU: %f, faceV: %d \n", cubeMapFaceIndex1, faceU1, faceV1);
+        printf("Probe 1: Face index: %f, faceU: %f, faceV: %f \n", cubeMapFaceIndex1, faceU1, faceV1);
         convert_xyz_to_cube_uv(rayDir2.x, rayDir2.y, rayDir2.z, &cubeMapFaceIndex2, &faceU2, &faceV2);
-        printf("Probe 2: Face index: %f, faceU: %f, faceV: %d \n", cubeMapFaceIndex2, faceU2, faceV2);
+        printf("Probe 2: Face index: %f, faceU: %f, faceV: %f \n", cubeMapFaceIndex2, faceU2, faceV2);
 
         int uIndex1 = optixLaunchParams.cubeMapResolution * faceU1;
         int vIndex1 = optixLaunchParams.cubeMapResolution * faceV1;
@@ -130,12 +131,16 @@ namespace mcrt {
         int vIndex2 = optixLaunchParams.cubeMapResolution * faceV2;
         int uvOffset2 = vIndex2 * optixLaunchParams.cubeMapResolution + uIndex2;
         printf("Probe 2:UV (%d, %d) \n", uIndex2, vIndex2);
-
+        
+        printf("Probe offset 1: %d\n", probeOffset1);
+        printf("Accessed index 1: %d\n", (probeOffset1 + (cubeMapFaceIndex1 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution))));
         uint32_t incomingRadiance1 = optixLaunchParams.cubeMaps[(probeOffset1 + (cubeMapFaceIndex1 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution))) + uvOffset1];
         uint32_t r1 = 0x000000ff & (incomingRadiance1);
         uint32_t g1 = (0x0000ff00 & (incomingRadiance1)) >> 8;
         uint32_t b1 = (0x00ff0000 & (incomingRadiance1)) >> 16;
 
+        printf("Probe offset 2: %d\n", probeOffset2);
+        printf("Accessed index 2: %d\n", (probeOffset2 + (cubeMapFaceIndex2 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution))));
         uint32_t incomingRadiance2 = optixLaunchParams.cubeMaps[(probeOffset2 + (cubeMapFaceIndex2 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution))) + uvOffset2];
         uint32_t r2 = 0x000000ff & (incomingRadiance2);
         uint32_t g2 = (0x0000ff00 & (incomingRadiance2)) >> 8;

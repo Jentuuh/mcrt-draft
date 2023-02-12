@@ -692,12 +692,10 @@ namespace mcrt {
         // Visualize cubemap from a probe as a test
         glm::ivec3 testProbeCoord = scene.grid.getCell(12).getCellCoords();
         int testProbeOffset = ((testProbeCoord.z * scene.grid.resolution.x * scene.grid.resolution.y) + (testProbeCoord.y * scene.grid.resolution.x) + (testProbeCoord.x)) * 6 * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution;
-
         for (int f = 0; f < 6; f++)
         {
             int faceOffset = f * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution;
             int totalOffset = testProbeOffset + faceOffset;
-
             std::vector<uint32_t> cubeMapFace(radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution);
             cubeMaps.download_with_offset(cubeMapFace.data(), radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution, totalOffset);
             writeToImage("cubemap_face_" + std::to_string(f) + ".png", radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution, radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution, cubeMapFace.data());
@@ -706,12 +704,10 @@ namespace mcrt {
         // Visualize cubemap 2 from a probe as a test
         glm::ivec3 testProbeCoord2 = scene.grid.getCell(12).getCellCoords() + glm::ivec3{ 2, 0, 0 };
         int testProbeOffset2 = ((testProbeCoord2.z * scene.grid.resolution.x * scene.grid.resolution.y) + (testProbeCoord2.y * scene.grid.resolution.x) + (testProbeCoord2.x)) * 6 * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution;
-
         for (int f = 0; f < 6; f++)
         {
             int faceOffset = f * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution;
             int totalOffset = testProbeOffset2 + faceOffset;
-
             std::vector<uint32_t> cubeMapFace(radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution);
             cubeMaps.download_with_offset(cubeMapFace.data(), radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution, totalOffset);
             writeToImage("cubemap2_face_" + std::to_string(f) + ".png", radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution, radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution, cubeMapFace.data());
@@ -787,12 +783,12 @@ namespace mcrt {
         const int texSize = directLightPipeline->launchParams.directLightingTexture.size;
         NonEmptyCells nonEmpties = scene.grid.getNonEmptyCells();
 
-        //for (int i = 0; i < nonEmpties.nonEmptyCells.size(); i++)
-        //{
-            radianceCellScatterCubeMapPipeline->launchParams.nonEmptyCellIndex = 12;
-            radianceCellScatterCubeMapPipeline->launchParams.cellCoords = nonEmpties.nonEmptyCells[12]->getCellCoords();
-            radianceCellScatterCubeMapPipeline->launchParams.probeWidthRes = scene.grid.resolution.x + 1;
-            radianceCellScatterCubeMapPipeline->launchParams.probeHeightRes = scene.grid.resolution.y + 1;
+        for (int i = 0; i < nonEmpties.nonEmptyCells.size(); i++)
+        {
+            radianceCellScatterCubeMapPipeline->launchParams.nonEmptyCellIndex = i;
+            radianceCellScatterCubeMapPipeline->launchParams.cellCoords = nonEmpties.nonEmptyCells[i]->getCellCoords();
+            radianceCellScatterCubeMapPipeline->launchParams.probeWidthRes = scene.grid.resolution.x;
+            radianceCellScatterCubeMapPipeline->launchParams.probeHeightRes = scene.grid.resolution.y;
 
             // Texture that we write to
             radianceCellScatterCubeMapPipeline->launchParams.currentBounceTexture.size = texSize;
@@ -803,11 +799,11 @@ namespace mcrt {
             radianceCellScatterCubeMapPipeline->launchParams.prevBounceTexture.colorBuffer = (uint32_t*)prevBounceTexture.d_pointer();
 
             // Load uvs per cell 
-            //std::vector<glm::vec2> cellUVs = nonEmpties.nonEmptyCells[i]->getUVsInside();
-            //std::cout << "Iteration " << i << ": UVs in this cell: " << cellUVs.size() << std::endl;
+            std::vector<glm::vec2> cellUVs = nonEmpties.nonEmptyCells[i]->getUVsInside();
+            std::cout << "Iteration " << i << ": UVs in this cell: " << cellUVs.size() << std::endl;
 
             // Radiance cell data
-            radianceCellScatterCubeMapPipeline->launchParams.cellCenter = nonEmpties.nonEmptyCells[12]->getCenter();
+            radianceCellScatterCubeMapPipeline->launchParams.cellCenter = nonEmpties.nonEmptyCells[i]->getCenter();
             radianceCellScatterCubeMapPipeline->launchParams.cellSize = scene.grid.getCellSize();
 
             // UV world position data
@@ -821,14 +817,14 @@ namespace mcrt {
                 radianceCellScatterCubeMapPipeline->launchParamsBuffer.d_pointer(),
                 radianceCellScatterCubeMapPipeline->launchParamsBuffer.sizeInBytes,
                 &radianceCellScatterCubeMapPipeline->sbt,
-                1,                                  // dimension X: amount of UV texels in the cell
+                cellUVs.size(),                     // dimension X: amount of UV texels in the cell
                 1,                                  // dimension Y: 1
                 1                                   // dimension Z: 1
                 // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
             ));
 
             CUDA_SYNC_CHECK();
-    /*    }*/
+        }
         // Download resulting texture from GPU
         std::vector<uint32_t> current_bounce_result(radianceCellScatterCubeMapPipeline->launchParams.currentBounceTexture.size * radianceCellScatterCubeMapPipeline->launchParams.currentBounceTexture.size);
         dstTexture.download(current_bounce_result.data(),
@@ -848,8 +844,8 @@ namespace mcrt {
 
         radianceCellScatterCubeMapPipeline->launchParams.nonEmptyCellIndex = 12;
         radianceCellScatterCubeMapPipeline->launchParams.cellCoords = scene.grid.getCell(12).getCellCoords();
-        radianceCellScatterCubeMapPipeline->launchParams.probeWidthRes = scene.grid.resolution.x + 1;
-        radianceCellScatterCubeMapPipeline->launchParams.probeHeightRes = scene.grid.resolution.y + 1;
+        radianceCellScatterCubeMapPipeline->launchParams.probeWidthRes = scene.grid.resolution.x;
+        radianceCellScatterCubeMapPipeline->launchParams.probeHeightRes = scene.grid.resolution.y;
 
         // Radiance cell data
         radianceCellScatterCubeMapPipeline->launchParams.cellCenter = scene.grid.getCell(12).getCenter();

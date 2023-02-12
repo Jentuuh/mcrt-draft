@@ -12,7 +12,7 @@
 
 #define PI 3.14159265358979323846f
 #define NUM_SAMPLES_HEMISPHERE 400
-#define TRACING_RANGE 0.1f
+#define TRACING_RANGE 0.5f
 
 using namespace mcrt;
 
@@ -91,6 +91,9 @@ namespace mcrt {
         const glm::ivec3 cellCoords = optixLaunchParams.cellCoords;
         const int probeResWidth = optixLaunchParams.probeWidthRes;
         const int probeResHeight = optixLaunchParams.probeHeightRes;
+
+        glm::vec3 cubeMin = { 0.0f, 0.0f ,0.0f };
+        glm::vec3 cubeMax = { 1.0f, 1.0f ,1.0f };
 
         // Take different seed for each radiance cell face
         unsigned int seed = tea<4>(uvIndex, nonEmptyCellIndex);
@@ -184,8 +187,11 @@ namespace mcrt {
             else {  // PROBE CONTRIBUTION (How to make the distinction between an actual miss and out of range?)
                 // Find "distant projection" along ray direction of point that we are calculating incoming radiance for, 
                 // this is necessary to sample an approximated correct direction on the radiance probes.
-                glm::vec3 distantProjectedPoint;
-                find_distant_point_along_direction(UVWorldPos, glm::vec3{ randomDir.x, randomDir.y, randomDir.z }, &distantProjectedPoint);
+
+                double t_min;
+                double t_max;
+                find_distant_point_along_direction(UVWorldPos, glm::vec3{ randomDir.x, randomDir.y, randomDir.z }, cubeMin, cubeMax, &t_min, &t_max);
+                glm::vec3 distantProjectedPoint = UVWorldPos + (glm::vec3{ randomDir.x * t_max,  randomDir.y * t_max,  randomDir.z * t_max });
                 //printf("UVWorldPos:%f %f %f , projected: %f %f %f, dir: %f %f %f \n", UVWorldPos.x, UVWorldPos.y, UVWorldPos.z, distantProjectedPoint.x, distantProjectedPoint.y, distantProjectedPoint.z, randomDir.x, randomDir.y, randomDir.z);
 
                 float faceU, faceV;
