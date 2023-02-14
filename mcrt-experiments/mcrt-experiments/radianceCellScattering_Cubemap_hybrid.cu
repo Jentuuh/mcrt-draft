@@ -117,10 +117,29 @@ namespace mcrt {
         float3 rayOrigin3f = float3{ UVWorldPos.x, UVWorldPos.y, UVWorldPos.z };
 
         // Center of this radiance cell
-        glm::vec3 cellCenter = optixLaunchParams.cellCenter;
+        //glm::vec3 cellCenter = optixLaunchParams.cellCenter;
         
-        // Probe buffer offset
-        int probeOffset = ((cellCoords.z * probeResWidth * probeResHeight) + (cellCoords.y * probeResWidth) + cellCoords.x) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution);
+        // Probes coordinates
+        glm::vec3 probeCoords[7] = {
+            optixLaunchParams.cellCenter,
+            optixLaunchParams.cellCenter + glm::vec3{optixLaunchParams.cellSize, 0.0f, 0.0f},
+            optixLaunchParams.cellCenter - glm::vec3{optixLaunchParams.cellSize, 0.0f, 0.0f},
+            optixLaunchParams.cellCenter + glm::vec3{0.0f, optixLaunchParams.cellSize, 0.0f},
+            optixLaunchParams.cellCenter - glm::vec3{0.0f, optixLaunchParams.cellSize, 0.0f},
+            optixLaunchParams.cellCenter + glm::vec3{0.0f, 0.0f, optixLaunchParams.cellSize},
+            optixLaunchParams.cellCenter - glm::vec3{0.0f, 0.0f, optixLaunchParams.cellSize},
+        };
+
+        // Probe buffer offsets
+        int probeOffsets[7] = { ((cellCoords.z * probeResWidth * probeResHeight) + (cellCoords.y * probeResWidth) + cellCoords.x) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution), 
+                                ((cellCoords.z * probeResWidth * probeResHeight) + (cellCoords.y * probeResWidth) + cellCoords.x + 1) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution),
+                                ((cellCoords.z * probeResWidth * probeResHeight) + (cellCoords.y * probeResWidth) + cellCoords.x - 1) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution),
+                                ((cellCoords.z * probeResWidth * probeResHeight) + ((cellCoords.y + 1) * probeResWidth) + cellCoords.x) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution),
+                                ((cellCoords.z * probeResWidth * probeResHeight) + ((cellCoords.y - 1) * probeResWidth) + cellCoords.x) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution),
+                                (((cellCoords.z + 1) * probeResWidth * probeResHeight) + (cellCoords.y * probeResWidth) + cellCoords.x) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution),
+                                (((cellCoords.z - 1) * probeResWidth * probeResHeight) + (cellCoords.y * probeResWidth) + cellCoords.x) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution) };
+
+        //int probeOffset = ((cellCoords.z * probeResWidth * probeResHeight) + (cellCoords.y * probeResWidth) + cellCoords.x) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution);
 
         // Radiance accumulator
         glm::vec3 totalRadiance = glm::vec3{ 0.0f, 0.0f, 0.0f };
@@ -187,7 +206,6 @@ namespace mcrt {
             else {  // PROBE CONTRIBUTION (How to make the distinction between an actual miss and out of range?)
                 // Find "distant projection" along ray direction of point that we are calculating incoming radiance for, 
                 // this is necessary to sample an approximated correct direction on the radiance probes.
-
                 double t_min;
                 double t_max;
                 find_distant_point_along_direction(UVWorldPos, glm::vec3{ randomDir.x, randomDir.y, randomDir.z }, cubeMin, cubeMax, &t_min, &t_max);
@@ -200,20 +218,31 @@ namespace mcrt {
                 // ==================================================================================
                 // Sample the probe in the center of this cell
                 // ==================================================================================
-                glm::vec3 probeSampleDirection = distantProjectedPoint - cellCenter;
-                convert_xyz_to_cube_uv(probeSampleDirection.x, probeSampleDirection.y, probeSampleDirection.z, &cubeMapFaceIndex, &faceU, &faceV);
+                glm::vec3 averageProbeContribution = {0.0f, 0.0f, 0.0f};
+                int numProbeContributions = 0;
+                for (int p = 0; p < 1; p++)
+                {
+                    if (probeCoords[p].x >= 0.0f && probeCoords[p].x <= 1.0f && probeCoords[p].y >= 0.0f && probeCoords[p].y <= 1.0f && probeCoords[p].z >= 0.0f && probeCoords[p].z <= 1.0f)
+                    {
+                        glm::vec3 probeSampleDirection = distantProjectedPoint - probeCoords[p];
+                        convert_xyz_to_cube_uv(probeSampleDirection.x, probeSampleDirection.y, probeSampleDirection.z, &cubeMapFaceIndex, &faceU, &faceV);
 
-                int uIndex = optixLaunchParams.cubeMapResolution * faceU;
-                int vIndex = optixLaunchParams.cubeMapResolution * faceV;
-                int uvOffset = vIndex * optixLaunchParams.cubeMapResolution + uIndex;
+                        int uIndex = optixLaunchParams.cubeMapResolution * faceU;
+                        int vIndex = optixLaunchParams.cubeMapResolution * faceV;
+                        int uvOffset = vIndex * optixLaunchParams.cubeMapResolution + uIndex;
 
-                uint32_t incomingRadiance = optixLaunchParams.cubeMaps[(probeOffset + cubeMapFaceIndex * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution)) + uvOffset];
-
-                // Extract rgb values from light source texture pixel
-                uint32_t r = 0x000000ff & (incomingRadiance);
-                uint32_t g = (0x0000ff00 & (incomingRadiance)) >> 8;
-                uint32_t b = (0x00ff0000 & (incomingRadiance)) >> 16;
-                glm::vec3 rgbNormalizedSpectrum = glm::vec3{ r, g, b };
+                        uint32_t incomingRadiance = optixLaunchParams.cubeMaps[(probeOffsets[p] + cubeMapFaceIndex * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution)) + uvOffset];
+                        
+                        // Extract rgb values from light source texture pixel
+                        uint32_t r = 0x000000ff & (incomingRadiance);
+                        uint32_t g = (0x0000ff00 & (incomingRadiance)) >> 8;
+                        uint32_t b = (0x00ff0000 & (incomingRadiance)) >> 16;
+                        
+                        averageProbeContribution += glm::vec3{ r, g, b };
+                        numProbeContributions++;
+                    }
+                }
+                averageProbeContribution = glm::vec3{ averageProbeContribution.x / float(numProbeContributions), averageProbeContribution.y / float(numProbeContributions), averageProbeContribution.z / float(numProbeContributions) };
 
                 //// Convert to grayscale (for now we assume 1 color channel)
                 //const float intensity = (0.3 * r + 0.59 * g + 0.11 * b) / 255.0f;
@@ -222,7 +251,7 @@ namespace mcrt {
                 float cosContribution = dot(normalize(randomDir), normalize(uvNormal3f));
                 if (cosContribution >= 0)
                 {
-                    totalRadiance += cosContribution * rgbNormalizedSpectrum;
+                    totalRadiance += cosContribution * averageProbeContribution;
                     numSamples++;
                 }
             }
