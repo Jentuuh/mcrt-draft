@@ -62,12 +62,9 @@ namespace mcrt {
 
         // Read color (outgoing radiance) at intersection (NOTE THAT WE ASSUME LAMBERTIAN SURFACE HERE)
         // --> Otherwise BRDF needs to be evaluated for the incoming direction at this point
-        uint32_t lightSrcColor = optixLaunchParams.prevBounceTexture.colorBuffer[vTexelCoord * optixLaunchParams.prevBounceTexture.size + uTexelCoord];
-
-        // Extract rgb values from light source texture pixel
-        uint32_t r = 0x000000ff & (lightSrcColor);
-        uint32_t g = (0x0000ff00 & (lightSrcColor)) >> 8;
-        uint32_t b = (0x00ff0000 & (lightSrcColor)) >> 16;
+        float r = optixLaunchParams.prevBounceTexture.colorBuffer[(vTexelCoord * optixLaunchParams.prevBounceTexture.size * 3) + (uTexelCoord * 3) + 0];
+        float g = optixLaunchParams.prevBounceTexture.colorBuffer[(vTexelCoord * optixLaunchParams.prevBounceTexture.size * 3) + (uTexelCoord * 3) + 1];
+        float b = optixLaunchParams.prevBounceTexture.colorBuffer[(vTexelCoord * optixLaunchParams.prevBounceTexture.size * 3) + (uTexelCoord * 3) + 2];
 
         RadianceCellScatterUnbiasedPRD prd = loadRadianceCellScatterUnbiasedPRD();
         prd.resultColor = glm::vec3{r,g,b};
@@ -89,8 +86,6 @@ namespace mcrt {
     extern "C" __global__ void __raygen__renderFrame__cell__scattering__unbiased()
     {
         const int uvIndex = optixGetLaunchIndex().x;
-        //const int u = optixGetLaunchIndex().x;
-        //const int v = optixGetLaunchIndex().y;
         const int nonEmptyCellIndex = optixLaunchParams.nonEmptyCellIndex;
 
         // Take different seed for each radiance cell face
@@ -222,26 +217,19 @@ namespace mcrt {
 
             prd.resultColor = glm::vec3{__uint_as_float(u0), __uint_as_float(u1), __uint_as_float(u2)};
 
-            //float intensity = prd.resultColor.x * prd.resultColor.x + prd.resultColor.y * prd.resultColor.y + prd.resultColor.z * prd.resultColor.z;
-            //if (intensity > 0.001f)   // Don't let 'black rays' contribute
-            //{
-                // Cosine weighted contribution
-                float cosContribution = dot(normalize(randomDir), normalize(uvNormal3f));
-                totalRadiance += glm::vec3{ cosContribution * prd.resultColor.x, cosContribution * prd.resultColor.y, cosContribution * prd.resultColor.z };
-                ++numSamples;
-            //}
+            // Cosine weighted contribution
+            float cosContribution = dot(normalize(randomDir), normalize(uvNormal3f));
+            totalRadiance += glm::vec3{ cosContribution * prd.resultColor.x, cosContribution * prd.resultColor.y, cosContribution * prd.resultColor.z };
+            ++numSamples;
         }
 
-        // TODO: add Monte Carlo weight (although how do we get the exact pdf that we are sampling from...?)
-        const int r_result = int((totalRadiance.x / (float(numSamples))));
-        const int g_result = int((totalRadiance.y / (float(numSamples))));
-        const int b_result = int((totalRadiance.z / (float(numSamples))));
-
-        // convert to 32-bit rgba value (we explicitly set alpha to 0xff
-        // to make stb_image_write happy ...
-        const uint32_t rgba = 0xff000000
-            | (r_result << 0) | (g_result << 8) | (b_result << 16);
+        // Monte-Carlo weighted estimation
+        const float r_result = totalRadiance.x / (float(numSamples) * PI);
+        const float g_result = totalRadiance.y / (float(numSamples) * PI);
+        const float b_result = totalRadiance.z / (float(numSamples) * PI);
         
-        optixLaunchParams.currentBounceTexture.colorBuffer[v * optixLaunchParams.currentBounceTexture.size + u] = rgba;
+        optixLaunchParams.currentBounceTexture.colorBuffer[(v * optixLaunchParams.currentBounceTexture.size * 3) + (u * 3) + 0] = r_result;
+        optixLaunchParams.currentBounceTexture.colorBuffer[(v * optixLaunchParams.currentBounceTexture.size * 3) + (u * 3) + 1] = g_result;
+        optixLaunchParams.currentBounceTexture.colorBuffer[(v * optixLaunchParams.currentBounceTexture.size * 3) + (u * 3) + 2] = b_result;
     }
 }

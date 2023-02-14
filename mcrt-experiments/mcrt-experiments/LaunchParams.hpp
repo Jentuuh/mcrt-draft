@@ -15,7 +15,7 @@ namespace mcrt {
 	* ================
 	*/
 	struct PixelBuffer {
-		uint32_t* colorBuffer;
+		float* colorBuffer;
 		int size;
 	};
 
@@ -100,7 +100,7 @@ namespace mcrt {
 		int probeHeightRes;	// Amount of probes in the y-direction
 		int nonEmptyCellIndex;
 
-		uint32_t* cubeMaps; // A pointer to cubemap faces
+		float* cubeMaps; // A pointer to cubemap faces
 		int cubeMapResolution;
 
 		OptixTraversableHandle sceneTraversable;
@@ -177,7 +177,7 @@ namespace mcrt {
 
 		PixelBuffer lightSourceTexture;
 
-		uint32_t* cubeMaps; // A pointer to cubemap faces
+		float* cubeMaps; // A pointer to cubemap faces
 		int cubeMapResolution;
 
 		OptixTraversableHandle sceneTraversable;

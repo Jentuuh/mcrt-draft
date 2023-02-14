@@ -180,7 +180,7 @@
 .visible .entry __raygen__renderFrame__cell__scattering()
 {
 	.reg .pred 	%p<17>;
-	.reg .f32 	%f<598>;
+	.reg .f32 	%f<599>;
 	.reg .b32 	%r<588>;
 	.reg .f64 	%fd<3>;
 	.reg .b64 	%rd<39>;
@@ -375,7 +375,7 @@
 	.loc	1 178 17
 	setp.gt.ftz.f32 	%p1, %f149, 0f00000000;
 	.loc	1 175 34
-	mov.f32 	%f591, 0f00000000;
+	mov.f32 	%f592, 0f00000000;
 	.loc	1 178 17
 	@%p1 bra 	$L__BB3_3;
 
@@ -488,17 +488,17 @@
 	fma.rn.ftz.f32 	%f202, %f1, %f198, %f201;
 	fma.rn.ftz.f32 	%f203, %f3, %f200, %f202;
 	.loc	1 235 17
-	fma.rn.ftz.f32 	%f591, %f193, %f203, 0f00000000;
+	fma.rn.ftz.f32 	%f592, %f193, %f203, 0f00000000;
 
 $L__BB3_3:
 	.loc	1 92 9
-	fma.rn.ftz.f32 	%f585, %f2, 0f38D1B717, %f144;
+	fma.rn.ftz.f32 	%f586, %f2, 0f38D1B717, %f144;
 	.loc	3 665 3, function_name $L__info_string16, inlined_at 1 131 28
-	sub.ftz.f32 	%f584, %f585, %f68;
+	sub.ftz.f32 	%f585, %f586, %f68;
 	.loc	4 529 5, function_name $L__info_string17, inlined_at 1 178 17
-	mul.ftz.f32 	%f583, %f2, %f584;
+	mul.ftz.f32 	%f584, %f2, %f585;
 	mul.ftz.f32 	%f101, %f1, %f79;
-	add.ftz.f32 	%f102, %f101, %f583;
+	add.ftz.f32 	%f102, %f101, %f584;
 	add.ftz.f32 	%f204, %f102, %f88;
 	.loc	1 178 17
 	setp.gt.ftz.f32 	%p3, %f204, 0f00000000;
@@ -588,17 +588,17 @@ $L__BB3_3:
 	fma.rn.ftz.f32 	%f256, %f1, %f252, %f255;
 	fma.rn.ftz.f32 	%f257, %f3, %f254, %f256;
 	.loc	1 235 17
-	fma.rn.ftz.f32 	%f591, %f247, %f257, %f591;
+	fma.rn.ftz.f32 	%f592, %f247, %f257, %f592;
 
 $L__BB3_6:
 	.loc	1 92 9
-	fma.rn.ftz.f32 	%f588, %f1, 0f38D1B717, %f142;
+	fma.rn.ftz.f32 	%f589, %f1, 0f38D1B717, %f142;
 	.loc	3 665 3, function_name $L__info_string16, inlined_at 1 131 28
-	sub.ftz.f32 	%f587, %f588, %f67;
+	sub.ftz.f32 	%f588, %f589, %f67;
 	.loc	4 529 5, function_name $L__info_string17, inlined_at 1 178 17
-	mul.ftz.f32 	%f586, %f1, %f587;
+	mul.ftz.f32 	%f587, %f1, %f588;
 	mul.ftz.f32 	%f106, %f2, %f81;
-	add.ftz.f32 	%f107, %f586, %f106;
+	add.ftz.f32 	%f107, %f587, %f106;
 	add.ftz.f32 	%f258, %f107, %f88;
 	.loc	1 178 17
 	setp.gt.ftz.f32 	%p5, %f258, 0f00000000;
@@ -688,12 +688,12 @@ $L__BB3_6:
 	fma.rn.ftz.f32 	%f310, %f1, %f306, %f309;
 	fma.rn.ftz.f32 	%f311, %f3, %f308, %f310;
 	.loc	1 235 17
-	fma.rn.ftz.f32 	%f591, %f301, %f311, %f591;
+	fma.rn.ftz.f32 	%f592, %f301, %f311, %f592;
 
 $L__BB3_9:
 	.loc	4 529 5, function_name $L__info_string17, inlined_at 1 178 17
-	mul.ftz.f32 	%f589, %f1, %f79;
-	add.ftz.f32 	%f111, %f589, %f106;
+	mul.ftz.f32 	%f590, %f1, %f79;
+	add.ftz.f32 	%f111, %f590, %f106;
 	add.ftz.f32 	%f312, %f111, %f88;
 	.loc	1 178 17
 	setp.gt.ftz.f32 	%p7, %f312, 0f00000000;
@@ -783,7 +783,7 @@ $L__BB3_9:
 	fma.rn.ftz.f32 	%f364, %f1, %f360, %f363;
 	fma.rn.ftz.f32 	%f365, %f3, %f362, %f364;
 	.loc	1 235 17
-	fma.rn.ftz.f32 	%f591, %f355, %f365, %f591;
+	fma.rn.ftz.f32 	%f592, %f355, %f365, %f592;
 
 $L__BB3_12:
 	.loc	4 529 5, function_name $L__info_string17, inlined_at 1 178 17
@@ -877,7 +877,7 @@ $L__BB3_12:
 	fma.rn.ftz.f32 	%f418, %f1, %f414, %f417;
 	fma.rn.ftz.f32 	%f419, %f3, %f416, %f418;
 	.loc	1 235 17
-	fma.rn.ftz.f32 	%f591, %f409, %f419, %f591;
+	fma.rn.ftz.f32 	%f592, %f409, %f419, %f592;
 
 $L__BB3_15:
 	.loc	4 529 5, function_name $L__info_string17, inlined_at 1 178 17
@@ -970,7 +970,7 @@ $L__BB3_15:
 	fma.rn.ftz.f32 	%f472, %f1, %f468, %f471;
 	fma.rn.ftz.f32 	%f473, %f3, %f470, %f472;
 	.loc	1 235 17
-	fma.rn.ftz.f32 	%f591, %f463, %f473, %f591;
+	fma.rn.ftz.f32 	%f592, %f463, %f473, %f592;
 
 $L__BB3_18:
 	.loc	4 529 5, function_name $L__info_string17, inlined_at 1 178 17
@@ -1063,7 +1063,7 @@ $L__BB3_18:
 	fma.rn.ftz.f32 	%f526, %f1, %f522, %f525;
 	fma.rn.ftz.f32 	%f527, %f3, %f524, %f526;
 	.loc	1 235 17
-	fma.rn.ftz.f32 	%f591, %f517, %f527, %f591;
+	fma.rn.ftz.f32 	%f592, %f517, %f527, %f592;
 
 $L__BB3_21:
 	.loc	4 529 5, function_name $L__info_string17, inlined_at 1 178 17
@@ -1156,11 +1156,11 @@ $L__BB3_21:
 	fma.rn.ftz.f32 	%f580, %f1, %f576, %f579;
 	fma.rn.ftz.f32 	%f581, %f3, %f578, %f580;
 	.loc	1 235 17
-	fma.rn.ftz.f32 	%f591, %f571, %f581, %f591;
+	fma.rn.ftz.f32 	%f592, %f571, %f581, %f592;
 
 $L__BB3_24:
 	.loc	1 241 21
-	cvt.ftz.f64.f32 	%fd1, %f591;
+	cvt.ftz.f64.f32 	%fd1, %f592;
 	mul.f64 	%fd2, %fd1, 0d406FFFAE147AE148;
 	cvt.rzi.s32.f64 	%r582, %fd2;
 	.loc	1 247 29
@@ -1170,11 +1170,12 @@ $L__BB3_24:
 	or.b32  	%r586, %r585, %r584;
 	or.b32  	%r587, %r586, -16777216;
 	.loc	1 250 9
+	cvt.rn.f32.u32 	%f582, %r587;
 	ld.const.u64 	%rd35, [optixLaunchParams+32];
 	cvta.to.global.u64 	%rd36, %rd35;
 	shl.b64 	%rd37, %rd1, 2;
 	add.s64 	%rd38, %rd36, %rd37;
-	st.global.u32 	[%rd38], %r587;
+	st.global.f32 	[%rd38], %f582;
 	.loc	1 251 5
 	ret;
 

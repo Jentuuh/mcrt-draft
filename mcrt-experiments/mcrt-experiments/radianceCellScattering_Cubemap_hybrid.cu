@@ -62,12 +62,9 @@ namespace mcrt {
 
         // Read color (outgoing radiance) at intersection (NOTE THAT WE ASSUME LAMBERTIAN SURFACE HERE)
         // --> Otherwise BRDF needs to be evaluated for the incoming direction at this point
-        uint32_t lightSrcColor = optixLaunchParams.prevBounceTexture.colorBuffer[vTexelCoord * optixLaunchParams.prevBounceTexture.size + uTexelCoord];
-
-        // Extract rgb values from light source texture pixel
-        uint32_t r = 0x000000ff & (lightSrcColor);
-        uint32_t g = (0x0000ff00 & (lightSrcColor)) >> 8;
-        uint32_t b = (0x00ff0000 & (lightSrcColor)) >> 16;
+        float r = optixLaunchParams.prevBounceTexture.colorBuffer[(vTexelCoord * optixLaunchParams.prevBounceTexture.size * 3) + (uTexelCoord * 3) + 0];
+        float g = optixLaunchParams.prevBounceTexture.colorBuffer[(vTexelCoord * optixLaunchParams.prevBounceTexture.size * 3) + (uTexelCoord * 3) + 1];
+        float b = optixLaunchParams.prevBounceTexture.colorBuffer[(vTexelCoord * optixLaunchParams.prevBounceTexture.size * 3) + (uTexelCoord * 3) + 2];
 
         RadianceCellScatterPRDHybrid prd = loadRadianceCellScatterPRD();
         prd.hitFound = 1;
@@ -115,9 +112,6 @@ namespace mcrt {
 
         // Convert to float3 format
         float3 rayOrigin3f = float3{ UVWorldPos.x, UVWorldPos.y, UVWorldPos.z };
-
-        // Center of this radiance cell
-        //glm::vec3 cellCenter = optixLaunchParams.cellCenter;
         
         // Probes coordinates
         glm::vec3 probeCoords[7] = {
@@ -138,8 +132,6 @@ namespace mcrt {
                                 ((cellCoords.z * probeResWidth * probeResHeight) + ((cellCoords.y - 1) * probeResWidth) + cellCoords.x) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution),
                                 (((cellCoords.z + 1) * probeResWidth * probeResHeight) + (cellCoords.y * probeResWidth) + cellCoords.x) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution),
                                 (((cellCoords.z - 1) * probeResWidth * probeResHeight) + (cellCoords.y * probeResWidth) + cellCoords.x) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution) };
-
-        //int probeOffset = ((cellCoords.z * probeResWidth * probeResHeight) + (cellCoords.y * probeResWidth) + cellCoords.x) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution);
 
         // Radiance accumulator
         glm::vec3 totalRadiance = glm::vec3{ 0.0f, 0.0f, 0.0f };
@@ -231,21 +223,15 @@ namespace mcrt {
                         int vIndex = optixLaunchParams.cubeMapResolution * faceV;
                         int uvOffset = vIndex * optixLaunchParams.cubeMapResolution + uIndex;
 
-                        uint32_t incomingRadiance = optixLaunchParams.cubeMaps[(probeOffsets[p] + cubeMapFaceIndex * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution)) + uvOffset];
-                        
-                        // Extract rgb values from light source texture pixel
-                        uint32_t r = 0x000000ff & (incomingRadiance);
-                        uint32_t g = (0x0000ff00 & (incomingRadiance)) >> 8;
-                        uint32_t b = (0x00ff0000 & (incomingRadiance)) >> 16;
+                        float r = optixLaunchParams.cubeMaps[((probeOffsets[p] + cubeMapFaceIndex * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution)) * 3) + uvOffset * 3 + 0];
+                        float g = optixLaunchParams.cubeMaps[((probeOffsets[p] + cubeMapFaceIndex * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution)) * 3) + uvOffset * 3 + 1];
+                        float b = optixLaunchParams.cubeMaps[((probeOffsets[p] + cubeMapFaceIndex * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution)) * 3) + uvOffset * 3 + 2];
                         
                         averageProbeContribution += glm::vec3{ r, g, b };
                         numProbeContributions++;
                     }
                 }
                 averageProbeContribution = glm::vec3{ averageProbeContribution.x / float(numProbeContributions), averageProbeContribution.y / float(numProbeContributions), averageProbeContribution.z / float(numProbeContributions) };
-
-                //// Convert to grayscale (for now we assume 1 color channel)
-                //const float intensity = (0.3 * r + 0.59 * g + 0.11 * b) / 255.0f;
 
                 // Cosine weighted contribution
                 float cosContribution = dot(normalize(randomDir), normalize(uvNormal3f));
@@ -257,15 +243,12 @@ namespace mcrt {
             }
         }
 
-        const int r = int(totalRadiance.x / float(numSamples));
-        const int g = int(totalRadiance.y / float(numSamples));
-        const int b = int(totalRadiance.z / float(numSamples));
+        const float r = totalRadiance.x / (float(numSamples) * PI);
+        const float g = totalRadiance.y / (float(numSamples) * PI);
+        const float b = totalRadiance.z / (float(numSamples) * PI);
 
-        // convert to 32-bit rgba value (we explicitly set alpha to 0xff
-        // to make stb_image_write happy ...
-        const uint32_t rgba = 0xff000000
-            | (r << 0) | (g << 8) | (b << 16);
-
-        optixLaunchParams.currentBounceTexture.colorBuffer[v * optixLaunchParams.currentBounceTexture.size + u] = rgba;
+        optixLaunchParams.currentBounceTexture.colorBuffer[(v * optixLaunchParams.currentBounceTexture.size * 3) + (u * 3) + 0] = r;
+        optixLaunchParams.currentBounceTexture.colorBuffer[(v * optixLaunchParams.currentBounceTexture.size * 3) + (u * 3) + 1] = g;
+        optixLaunchParams.currentBounceTexture.colorBuffer[(v * optixLaunchParams.currentBounceTexture.size * 3) + (u * 3) + 2] = b;
     }
 }

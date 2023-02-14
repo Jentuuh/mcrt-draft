@@ -207,7 +207,8 @@ namespace mcrt {
                         if (cosContribution > 0.0f)
                         {
                             // TODO: (Note that BRDF is currently omitted here)
-                            float intensity = 255.99f * cosContribution * prd.resultColor.x * lightProperties.power.x;
+                            //float intensity = 255.99f * cosContribution * prd.resultColor.x * lightProperties.power.x;
+                            float intensity = cosContribution * prd.resultColor.x * lightProperties.power.x;
                             totalLightContribution += intensity * diffuseColor;
                         }
                     }
@@ -218,17 +219,20 @@ namespace mcrt {
             totalLightContribution /= NUM_SAMPLES_PER_STRATIFY_CELL * optixLaunchParams.stratifyResX * optixLaunchParams.stratifyResY;
             // totalLightContribution /= PI;
 
-            const int r = int(totalLightContribution.x);
-            const int g = int(totalLightContribution.y);
-            const int b = int(totalLightContribution.z);
+            //const int r = int(totalLightContribution.x);
+            //const int g = int(totalLightContribution.y);
+            //const int b = int(totalLightContribution.z);
 
             // convert to 32-bit rgba value (we explicitly set alpha to 0xff
             // to make stb_image_write happy ...
-            const uint32_t rgba = 0xff000000
-                | (r << 0) | (g << 8) | (b << 16);
+            //const uint32_t rgba = 0xff000000
+            //    | (r << 0) | (g << 8) | (b << 16);
 
-            int uvIndex = vIndex * optixLaunchParams.directLightingTexture.size + uIndex;
-            optixLaunchParams.directLightingTexture.colorBuffer[uvIndex] += rgba;
+            int uvIndex = (vIndex * optixLaunchParams.directLightingTexture.size * 3) + (uIndex * 3);
+            optixLaunchParams.directLightingTexture.colorBuffer[uvIndex + 0] = totalLightContribution.x;
+            optixLaunchParams.directLightingTexture.colorBuffer[uvIndex + 1] = totalLightContribution.y;
+            optixLaunchParams.directLightingTexture.colorBuffer[uvIndex + 2] = totalLightContribution.z;
+            //optixLaunchParams.directLightingTexture.colorBuffer[uvIndex] += rgba;
         }
     }
 }

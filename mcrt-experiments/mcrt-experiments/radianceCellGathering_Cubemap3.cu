@@ -9,9 +9,6 @@
 
 #include "cube_mapping.cuh"
 
-#define PI 3.14159265358979323846f
-#define EPSILON 0.0000000000002f
-
 using namespace mcrt;
 
 namespace mcrt {
@@ -57,14 +54,13 @@ namespace mcrt {
         const int uTexelCoord = tc.x * optixLaunchParams.lightSourceTexture.size;
         const int vTexelCoord = tc.y * optixLaunchParams.lightSourceTexture.size;
 
+
         // Read color (outgoing radiance) at intersection (NOTE THAT WE ASSUME LAMBERTIAN SURFACE HERE)
         // --> Otherwise BRDF needs to be evaluated for the incoming direction at this point
-        uint32_t lightSrcColor = optixLaunchParams.lightSourceTexture.colorBuffer[vTexelCoord * optixLaunchParams.lightSourceTexture.size + uTexelCoord];
+        float r = optixLaunchParams.lightSourceTexture.colorBuffer[(vTexelCoord * optixLaunchParams.lightSourceTexture.size * 3) + (uTexelCoord * 3) + 0];
+        float g = optixLaunchParams.lightSourceTexture.colorBuffer[(vTexelCoord * optixLaunchParams.lightSourceTexture.size * 3) + (uTexelCoord * 3) + 1];
+        float b = optixLaunchParams.lightSourceTexture.colorBuffer[(vTexelCoord * optixLaunchParams.lightSourceTexture.size * 3) + (uTexelCoord * 3) + 2];
 
-        // Extract rgb values from light source texture pixel
-        uint32_t r = 0x000000ff & (lightSrcColor);
-        uint32_t g = (0x0000ff00 & (lightSrcColor)) >> 8;
-        uint32_t b = (0x00ff0000 & (lightSrcColor)) >> 16;
 
         RadianceCellGatherPRDAlt prd = loadRadianceCellGatherPRD();
         prd.resultColor = glm::vec3{ r,g,b };
@@ -131,17 +127,11 @@ namespace mcrt {
 
         prd.resultColor = glm::vec3{ __uint_as_float(u0), __uint_as_float(u1), __uint_as_float(u2) };
 
-        const int r = int(prd.resultColor.x);
-        const int g = int(prd.resultColor.y);
-        const int b = int(prd.resultColor.z);
-
         int uvIndex = vPixel * optixLaunchParams.cubeMapResolution + uPixel;
 
-        // convert to 32-bit rgba value (we explicitly set alpha to 0xff
-        // to make stb_image_write happy ...
-        const uint32_t rgba = 0xff000000
-            | (r << 0) | (g << 8) | (b << 16);
-
-        optixLaunchParams.cubeMaps[(probeOffset + faceIndex * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution)) + uvIndex] = rgba;
+        // Write rgb
+        optixLaunchParams.cubeMaps[((probeOffset + faceIndex * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution)) * 3) + uvIndex * 3 + 0] = prd.resultColor.x;
+        optixLaunchParams.cubeMaps[((probeOffset + faceIndex * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution)) * 3) + uvIndex * 3 + 1] = prd.resultColor.y;
+        optixLaunchParams.cubeMaps[((probeOffset + faceIndex * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution)) * 3) + uvIndex * 3 + 2] = prd.resultColor.z;
     }
 }

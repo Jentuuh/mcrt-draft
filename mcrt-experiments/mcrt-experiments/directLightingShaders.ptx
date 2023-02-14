@@ -160,8 +160,8 @@
 	.reg .b64 	%SP;
 	.reg .b64 	%SPL;
 	.reg .pred 	%p<7>;
-	.reg .f32 	%f<79>;
-	.reg .b32 	%r<215>;
+	.reg .f32 	%f<81>;
+	.reg .b32 	%r<214>;
 	.reg .b64 	%rd<15>;
 	.loc	1 87 0
 
@@ -251,7 +251,7 @@
 	add.s32 	%r113, %r112, -939442524;
 	xor.b32  	%r114, %r110, %r111;
 	xor.b32  	%r115, %r114, %r113;
-	add.s32 	%r211, %r115, %r100;
+	add.s32 	%r210, %r115, %r100;
 	.loc	1 99 35
 	ld.const.u64 	%rd6, [optixLaunchParams+32];
 	cvta.to.global.u64 	%rd7, %rd6;
@@ -321,7 +321,7 @@
 	ld.const.u64 	%rd11, [optixLaunchParams+16];
 	cvta.to.global.u64 	%rd3, %rd11;
 	mov.u32 	%r59, 0;
-	mov.u32 	%r208, %r59;
+	mov.u32 	%r207, %r59;
 
 $L__BB3_1:
 	.loc	1 111 23
@@ -332,7 +332,7 @@ $L__BB3_1:
 	.loc	1 116 40
 	.loc	4 66 20, function_name $L__info_string13, inlined_at 1 116 40
 	.loc	4 53 5, function_name $L__info_string14, inlined_at 4 66 20
-	mad.lo.s32 	%r119, %r211, 1664525, 1013904223;
+	mad.lo.s32 	%r119, %r210, 1664525, 1013904223;
 	.loc	4 54 5, function_name $L__info_string14, inlined_at 4 66 20
 	and.b32  	%r120, %r119, 16777215;
 	.loc	4 66 20, function_name $L__info_string13, inlined_at 1 116 40
@@ -342,9 +342,9 @@ $L__BB3_1:
 	.loc	1 116 51
 	.loc	4 66 20, function_name $L__info_string13, inlined_at 1 116 51
 	.loc	4 53 5, function_name $L__info_string14, inlined_at 4 66 20
-	mad.lo.s32 	%r211, %r119, 1664525, 1013904223;
+	mad.lo.s32 	%r210, %r119, 1664525, 1013904223;
 	.loc	4 54 5, function_name $L__info_string14, inlined_at 4 66 20
-	and.b32  	%r121, %r211, 16777215;
+	and.b32  	%r121, %r210, 16777215;
 	.loc	4 66 20, function_name $L__info_string13, inlined_at 1 116 51
 	cvt.rn.f32.u32 	%f47, %r121;
 	div.approx.ftz.f32 	%f48, %f47, %f45;
@@ -362,15 +362,15 @@ $L__BB3_1:
 	fma.rn.ftz.f32 	%f19, %f9, %f53, %f50;
 	fma.rn.ftz.f32 	%f20, %f10, %f53, %f51;
 	fma.rn.ftz.f32 	%f21, %f11, %f53, %f52;
-	mov.u32 	%r210, %r59;
-	mov.u32 	%r212, %r2;
-	mov.u32 	%r213, %r3;
+	mov.u32 	%r209, %r59;
+	mov.u32 	%r211, %r2;
+	mov.u32 	%r212, %r3;
 
 $L__BB3_3:
 	.loc	1 135 53
 	.loc	4 66 20, function_name $L__info_string13, inlined_at 1 135 53
 	.loc	4 53 5, function_name $L__info_string14, inlined_at 4 66 20
-	mad.lo.s32 	%r122, %r211, 1664525, 1013904223;
+	mad.lo.s32 	%r122, %r210, 1664525, 1013904223;
 	.loc	4 54 5, function_name $L__info_string14, inlined_at 4 66 20
 	and.b32  	%r123, %r122, 16777215;
 	.loc	4 66 20, function_name $L__info_string13, inlined_at 1 135 53
@@ -382,9 +382,9 @@ $L__BB3_3:
 	.loc	1 135 90
 	.loc	4 66 20, function_name $L__info_string13, inlined_at 1 135 90
 	.loc	4 53 5, function_name $L__info_string14, inlined_at 4 66 20
-	mad.lo.s32 	%r211, %r122, 1664525, 1013904223;
+	mad.lo.s32 	%r210, %r122, 1664525, 1013904223;
 	.loc	4 54 5, function_name $L__info_string14, inlined_at 4 66 20
-	and.b32  	%r124, %r211, 16777215;
+	and.b32  	%r124, %r210, 16777215;
 	.loc	4 66 20, function_name $L__info_string13, inlined_at 1 135 90
 	cvt.rn.f32.u32 	%f58, %r124;
 	div.approx.ftz.f32 	%f59, %f58, %f55;
@@ -425,7 +425,7 @@ $L__BB3_3:
 	mov.u32 	%r163, 2;
 	mov.u32 	%r195, 0;
 	// begin inline asm
-	call(%r212,%r213,%r127,%r128,%r129,%r130,%r131,%r132,%r133,%r134,%r135,%r136,%r137,%r138,%r139,%r140,%r141,%r142,%r143,%r144,%r145,%r146,%r147,%r148,%r149,%r150,%r151,%r152,%r153,%r154,%r155,%r156),_optix_trace_typed_32,(%r195,%rd2,%f19,%f20,%f21,%f22,%f23,%f24,%f76,%f75,%f76,%r158,%r161,%r195,%r161,%r195,%r163,%r212,%r213,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195);
+	call(%r211,%r212,%r127,%r128,%r129,%r130,%r131,%r132,%r133,%r134,%r135,%r136,%r137,%r138,%r139,%r140,%r141,%r142,%r143,%r144,%r145,%r146,%r147,%r148,%r149,%r150,%r151,%r152,%r153,%r154,%r155,%r156),_optix_trace_typed_32,(%r195,%rd2,%f19,%f20,%f21,%f22,%f23,%f24,%f76,%f75,%f76,%r158,%r161,%r195,%r161,%r195,%r163,%r211,%r212,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195,%r195);
 	// end inline asm
 	.loc	1 163 17
 	ld.local.f32 	%f25, [%rd1];
@@ -459,21 +459,22 @@ $L__BB3_3:
 	.loc	1 184 21
 	mul.wide.u32 	%rd13, %r206, 4;
 	add.s64 	%rd14, %rd3, %rd13;
+	cvt.rn.f32.u32 	%f79, %r203;
 	.loc	1 184 21
-	.loc	8 82 10, function_name $L__info_string19, inlined_at 1 184 21
-	atom.global.add.u32 	%r207, [%rd14], %r203;
+	.loc	8 77 10, function_name $L__info_string19, inlined_at 1 184 21
+	atom.global.add.f32 	%f80, [%rd14], %f79;
 
 $L__BB3_6:
 	.loc	1 121 38
-	add.s32 	%r210, %r210, 1;
+	add.s32 	%r209, %r209, 1;
 	.loc	1 121 13
-	setp.lt.u32 	%p5, %r210, 500;
+	setp.lt.u32 	%p5, %r209, 500;
 	@%p5 bra 	$L__BB3_3;
 
 	.loc	1 108 36
-	add.s32 	%r208, %r208, 1;
+	add.s32 	%r207, %r207, 1;
 	.loc	1 108 9
-	setp.lt.u32 	%p6, %r208, 20000;
+	setp.lt.u32 	%p6, %r207, 20000;
 	@%p6 bra 	$L__BB3_1;
 
 	.loc	1 188 5
@@ -487,7 +488,7 @@ $L__BB3_6:
 	.file	5 "C:\\Users\\jente\\Desktop\\University\\mcrt-draft\\mcrt-draft\\mcrt-experiments\\3rdparty\\glm\\glm\\detail\\type_vec3.inl"
 	.file	6 "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.34.31933\\include\\cmath"
 	.file	7 "C:\\Users\\jente\\Desktop\\University\\mcrt-draft\\mcrt-draft\\mcrt-experiments\\3rdparty/nvidia\\vec_math.hpp"
-	.file	8 "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.8\\include\\device_atomic_functions.hpp"
+	.file	8 "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.8\\include\\sm_20_atomic_functions.hpp"
 	.section	.debug_str
 	{
 $L__info_string0:
@@ -554,6 +555,6 @@ $L__info_string18:
 .b8 121,54,102,108,111,97,116,51,83,49,95,102,102,102,106,106,106,106,106,68,112,82,84,95,0
 $L__info_string19:
 .b8 95,90,78,53,53,95,73,78,84,69,82,78,65,76,95,51,54,52,48,57,54,56,49,95,50,52,95,100,105,114,101,99,116,76,105,103,104,116,105,110
-.b8 103,83,104,97,100,101,114,115,95,99,117,95,100,53,51,102,52,102,99,51,57,97,116,111,109,105,99,65,100,100,69,80,106,106,0
+.b8 103,83,104,97,100,101,114,115,95,99,117,95,100,53,51,102,52,102,99,51,57,97,116,111,109,105,99,65,100,100,69,80,102,102,0
 
 	}
