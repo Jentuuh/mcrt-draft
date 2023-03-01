@@ -55,6 +55,15 @@
     <Filter Include="Source Files\GPU\Unbiased">
       <UniqueIdentifier>{45e3a936-fad3-4759-8b5d-c1810bd19a83}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Octree Textures">
+      <UniqueIdentifier>{58cc2670-4acb-4999-b548-2962d75ef931}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Octree Textures">
+      <UniqueIdentifier>{a7cdda9b-48c3-4d65-8dd9-062ae7e832fd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GPU\Testing">
+      <UniqueIdentifier>{37c7b5f9-43cb-4106-bd39-2583bbf96d36}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -150,6 +159,9 @@
     <ClCompile Include="unbiasedScattering_embedded.c">
       <Filter>Source Files\GPU\Unbiased</Filter>
     </ClCompile>
+    <ClCompile Include="octree_texture.cpp">
+      <Filter>Source Files\Octree Textures</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="renderer.hpp">
@@ -230,6 +242,9 @@
     <ClInclude Include="radiance_cell_scatter_unbiased_pipeline.hpp">
       <Filter>Header Files\Pipelines</Filter>
     </ClInclude>
+    <ClInclude Include="octree_texture.hpp">
+      <Filter>Header Files\Octree Textures</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="devicePrograms.cu">
@@ -298,11 +313,14 @@
     <None Include="radianceCellScattering_Cubemap_hybrid.cu">
       <Filter>Source Files\GPU\Cubemap</Filter>
     </None>
-    <None Include="probeTesting.cu">
-      <Filter>Source Files\GPU\Cubemap</Filter>
-    </None>
     <None Include="radianceCellGathering_Cubemap3.cu">
       <Filter>Source Files\GPU\Cubemap</Filter>
+    </None>
+    <None Include="probeTesting.cu">
+      <Filter>Source Files\GPU\Testing</Filter>
+    </None>
+    <None Include="octreeTesting.cu">
+      <Filter>Source Files\GPU\Testing</Filter>
     </None>
   </ItemGroup>
 </Project>

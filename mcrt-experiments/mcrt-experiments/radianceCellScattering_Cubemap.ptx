@@ -11,7 +11,7 @@
 .address_size 64
 
 	// .globl	__closesthit__radiance__cell__scattering__scene
-.const .align 8 .b8 optixLaunchParams[128];
+.const .align 8 .b8 optixLaunchParams[136];
 
 .visible .entry __closesthit__radiance__cell__scattering__scene()
 {
@@ -354,7 +354,7 @@
 $L__BB3_1:
 	.loc	1 0 13
 	mov.f32 	%f222, 0f00000000;
-	ld.const.u64 	%rd23, [optixLaunchParams+120];
+	ld.const.u64 	%rd23, [optixLaunchParams+128];
 	mov.u32 	%r196, 0;
 	mov.f32 	%f221, 0f3F800000;
 	.loc	1 148 45

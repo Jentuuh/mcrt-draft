@@ -19,9 +19,10 @@
 #define SPHERICAL_HARMONIC_BASIS_FUNCTIONS 9
 #define TEXTURE_DIVISION_RES 1024
 
+
 namespace mcrt {
 
-    Renderer::Renderer(Scene& scene, const Camera& camera): renderCamera{camera}, scene{scene}
+    Renderer::Renderer(Scene& scene, const Camera& camera, BIAS_MODE bias, PROBE_MODE probeType): renderCamera{camera}, scene{scene}
     {
         initOptix();
         updateCamera(camera);
@@ -35,35 +36,48 @@ namespace mcrt {
         std::cout << "Loading textures..." << std::endl;
         createTextures();
 
-        std::cout << "Setting up pipeline..." << std::endl;
+        std::cout << "Setting up pipelines..." << std::endl;
         GeometryBufferHandle geometryData = GeometryBufferHandle{ vertexBuffers, indexBuffers, normalBuffers, texcoordBuffers, textureObjects, amountVertices, amountIndices };
 
-        std::vector<CUDABuffer> emptyNormalsVec;
-        std::vector<CUDABuffer> emptyTexcoordBufferVec;
-        std::vector<cudaTextureObject_t> emptyTexBufferVec;
-        GeometryBufferHandle radianceCellGeometry = GeometryBufferHandle{ radianceGridVertexBuffers, radianceGridIndexBuffers, emptyNormalsVec, emptyTexcoordBufferVec, emptyTexBufferVec, amountVerticesRadianceGrid, amountIndicesRadianceGrid };
-
-        tutorialPipeline = std::make_unique<DefaultPipeline>(optixContext, geometryData, scene);
+        cameraPipeline = std::make_unique<DefaultPipeline>(optixContext, geometryData, scene);
         directLightPipeline = std::make_unique<DirectLightPipeline>(optixContext, geometryData, scene);
-        radianceCellGatherPipeline = std::make_unique<RadianceCellGatherPipeline>(optixContext, radianceCellGeometry, geometryData, scene); // For now we can use normal geometry instead of proxy
-        radianceCellGatherCubeMapPipeline = std::make_unique<RadianceCellGatherCubeMapPipeline>(optixContext, radianceCellGeometry, geometryData, scene);
-        radianceCellScatterPipeline = std::make_unique<RadianceCellScatterPipeline>(optixContext, geometryData, scene);
-        radianceCellScatterCubeMapPipeline = std::make_unique<RadianceCellScatterCubeMapPipeline>(optixContext, geometryData, scene);
-        radianceCellScatterUnbiasedPipeline = std::make_unique<RadianceCellScatterUnbiasedPipeline>(optixContext, geometryData, scene);
+
+        if (bias == BIASED_PROBES)
+        {
+            if (probeType == CUBE_MAP)
+            {
+                radianceCellGatherCubeMapPipeline = std::make_unique<RadianceCellGatherCubeMapPipeline>(optixContext, geometryData, scene);
+                radianceCellScatterCubeMapPipeline = std::make_unique<RadianceCellScatterCubeMapPipeline>(optixContext, geometryData, scene);
+            }
+            else if (probeType == SPHERICAL_HARMONICS)
+            {
+                radianceCellGatherPipeline = std::make_unique<RadianceCellGatherPipeline>(optixContext, geometryData, scene); // For now we can use normal geometry instead of proxy
+                radianceCellScatterPipeline = std::make_unique<RadianceCellScatterPipeline>(optixContext, geometryData, scene);
+            }
+        }
+        else if (bias == UNBIASED)
+        {
+            radianceCellScatterUnbiasedPipeline = std::make_unique<RadianceCellScatterUnbiasedPipeline>(optixContext, geometryData, scene);
+        }
 
         std::cout << "Context, module, pipeline, etc, all set up." << std::endl;
         std::cout << "MCRT renderer fully set up." << std::endl;
+
+        // Initialize irradiance octree textures
+        octreeTextures = std::make_unique<OctreeTexture>(9);
 
         // Direct lighting (preprocess)
         initLightingTextures(1024);
         prepareUVWorldPositions();
         prepareUVsInsideBuffer();
-        NonEmptyCells nonEmpties = scene.grid.getNonEmptyCells();
-        initLightProbeCubeMaps(64, scene.grid.resolution.x);
-        //loadLightTexture();
-        //downloadAndWriteLightSourceTexture();
+        
+        if (bias == BIASED_PROBES && probeType == CUBE_MAP)
+        {
+            initLightProbeCubeMaps(64, scene.grid.resolution.x);
+        }
+
         calculateDirectLighting();
-        calculateIndirectLighting(UNBIASED, NA);
+        calculateIndirectLighting(bias, probeType);
     }
 
     void Renderer::fillGeometryBuffers()
@@ -215,28 +229,28 @@ namespace mcrt {
     void Renderer::render()
     {
         // First resize needs to be done before rendering
-        if (tutorialPipeline->launchParams.frame.size.x == 0) return;
+        if (cameraPipeline->launchParams.frame.size.x == 0) return;
 
         // Light bounce textures
-        tutorialPipeline->launchParams.lightTexture.colorBuffer = (float*)directLightingTexture.d_pointer();
-        tutorialPipeline->launchParams.lightTexture.size = directLightPipeline->launchParams.directLightingTexture.size;
-        tutorialPipeline->launchParams.lightTextureSecondBounce.colorBuffer = (float*)secondBounceTexture.d_pointer();
-        tutorialPipeline->launchParams.lightTextureSecondBounce.size = 1024;
-        tutorialPipeline->launchParams.lightTextureThirdBounce.colorBuffer = (float*)thirdBounceTexture.d_pointer();
-        tutorialPipeline->launchParams.lightTextureThirdBounce.size = 1024;
+        cameraPipeline->launchParams.lightTexture.colorBuffer = (float*)directLightingTexture.d_pointer();
+        cameraPipeline->launchParams.lightTexture.size = directLightPipeline->launchParams.directLightingTexture.size;
+        cameraPipeline->launchParams.lightTextureSecondBounce.colorBuffer = (float*)secondBounceTexture.d_pointer();
+        cameraPipeline->launchParams.lightTextureSecondBounce.size = 1024;
+        cameraPipeline->launchParams.lightTextureThirdBounce.colorBuffer = (float*)thirdBounceTexture.d_pointer();
+        cameraPipeline->launchParams.lightTextureThirdBounce.size = 1024;
 
-        tutorialPipeline->uploadLaunchParams();
+        cameraPipeline->uploadLaunchParams();
 
         // Launch render pipeline
         OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
-            tutorialPipeline->pipeline, stream,
+            cameraPipeline->pipeline, stream,
             /*! launch parameters and SBT */
-            tutorialPipeline->launchParamsBuffer.d_pointer(),
-            tutorialPipeline->launchParamsBuffer.sizeInBytes,
-            &tutorialPipeline->sbt,
+            cameraPipeline->launchParamsBuffer.d_pointer(),
+            cameraPipeline->launchParamsBuffer.sizeInBytes,
+            &cameraPipeline->sbt,
             /*! dimensions of the launch: */
-            tutorialPipeline->launchParams.frame.size.x,
-            tutorialPipeline->launchParams.frame.size.y,
+            cameraPipeline->launchParams.frame.size.x,
+            cameraPipeline->launchParams.frame.size.y,
             1
         ));
 
@@ -251,19 +265,19 @@ namespace mcrt {
 
     void Renderer::updateCamera(const Camera& camera)
     {
-        if (tutorialPipeline != nullptr)
+        if (cameraPipeline != nullptr)
         {
             renderCamera = camera;
-            tutorialPipeline->launchParams.camera.position = camera.position;
-            tutorialPipeline->launchParams.camera.direction = normalize(camera.target - camera.position);
+            cameraPipeline->launchParams.camera.position = camera.position;
+            cameraPipeline->launchParams.camera.direction = normalize(camera.target - camera.position);
             const float cosFovy = 0.66f;
-            const float aspect = float(tutorialPipeline->launchParams.frame.size.x) / float(tutorialPipeline->launchParams.frame.size.y);
-            tutorialPipeline->launchParams.camera.horizontal
-                = cosFovy * aspect * normalize(cross(tutorialPipeline->launchParams.camera.direction,
+            const float aspect = float(cameraPipeline->launchParams.frame.size.x) / float(cameraPipeline->launchParams.frame.size.y);
+            cameraPipeline->launchParams.camera.horizontal
+                = cosFovy * aspect * normalize(cross(cameraPipeline->launchParams.camera.direction,
                     camera.up));
-            tutorialPipeline->launchParams.camera.vertical
-                = cosFovy * normalize(cross(tutorialPipeline->launchParams.camera.horizontal,
-                    tutorialPipeline->launchParams.camera.direction));
+            cameraPipeline->launchParams.camera.vertical
+                = cosFovy * normalize(cross(cameraPipeline->launchParams.camera.horizontal,
+                    cameraPipeline->launchParams.camera.direction));
         }
     }
 
@@ -401,15 +415,14 @@ namespace mcrt {
                     switch (i)
                     {
                     case 0:
-                        //calculateRadianceCellGatherPassCubeMap(directLightingTexture);
                         calculateRadianceCellGatherPassCubeMapAlt(directLightingTexture);
                         std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
                         calculateRadianceCellScatterPassCubeMap(i, directLightingTexture, secondBounceTexture);
                         //lightProbeTest(i, directLightingTexture, secondBounceTexture);
+                        //octreeTextureTest();
 
                         break;
                     case 1:
-                        //calculateRadianceCellGatherPassCubeMap(secondBounceTexture);
                         calculateRadianceCellGatherPassCubeMapAlt(secondBounceTexture);
                         std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
                         calculateRadianceCellScatterPassCubeMap(i, secondBounceTexture, thirdBounceTexture);
@@ -645,6 +658,7 @@ namespace mcrt {
         }
     }
 
+    // Cubemap alternative approach avoids 'holes' in cubemap texture by iterating over the cubemap pixels instead of the surrounding indirect light source texels.
     void Renderer::calculateRadianceCellGatherPassCubeMapAlt(CUDABuffer& previousPassLightSourceTexture)
     {
         // TODO: For now we're using the same texture size as for the direct lighting pass, we can downsample in the future to gain performance
@@ -873,6 +887,29 @@ namespace mcrt {
         CUDA_SYNC_CHECK();
     }
 
+    void Renderer::octreeTextureTest()
+    {
+        std::cout << "OCTREE TESTING... " << std::endl;
+
+        radianceCellScatterCubeMapPipeline->launchParams.octreeTexture = octreeTextures->getTextureObjects()[0];
+
+        radianceCellScatterCubeMapPipeline->uploadLaunchParams();
+
+        OPTIX_CHECK(optixLaunch(
+            radianceCellScatterCubeMapPipeline->pipeline, stream,
+            radianceCellScatterCubeMapPipeline->launchParamsBuffer.d_pointer(),
+            radianceCellScatterCubeMapPipeline->launchParamsBuffer.sizeInBytes,
+            &radianceCellScatterCubeMapPipeline->sbt,
+            1,                     // dimension X: amount of UV texels in the cell
+            1,                     // dimension Y: 1
+            1                      // dimension Z: 1
+            // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
+        ));
+
+        CUDA_SYNC_CHECK();
+    }
+
+
 
     void Renderer::calculateRadianceCellScatterUnbiased(int iteration, CUDABuffer& prevBounceTexture, CUDABuffer& dstTexture)
     {
@@ -1033,15 +1070,25 @@ namespace mcrt {
         writeUVsPerCellToImage(offsets, cellUVs, 1024);
 
         UVsInsideBuffer.alloc_and_upload(cellUVs);
-        radianceCellScatterPipeline->launchParams.uvsInside = (glm::vec2*)UVsInsideBuffer.d_pointer();
         UVsInsideOffsets.alloc_and_upload(offsets);
-        radianceCellScatterPipeline->launchParams.uvsInsideOffsets = (int*)UVsInsideOffsets.d_pointer();
 
-        radianceCellScatterCubeMapPipeline->launchParams.uvsInside = (glm::vec2*)UVsInsideBuffer.d_pointer();
-        radianceCellScatterCubeMapPipeline->launchParams.uvsInsideOffsets = (int*)UVsInsideOffsets.d_pointer();
+        if (radianceCellScatterPipeline != nullptr)
+        {
+            radianceCellScatterPipeline->launchParams.uvsInside = (glm::vec2*)UVsInsideBuffer.d_pointer();
+            radianceCellScatterPipeline->launchParams.uvsInsideOffsets = (int*)UVsInsideOffsets.d_pointer();
+        }
 
-        radianceCellScatterUnbiasedPipeline->launchParams.uvsInside = (glm::vec2*)UVsInsideBuffer.d_pointer();
-        radianceCellScatterUnbiasedPipeline->launchParams.uvsInsideOffsets = (int*)UVsInsideOffsets.d_pointer();
+        if (radianceCellScatterCubeMapPipeline != nullptr)
+        {
+            radianceCellScatterCubeMapPipeline->launchParams.uvsInside = (glm::vec2*)UVsInsideBuffer.d_pointer();
+            radianceCellScatterCubeMapPipeline->launchParams.uvsInsideOffsets = (int*)UVsInsideOffsets.d_pointer();
+        }
+
+        if (radianceCellScatterUnbiasedPipeline != nullptr)
+        {
+            radianceCellScatterUnbiasedPipeline->launchParams.uvsInside = (glm::vec2*)UVsInsideBuffer.d_pointer();
+            radianceCellScatterUnbiasedPipeline->launchParams.uvsInsideOffsets = (int*)UVsInsideOffsets.d_pointer();
+        }
     }
 
     void Renderer::writeUVsPerCellToImage(std::vector<int>& offsets, std::vector<glm::vec2>& uvs, int texRes)
@@ -1128,8 +1175,8 @@ namespace mcrt {
         colorBuffer.resize(newSize.x * newSize.y * sizeof(uint32_t));
     
         // Update launch parameters that are passed to OptiX launch
-        tutorialPipeline->launchParams.frame.size = newSize;
-        tutorialPipeline->launchParams.frame.colorBuffer = (uint32_t*)colorBuffer.d_pointer();
+        cameraPipeline->launchParams.frame.size = newSize;
+        cameraPipeline->launchParams.frame.colorBuffer = (uint32_t*)colorBuffer.d_pointer();
 
         // Reset camera, aspect may have changed
         updateCamera(renderCamera);
@@ -1139,7 +1186,7 @@ namespace mcrt {
     void Renderer::downloadPixels(uint32_t h_pixels[])
     {
         colorBuffer.download(h_pixels,
-            tutorialPipeline->launchParams.frame.size.x * tutorialPipeline->launchParams.frame.size.y);
+            cameraPipeline->launchParams.frame.size.x * cameraPipeline->launchParams.frame.size.y);
     }
 
     void Renderer::downloadDirectLighting(uint32_t h_pixels[])

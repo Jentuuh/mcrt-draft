@@ -12,7 +12,7 @@
 
 #define PI 3.14159265358979323846f
 #define EPSILON 0.0000000000002f
-#define NUM_DIRECTION_SAMPLES 400
+#define NUM_DIRECTION_SAMPLES 100
 #define PI_OVER_4 0.785398163397425f
 #define PI_OVER_2 1.5707963267945f
 
@@ -108,25 +108,6 @@ namespace mcrt {
         float3 rayOrigin3f = float3{ UVWorldPos.x, UVWorldPos.y, UVWorldPos.z };
         float3 uvNormal3f = float3{ UVNormal.x, UVNormal.y, UVNormal.z };
 
-        //// ==============================================================================
-        //// Calculate rotation matrix to align generated directions with normal hemisphere
-        //// ==============================================================================
-        //float3 up = float3{ 0.0f, 1.0f, 0.0f };
-        //glm::mat3x3 rotationMatrix;
-        //if (uvNormal3f.x == 0.0f && uvNormal3f.y == -1.0f && uvNormal3f.z == 0.0f)
-        //{
-        //    float3 rotAxis = cross(up, uvNormal3f);
-        //    float sine = length(rotAxis);
-        //    float cosine = dot(up, uvNormal3f);
-        //    glm::mat3x3 v_x = glm::mat3x3{ {0.0f, rotAxis.z, -rotAxis.y}, {-rotAxis.z, 0.0f, rotAxis.x}, {rotAxis.y, -rotAxis.x, 0.0f} };
-        //    glm::mat3x3 v_xSquared = v_x * v_x;
-        //    float endFactor = 1.0f / (1 + cosine);
-        //    rotationMatrix = glm::mat3x3(1.0f) + v_x + (v_xSquared * endFactor);
-        //}
-        //else {
-        //    // 180 degrees rotation around the X-axis (flips along Y-axis)
-        //    rotationMatrix = glm::mat3x3{ {1.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f, -1.0f} };
-        //}
 
         // ======================================
         // Radiance + num of samples accumulators
@@ -163,40 +144,6 @@ namespace mcrt {
             //{
             //    randomDir = float3{-randomDir.x, -randomDir.y, -randomDir.z};
             //}
-
-
-
-            //// ===================================================
-            //// Concentric sampling on unit disk (see pbrt, p. 778)
-            //// ===================================================
-            //glm::vec2 randomPoint;
-            //glm::vec2 uniformRandoms = glm::vec2{ rnd(seed), rnd(seed) };
-            //glm::vec2 remappedRandoms = 2.0f * uniformRandoms - glm::vec2{1.0f, 1.0f};
-            //if (remappedRandoms.x == 0.0f && remappedRandoms.y == 0.0f)
-            //{
-            //    randomPoint = glm::vec2{0.0f, 0.0f};
-            //}
-            //else {
-            //    float theta, r;
-            //    if (abs(remappedRandoms.x) > abs(remappedRandoms.y))
-            //    {
-            //        r = remappedRandoms.x;
-            //        theta = PI_OVER_4 * (remappedRandoms.y / remappedRandoms.x);
-            //    }
-            //    else {
-            //        r = remappedRandoms.y;
-            //        theta = PI_OVER_2 - (PI_OVER_4 * (remappedRandoms.x / remappedRandoms.y));
-            //    }
-            //    randomPoint = r * glm::vec2{cos(theta), sin(theta)};
-            //}
-            //
-            //// Calculate z so vector is normalized (project the random point on the unit disk upwards)
-            //float z = sqrtf(fmaxf(0.0f, 1.0f - (randomPoint.x * randomPoint.x) - (randomPoint.y * randomPoint.y)));
-            //glm::vec3 randomDirInSampleSystem = glm::vec3{randomPoint.x, randomPoint.y, z};
-
-            //// Rotate random direction to the normal-oriented hemisphere
-            //glm::vec3 randomDirInHemisphere = rotationMatrix * randomDirInSampleSystem;
-            //float3 randomDir = float3{ randomDirInHemisphere.x, randomDirInHemisphere.y, randomDirInHemisphere.z };
 
             RadianceCellScatterUnbiasedPRD prd;
             unsigned int u0, u1, u2;

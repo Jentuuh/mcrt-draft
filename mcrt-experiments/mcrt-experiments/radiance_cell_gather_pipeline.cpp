@@ -32,9 +32,9 @@ namespace mcrt {
         MeshSBTDataRadianceCellGather data;
     };
 
-    RadianceCellGatherPipeline::RadianceCellGatherPipeline(OptixDeviceContext& context, GeometryBufferHandle& radianceCellGeometry, GeometryBufferHandle& proxyGeometry, Scene& scene) : McrtPipeline(context, radianceCellGeometry, scene)
+    RadianceCellGatherPipeline::RadianceCellGatherPipeline(OptixDeviceContext& context, GeometryBufferHandle& proxyGeometry, Scene& scene) : McrtPipeline(context, proxyGeometry, scene)
     {
-        initRadianceCellGather(context, radianceCellGeometry, proxyGeometry, scene);
+        initRadianceCellGather(context, proxyGeometry, scene);
 
         std::vector<GeometryBufferHandle> geometries;
         geometries.push_back(proxyGeometry);
@@ -45,12 +45,6 @@ namespace mcrt {
         // Build GAS
         buildGASes(context, geometries, numsBuildInputs, disableAnyHit);
         launchParams.sceneTraversable = GASes[0].traversableHandle();
-        
-        // Build IAS
-        //std::vector<int>gasIndices = { 0,1 };
-        //std::vector<glm::mat4> transforms = { glm::mat4(1.0f), glm::mat4(1.0f) };
-        //buildIAS(context, transforms, GASes, 1, gasIndices);
-        //launchParams.iasTraversable = ias->traversableHandle();
 
         launchParamsBuffer.alloc(sizeof(launchParams));
 	}
@@ -60,12 +54,12 @@ namespace mcrt {
         launchParamsBuffer.upload(&launchParams, 1);
     }
 
-    void RadianceCellGatherPipeline::initRadianceCellGather(OptixDeviceContext& context, GeometryBufferHandle& radianceCellGeometry, GeometryBufferHandle& proxyGeometry, Scene& scene)
+    void RadianceCellGatherPipeline::initRadianceCellGather(OptixDeviceContext& context, GeometryBufferHandle& proxyGeometry, Scene& scene)
     {
         buildModule(context);
         buildDevicePrograms(context);
         buildPipeline(context);
-        buildSBTRadianceCellGather(radianceCellGeometry, proxyGeometry, scene);
+        buildSBTRadianceCellGather(proxyGeometry, scene);
     }
 
 
@@ -180,24 +174,6 @@ namespace mcrt {
             &hitgroupPGs[0]
         ));
 
-        // Hitgroup radiance grid geometry
-        //OptixProgramGroupOptions pgOptionsHitgroupGrid = {};
-        //OptixProgramGroupDesc    pgDescHitgroupGrid = {};
-        //pgDescHitgroupGrid.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
-        //pgDescHitgroupGrid.hitgroup.moduleCH = module;
-        //pgDescHitgroupGrid.hitgroup.moduleAH = module;
-
-        //pgDescHitgroupGrid.hitgroup.entryFunctionNameCH = "__closesthit__radiance__cell__gathering__grid";
-        //pgDescHitgroupGrid.hitgroup.entryFunctionNameAH = "__anyhit__radiance__cell__gathering__grid";
-
-        //OPTIX_CHECK(optixProgramGroupCreate(context,
-        //    &pgDescHitgroupGrid,
-        //    1,
-        //    &pgOptionsHitgroupGrid,
-        //    log, &sizeof_log,
-        //    &hitgroupPGs[1]
-        //));
-
         if (sizeof_log > 1)
         {
             std::cout << log << std::endl;
@@ -209,7 +185,7 @@ namespace mcrt {
         // No implementation in this subclass, this class has its own version of buildSBT
     }
 
-    void RadianceCellGatherPipeline::buildSBTRadianceCellGather(GeometryBufferHandle& radianceCellGeometry, GeometryBufferHandle& proxyGeometry, Scene& scene)
+    void RadianceCellGatherPipeline::buildSBTRadianceCellGather( GeometryBufferHandle& proxyGeometry, Scene& scene)
     {
         // ----------------------------------------
         // Build raygen records
@@ -268,18 +244,6 @@ namespace mcrt {
 
         NonEmptyCells nonEmptyCells = scene.grid.getNonEmptyCells();
         int numNonEmptyCells = nonEmptyCells.nonEmptyCells.size();
-
-        //// Radiance grid geometry
-        //for (int i = 0; i < numNonEmptyCells; i++) {
-
-        //    HitgroupRecordRadianceCellGather rec_grid;
-        //    OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[1], &rec_grid));
-
-        //    rec_grid.data.cellIndex = i;
-        //    rec_grid.data.vertex = (glm::vec3*)radianceCellGeometry.vertices[nonEmptyCells.nonEmptyCellIndices[i]].d_pointer();     // Kan ik deze niet ook 1 keer opslaan en ter plekke hier transformeren?
-        //    rec_grid.data.index = (glm::ivec3*)radianceCellGeometry.indices[nonEmptyCells.nonEmptyCellIndices[i]].d_pointer();
-        //    hitgroupRecords.push_back(rec_grid);
-        //}
 
         // Upload records to device
         hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);

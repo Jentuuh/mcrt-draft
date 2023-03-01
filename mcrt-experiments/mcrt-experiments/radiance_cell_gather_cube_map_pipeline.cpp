@@ -32,9 +32,9 @@ namespace mcrt {
         MeshSBTDataRadianceCellGather data;
     };
 
-    RadianceCellGatherCubeMapPipeline::RadianceCellGatherCubeMapPipeline(OptixDeviceContext& context, GeometryBufferHandle& radianceCellGeometry, GeometryBufferHandle& proxyGeometry, Scene& scene) : McrtPipeline(context, radianceCellGeometry, scene)
+    RadianceCellGatherCubeMapPipeline::RadianceCellGatherCubeMapPipeline(OptixDeviceContext& context, GeometryBufferHandle& proxyGeometry, Scene& scene) : McrtPipeline(context, proxyGeometry, scene)
     {
-        initRadianceCellGather(context, radianceCellGeometry, proxyGeometry, scene);
+        initRadianceCellGather(context, proxyGeometry, scene);
 
         std::vector<GeometryBufferHandle> geometries;
         geometries.push_back(proxyGeometry);
@@ -46,12 +46,6 @@ namespace mcrt {
         buildGASes(context, geometries, numsBuildInputs, disableAnyHit);
         launchParams.sceneTraversable = GASes[0].traversableHandle();
 
-        // Build IAS
-        //std::vector<int>gasIndices = { 0,1 };
-        //std::vector<glm::mat4> transforms = { glm::mat4(1.0f), glm::mat4(1.0f) };
-        //buildIAS(context, transforms, GASes, 1, gasIndices);
-        //launchParams.iasTraversable = ias->traversableHandle();
-
         launchParamsBuffer.alloc(sizeof(launchParams));
     }
 
@@ -60,12 +54,12 @@ namespace mcrt {
         launchParamsBuffer.upload(&launchParams, 1);
     }
 
-    void RadianceCellGatherCubeMapPipeline::initRadianceCellGather(OptixDeviceContext& context, GeometryBufferHandle& radianceCellGeometry, GeometryBufferHandle& proxyGeometry, Scene& scene)
+    void RadianceCellGatherCubeMapPipeline::initRadianceCellGather(OptixDeviceContext& context, GeometryBufferHandle& proxyGeometry, Scene& scene)
     {
         buildModule(context);
         buildDevicePrograms(context);
         buildPipeline(context);
-        buildSBTRadianceCellGather(radianceCellGeometry, proxyGeometry, scene);
+        buildSBTRadianceCellGather(proxyGeometry, scene);
     }
 
 
@@ -180,23 +174,6 @@ namespace mcrt {
             &hitgroupPGs[0]
         ));
 
-        // Hitgroup radiance grid geometry
-        //OptixProgramGroupOptions pgOptionsHitgroupGrid = {};
-        //OptixProgramGroupDesc    pgDescHitgroupGrid = {};
-        //pgDescHitgroupGrid.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
-        //pgDescHitgroupGrid.hitgroup.moduleCH = module;
-        //pgDescHitgroupGrid.hitgroup.moduleAH = module;
-
-        //pgDescHitgroupGrid.hitgroup.entryFunctionNameCH = "__closesthit__radiance__cell__gathering__grid";
-        //pgDescHitgroupGrid.hitgroup.entryFunctionNameAH = "__anyhit__radiance__cell__gathering__grid";
-
-        //OPTIX_CHECK(optixProgramGroupCreate(context,
-        //    &pgDescHitgroupGrid,
-        //    1,
-        //    &pgOptionsHitgroupGrid,
-        //    log, &sizeof_log,
-        //    &hitgroupPGs[1]
-        //));
 
         if (sizeof_log > 1)
         {
@@ -209,7 +186,7 @@ namespace mcrt {
         // No implementation in this subclass, this class has its own version of buildSBT
     }
 
-    void RadianceCellGatherCubeMapPipeline::buildSBTRadianceCellGather(GeometryBufferHandle& radianceCellGeometry, GeometryBufferHandle& proxyGeometry, Scene& scene)
+    void RadianceCellGatherCubeMapPipeline::buildSBTRadianceCellGather(GeometryBufferHandle& proxyGeometry, Scene& scene)
     {
         // ----------------------------------------
         // Build raygen records

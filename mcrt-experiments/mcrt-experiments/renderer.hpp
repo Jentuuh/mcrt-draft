@@ -3,6 +3,7 @@
 #include "LaunchParams.hpp"
 #include "camera.hpp"
 #include "image.hpp"
+#include "octree_texture.hpp"
 #include "scene.hpp"
 #include "helpers.hpp"
 #include "default_pipeline.hpp"
@@ -32,7 +33,7 @@ namespace mcrt {
 	public:
 		/*! Constructor : performs setup, including initializing OptiX, creation of module
 		 pipelines, programs, SBT etc. */
-		Renderer(Scene& scene, const Camera& camera);
+		Renderer(Scene& scene, const Camera& camera, BIAS_MODE bias, PROBE_MODE probeType);
 
 		void render();
 
@@ -60,8 +61,9 @@ namespace mcrt {
 		void calculateRadianceCellScatterPass(int iteration, CUDABuffer& dstTexture);
 		void calculateRadianceCellScatterPassCubeMap(int iteration, CUDABuffer& prevBounceTexture, CUDABuffer& dstTexture);
 		void calculateRadianceCellScatterUnbiased(int iteration, CUDABuffer& prevBounceTexture, CUDABuffer& dstTexture);
-		void lightProbeTest(int iteration, CUDABuffer& prevBounceTexture, CUDABuffer& dstTexture);
 
+		void lightProbeTest(int iteration, CUDABuffer& prevBounceTexture, CUDABuffer& dstTexture);
+		void octreeTextureTest();
 
 		void loadLightTexture();
 		void writeWeightsToTxtFile(std::vector<float>& weights, std::vector<int>& numSamples, int amountCells);
@@ -103,7 +105,7 @@ namespace mcrt {
 		OptixDeviceContext	optixContext;
 
 		// Pipelines
-		std::unique_ptr<DefaultPipeline> tutorialPipeline;
+		std::unique_ptr<DefaultPipeline> cameraPipeline;
 		std::unique_ptr<DirectLightPipeline> directLightPipeline;
 		std::unique_ptr<RadianceCellGatherPipeline> radianceCellGatherPipeline;
 		std::unique_ptr<RadianceCellGatherCubeMapPipeline> radianceCellGatherCubeMapPipeline;
@@ -116,6 +118,7 @@ namespace mcrt {
 		CUDABuffer directLightingTexture; // Texture in which we store the direct lighting
 		CUDABuffer secondBounceTexture;	// Texture in which we store the second lighting bounce
 		CUDABuffer thirdBounceTexture; // Texture in which we store the third lighting bounce
+
 		CUDABuffer lightDataBuffer;	// In this buffer we'll store our light source data
 
 		CUDABuffer cubeMaps; // In this buffer we'll store the light probe cubemaps
@@ -128,7 +131,7 @@ namespace mcrt {
 		CUDABuffer UVsInsideBuffer;		// In this buffer we'll store the UV worldpositions for all texels inside each cell
 		CUDABuffer UVsInsideOffsets;	// In this buffer we'll store the offsets to index the UVsInsideBuffer
 
-
+		std::unique_ptr<OctreeTexture> octreeTextures;
 
 		Camera renderCamera;
 
