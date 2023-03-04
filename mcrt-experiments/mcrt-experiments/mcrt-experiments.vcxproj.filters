@@ -162,6 +162,15 @@
     <ClCompile Include="octree_texture.cpp">
       <Filter>Source Files\Octree Textures</Filter>
     </ClCompile>
+    <ClCompile Include="octree_builder.cpp">
+      <Filter>Source Files\Octree Textures</Filter>
+    </ClCompile>
+    <ClCompile Include="octree_node.cpp">
+      <Filter>Source Files\Octree Textures</Filter>
+    </ClCompile>
+    <ClCompile Include="intersection_tester.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="renderer.hpp">
@@ -244,6 +253,15 @@
     </ClInclude>
     <ClInclude Include="octree_texture.hpp">
       <Filter>Header Files\Octree Textures</Filter>
+    </ClInclude>
+    <ClInclude Include="octree_builder.hpp">
+      <Filter>Header Files\Octree Textures</Filter>
+    </ClInclude>
+    <ClInclude Include="octree_node.hpp">
+      <Filter>Header Files\Octree Textures</Filter>
+    </ClInclude>
+    <ClInclude Include="intersection_tester.hpp">
+      <Filter>Header Files\Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

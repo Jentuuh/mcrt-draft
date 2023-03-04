@@ -147,9 +147,12 @@
     <ClCompile Include="GLFWindow.cpp" />
     <ClCompile Include="ias.cpp" />
     <ClCompile Include="image.cpp" />
+    <ClCompile Include="intersection_tester.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mcrt_pipeline.cpp" />
     <ClCompile Include="model.cpp" />
+    <ClCompile Include="octree_builder.cpp" />
+    <ClCompile Include="octree_node.cpp" />
     <ClCompile Include="octree_texture.cpp" />
     <ClCompile Include="radianceCellGathering_Cubemap_embedded.c" />
     <ClCompile Include="radianceCellGathering_embedded.c" />
@@ -180,9 +183,12 @@
     <ClInclude Include="helpers.hpp" />
     <ClInclude Include="ias.hpp" />
     <ClInclude Include="image.hpp" />
+    <ClInclude Include="intersection_tester.hpp" />
     <ClInclude Include="LaunchParams.hpp" />
     <ClInclude Include="mcrt_pipeline.hpp" />
     <ClInclude Include="model.hpp" />
+    <ClInclude Include="octree_builder.hpp" />
+    <ClInclude Include="octree_node.hpp" />
     <ClInclude Include="octree_texture.hpp" />
     <ClInclude Include="radiance_cell.hpp" />
     <ClInclude Include="radiance_cell_gather_cube_map_pipeline.hpp" />

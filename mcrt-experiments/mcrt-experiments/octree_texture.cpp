@@ -3,18 +3,21 @@
 
 namespace mcrt {
 
-	OctreeTexture::OctreeTexture(int d)
+	OctreeTexture::OctreeTexture(int d, Scene& sceneObject)
 	{
-		initOctreeTexture(d);
+		initOctreeTexture(d, sceneObject);
 	}
 
-	void OctreeTexture::initOctreeTexture(int d)
+	void OctreeTexture::initOctreeTexture(int d, Scene& sceneObject)
 	{
 		textureObjects.resize(1);
 
+		// TODO: build octree data structure into initialization vector
+		OctreeBuilder builder{ d, 1024, sceneObject};
+
 		std::cout << "Initializing octree textures..." << std::endl;
 		int resolution = pow(2, d);
-		std::cout << "Octree resolution: " << resolution << std::endl;
+		//std::cout << "Octree resolution: " << resolution << std::endl;
 		cudaResourceDesc res_desc = {};
 
 		cudaChannelFormatDesc channel_desc;
@@ -25,7 +28,8 @@ namespace mcrt {
 		int32_t pitch = width * numComponents * sizeof(float);
 
 		std::vector<float> initializationVector(width * height * depth * 4, 0.0f);
-		// TODO: build octree data structure into initialization vector
+
+
 
 		channel_desc = cudaCreateChannelDesc<float>(); // 4 8-bit channels
 

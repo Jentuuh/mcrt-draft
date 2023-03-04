@@ -25,8 +25,6 @@ namespace mcrt {
 		std::shared_ptr<GameObject> voxelizedObject;
 	private:
 		void createBoundingBoxVoxelGrid();
-		bool triangleBoxOverlap(float boxcenter[3], float boxhalfsize[3], float** triverts);
-		bool planeBoxOverlap(float normal[3], float d, float maxbox[3]);
 
 		std::vector<Voxel> bbVoxelGrid;
 		float voxelSize;

@@ -64,7 +64,7 @@ namespace mcrt {
         std::cout << "MCRT renderer fully set up." << std::endl;
 
         // Initialize irradiance octree textures
-        octreeTextures = std::make_unique<OctreeTexture>(9);
+        octreeTextures = std::make_unique<OctreeTexture>(4, scene);
 
         // Direct lighting (preprocess)
         initLightingTextures(1024);
