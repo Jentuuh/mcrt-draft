@@ -1,6 +1,7 @@
 #include "octree_node.hpp"
 #include "intersection_tester.hpp"
 
+#include <iostream>
 #include <stdexcept>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -16,28 +17,55 @@ namespace mcrt {
 	
 	void OctreeNode::updateCurrentIndirectionGridCoord(glm::ivec3& currentCoord)
 	{
+		bool updateY = false;
+		bool updateZ = false;
 		int gridWidth = int(octreeTextureRes / 32);
 
-		currentCoord.x = (currentCoord.x + 1) % gridWidth;			// There are `gridWidth` nodes (indirection grids) in a row
-		if (currentCoord.x == 0)
+		currentCoord.x++;
+		if (currentCoord.x == gridWidth) // There are `gridWidth` nodes (indirection grids) in a row
 		{
-			currentCoord.y = (currentCoord.y + 1) % octreeTextureRes;	// There are `octreeTextureRes` rows
+			currentCoord.x = 0;
+			updateY = true;
 		}
-		if (currentCoord.x == 0 && currentCoord.y == 0)
+		if (updateY)
 		{
-			currentCoord.z = currentCoord.z + 1;
-			if (currentCoord.z > octreeTextureRes)	// There are `octreeTextureRes` texture layers
+			currentCoord.y++;
+			if (currentCoord.y == octreeTextureRes) // There are `octreeTextureRes` rows
+			{
+				currentCoord.y = 0;
+				updateZ = true;
+			}
+		}
+		if (updateZ)
+		{
+			currentCoord.z++;
+			if (currentCoord.z >= octreeTextureRes) // There are `octreeTextureRes` texture layers
 			{
 				throw std::runtime_error("Octree builder went beyond allocated memory for octree texture.");
 			}
 		}
+
+		//currentCoord.x = (currentCoord.x + 1) % gridWidth;			// There are `gridWidth` nodes (indirection grids) in a row
+		//if (currentCoord.x == 0)
+		//{
+		//	currentCoord.y = (currentCoord.y + 1) % octreeTextureRes;	// There are `octreeTextureRes` rows
+		//}
+		//if (currentCoord.x == 0 && currentCoord.y == 0)
+		//{
+		//	currentCoord.z = currentCoord.z + 1;
+		//	if (currentCoord.z > octreeTextureRes)	// There are `octreeTextureRes` texture layers
+		//	{
+		//		throw std::runtime_error("Octree builder went beyond allocated memory for octree texture.");
+		//	}
+		//}
 	}
 
 
 	void OctreeNode::recursiveSplit(int currentLevel, int maxDepth, Scene& sceneObject, std::vector<float>& gpuOctree, std::stack<glm::vec3>& parentCoordStack, glm::ivec3& currentIndirectGridCoord, int* nodeCount)
 	{
+		// The location of the current node in the octree vector (necessary to calculate the offset into this vector)
 		glm::vec3 currentNodeCoord = parentCoordStack.top();
-		int cellOffset = currentNodeCoord.z * octreeTextureRes * octreeTextureRes + currentNodeCoord.y * octreeTextureRes + currentNodeCoord.x * int(octreeTextureRes / 32);
+		int cellOffset = currentNodeCoord.z * octreeTextureRes * octreeTextureRes + currentNodeCoord.y * octreeTextureRes + currentNodeCoord.x * 32;
 
 		if (currentLevel >= maxDepth)
 		{
@@ -70,6 +98,9 @@ namespace mcrt {
 				// If a triangle of the object intersects with the node's bounding box, we split up further
 				if (IntersectionTester::triangleBoxOverlap(glm::value_ptr(boxCenter), glm::value_ptr(boxHalfSize), triangleVerts))
 				{
+					// Update the indirection grid coordinate tracker
+					updateCurrentIndirectionGridCoord(currentIndirectGridCoord);
+
 					int currentChild = 0;
 					// =======================================================
 					//				  CHILD 1: Left, front, up
@@ -78,6 +109,7 @@ namespace mcrt {
 					glm::vec3 max1 = boxCenter + glm::vec3{ 0.0f, boxHalfSize.y, 0.0f };
 					std::unique_ptr<OctreeNode> child1 = std::make_unique<OctreeNode>(min1, max1, octreeTextureRes, gpuOctree, parentCoordStack, currentIndirectGridCoord, nodeCount);
 					int childOffset = currentChild * 4;
+					//std::cout << "Octree length in floats: " << gpuOctree.size() << " Calculated offset: " << cellOffset + childOffset << std::endl;
 
 					gpuOctree[cellOffset + childOffset + 0] = float(currentIndirectGridCoord.x);	// R (x index)
 					gpuOctree[cellOffset + childOffset + 1] = float(currentIndirectGridCoord.y);	// G (y index)
@@ -86,8 +118,6 @@ namespace mcrt {
 
 					// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
 					parentCoordStack.push(glm::vec3{ currentIndirectGridCoord.x, currentIndirectGridCoord.y, currentIndirectGridCoord.z });
-					updateCurrentIndirectionGridCoord(currentIndirectGridCoord);
-
 					child1->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, nodeCount);
 					currentChild++;
 
@@ -106,8 +136,6 @@ namespace mcrt {
 
 					// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
 					parentCoordStack.push(glm::vec3{ currentIndirectGridCoord.x, currentIndirectGridCoord.y, currentIndirectGridCoord.z });
-					updateCurrentIndirectionGridCoord(currentIndirectGridCoord);
-
 					child2->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, nodeCount);
 					currentChild++;
 
@@ -126,8 +154,6 @@ namespace mcrt {
 					
 					// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
 					parentCoordStack.push(glm::vec3{ currentIndirectGridCoord.x, currentIndirectGridCoord.y, currentIndirectGridCoord.z });
-					updateCurrentIndirectionGridCoord(currentIndirectGridCoord);
-
 					child3->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, nodeCount);
 					currentChild++;
 
@@ -146,8 +172,6 @@ namespace mcrt {
 
 					// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
 					parentCoordStack.push(glm::vec3{ currentIndirectGridCoord.x, currentIndirectGridCoord.y, currentIndirectGridCoord.z });
-					updateCurrentIndirectionGridCoord(currentIndirectGridCoord);
-
 					child4->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, nodeCount);
 					currentChild++;
 
@@ -166,8 +190,6 @@ namespace mcrt {
 
 					// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
 					parentCoordStack.push(glm::vec3{ currentIndirectGridCoord.x, currentIndirectGridCoord.y, currentIndirectGridCoord.z });
-					updateCurrentIndirectionGridCoord(currentIndirectGridCoord);
-
 					child5->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, nodeCount);
 					currentChild++;
 
@@ -186,8 +208,6 @@ namespace mcrt {
 
 					// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
 					parentCoordStack.push(glm::vec3{ currentIndirectGridCoord.x, currentIndirectGridCoord.y, currentIndirectGridCoord.z });
-					updateCurrentIndirectionGridCoord(currentIndirectGridCoord);
-
 					child6->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, nodeCount);
 					currentChild++;
 
@@ -206,8 +226,6 @@ namespace mcrt {
 
 					// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
 					parentCoordStack.push(glm::vec3{ currentIndirectGridCoord.x, currentIndirectGridCoord.y, currentIndirectGridCoord.z });
-					updateCurrentIndirectionGridCoord(currentIndirectGridCoord);
-
 					child7->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, nodeCount);
 					currentChild++;
 
@@ -226,8 +244,6 @@ namespace mcrt {
 
 					// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
 					parentCoordStack.push(glm::vec3{ currentIndirectGridCoord.x, currentIndirectGridCoord.y, currentIndirectGridCoord.z });
-					updateCurrentIndirectionGridCoord(currentIndirectGridCoord);
-
 					child8->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, nodeCount);
 
 					parentCoordStack.pop();

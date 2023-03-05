@@ -59,7 +59,13 @@ namespace mcrt {
     extern "C" __global__ void __raygen__renderFrame__cell__scattering()
     {
 
-        float test = tex3D<float>(optixLaunchParams.octreeTexture, 0, 0, 1);
-        printf("Texture value: %f \n", test);
+        float test1 = tex3D<float>(optixLaunchParams.octreeTexture, 0, 0, 0);
+        float test2 = tex3D<float>(optixLaunchParams.octreeTexture, 1, 0, 0);
+        float test3 = tex3D<float>(optixLaunchParams.octreeTexture, 2, 0, 0);
+
+        printf("Texture value 1: %f \n", test1);
+        printf("Texture value 2: %f \n", test2);
+        printf("Texture value 3: %f \n", test3);
+
     }
 }

@@ -12,37 +12,49 @@ namespace mcrt {
 	{
 		textureObjects.resize(1);
 
+		int resolution = 1024;
+
+
 		// TODO: build octree data structure into initialization vector
-		OctreeBuilder builder{ d, 1024, sceneObject};
+		OctreeBuilder builder{ d, resolution, sceneObject};
 
 		std::cout << "Initializing octree textures..." << std::endl;
-		int resolution = pow(2, d);
-		//std::cout << "Octree resolution: " << resolution << std::endl;
 		cudaResourceDesc res_desc = {};
 
-		cudaChannelFormatDesc channel_desc;
 		int32_t width = resolution;
-		int32_t height = resolution;
-		int32_t depth = resolution;
-		int32_t numComponents = 4; // RGBA (alpha channel used to determine if node contains leaf data, child ptr or empty)
-		int32_t pitch = width * numComponents * sizeof(float);
+		int32_t height = builder.getTextureDimensions().z == 0 ? builder.getTextureDimensions().y + 1 : resolution;
+		int32_t depth = builder.getTextureDimensions().z + 1;
+		int32_t pitch = width * sizeof(float);
+		
+		// =============================================================================================================
+		// Allocate linear source memory on GPU as well, to ensure pitch compatibility with hardware
+		// See https://stackoverflow.com/questions/10611451/how-to-use-make-cudaextent-to-define-a-cudaextent-correctly 
+		// =============================================================================================================
+		cudaExtent volumeSizeBytes = make_cudaExtent(pitch, height, depth);
+		cudaPitchedPtr d_volumeMem;
+		CUDA_CHECK(Malloc3D(&d_volumeMem, volumeSizeBytes));
 
-		std::vector<float> initializationVector(width * height * depth * 4, 0.0f);
+		size_t size = d_volumeMem.pitch * height * depth;
+		float* h_volumeMem = builder.getOctree().data();
+		CUDA_CHECK(Memcpy(d_volumeMem.ptr, h_volumeMem, size, cudaMemcpyHostToDevice));
 
+		cudaChannelFormatDesc channel_desc = cudaCreateChannelDesc<float>();
 
-
-		channel_desc = cudaCreateChannelDesc<float>(); // 4 8-bit channels
-
-		// Array creation + copy data to array
+		// ======================
+		// Device to device copy
+		// ======================
 		cudaArray* pixelArray;
-		CUDA_CHECK(Malloc3DArray(&pixelArray, &channel_desc, make_cudaExtent(pitch, height, depth), 0));
+		CUDA_CHECK(Malloc3DArray(&pixelArray, &channel_desc, make_cudaExtent(width, height, depth), 0));
 		cudaMemcpy3DParms copyParams = { 0 };
-		copyParams.srcPtr = make_cudaPitchedPtr(initializationVector.data(), pitch, height, depth);
+		copyParams.srcPtr = d_volumeMem;
 		copyParams.dstArray = pixelArray;
 		copyParams.extent = make_cudaExtent(width, height, depth);
-		copyParams.kind = cudaMemcpyHostToDevice;
+		copyParams.kind = cudaMemcpyDeviceToDevice;
 		CUDA_CHECK(Memcpy3D(&copyParams));
 
+		// =============================
+		// Creation of texture resource
+		// =============================
 		cudaResourceDesc    textureResource;
 		memset(&textureResource, 0, sizeof(cudaResourceDesc));
 		textureResource.resType = cudaResourceTypeArray;
@@ -57,6 +69,8 @@ namespace mcrt {
 		textureDescription.readMode = cudaReadModeElementType;
 
 		CUDA_CHECK(CreateTextureObject(&textureObjects[0], &textureResource, &textureDescription, NULL));
+		std::cout << "Octree texture created." << std::endl;
+
 	}
 
 }

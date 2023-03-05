@@ -381,7 +381,9 @@ namespace mcrt {
         {
             if (mode == SPHERICAL_HARMONICS)
             {
-                std::cout << "Calculating indirect lighting with spherical harmonics probes..." << std::endl;
+                std::cout << "=======================================================" << std::endl;
+                std::cout << "        INDIRECT LIGHTING CALCULATION (SH)             " << std::endl;
+                std::cout << "=======================================================" << std::endl;
 
                 for (int i = 0; i < 1; i++)
                 {
@@ -406,7 +408,9 @@ namespace mcrt {
             }
             else if (mode == CUBE_MAP)
             {
-                std::cout << "Calculating indirect lighting with cubemap probes..." << std::endl;
+                std::cout << "====================================================" << std::endl;
+                std::cout << "      INDIRECT LIGHTING CALCULATION (CUBEMAP)       " << std::endl;
+                std::cout << "====================================================" << std::endl;
 
                 for (int i = 0; i < 1; i++)
                 {
@@ -417,9 +421,9 @@ namespace mcrt {
                     case 0:
                         calculateRadianceCellGatherPassCubeMapAlt(directLightingTexture);
                         std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
-                        calculateRadianceCellScatterPassCubeMap(i, directLightingTexture, secondBounceTexture);
+                        //calculateRadianceCellScatterPassCubeMap(i, directLightingTexture, secondBounceTexture);
                         //lightProbeTest(i, directLightingTexture, secondBounceTexture);
-                        //octreeTextureTest();
+                        octreeTextureTest();
 
                         break;
                     case 1:
@@ -435,7 +439,9 @@ namespace mcrt {
         }
         else if (bias == UNBIASED)
         {
-            std::cout << "Calculating indirect lighting unbiased approach..." << std::endl;
+            std::cout << "==================================================" << std::endl;
+            std::cout << "     INDIRECT LIGHTING CALCULATION (UNBIASED)     " << std::endl;
+            std::cout << "==================================================" << std::endl;
 
             for (int i = 0; i < 2; i++)
             {   
