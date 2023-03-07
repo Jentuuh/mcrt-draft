@@ -64,6 +64,12 @@
     <Filter Include="Source Files\GPU\Testing">
       <UniqueIdentifier>{37c7b5f9-43cb-4106-bd39-2583bbf96d36}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\GPU\Direct Lighting\Texture-based">
+      <UniqueIdentifier>{10c2c5ed-d721-48fd-afcb-0c54b192e740}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GPU\Direct Lighting\Octree-texture-based">
+      <UniqueIdentifier>{88c66d8f-af1c-4f77-9a8d-8a8328e58914}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -141,12 +147,6 @@
     <ClCompile Include="radianceCellGathering_Cubemap_embedded.c">
       <Filter>Source Files\GPU\Cubemap</Filter>
     </ClCompile>
-    <ClCompile Include="directLightingShaders_embedded.c">
-      <Filter>Source Files\GPU\Direct Lighting</Filter>
-    </ClCompile>
-    <ClCompile Include="directLightingShadersGathering_embedded.c">
-      <Filter>Source Files\GPU\Direct Lighting</Filter>
-    </ClCompile>
     <ClCompile Include="radianceCellScattering_Cubemap_embedded.c">
       <Filter>Source Files\GPU\Cubemap</Filter>
     </ClCompile>
@@ -170,6 +170,12 @@
     </ClCompile>
     <ClCompile Include="intersection_tester.cpp">
       <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="directLightingShadersGathering_embedded.c">
+      <Filter>Source Files\GPU\Direct Lighting</Filter>
+    </ClCompile>
+    <ClCompile Include="directLightingShaders_embedded.c">
+      <Filter>Source Files\GPU\Direct Lighting</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -301,12 +307,6 @@
     <None Include="radianceCellGathering_Cubemap.cu">
       <Filter>Source Files\GPU\Cubemap</Filter>
     </None>
-    <None Include="directLightingShaders.cu">
-      <Filter>Source Files\GPU\Direct Lighting</Filter>
-    </None>
-    <None Include="directLightingShadersGathering.cu">
-      <Filter>Source Files\GPU\Direct Lighting</Filter>
-    </None>
     <None Include="radianceCellScattering_Cubemap.cu">
       <Filter>Source Files\GPU\Cubemap</Filter>
     </None>
@@ -339,6 +339,15 @@
     </None>
     <None Include="octreeTesting.cu">
       <Filter>Source Files\GPU\Testing</Filter>
+    </None>
+    <None Include="directLightingShaders.cu">
+      <Filter>Source Files\GPU\Direct Lighting\Texture-based</Filter>
+    </None>
+    <None Include="directLightingShadersGathering.cu">
+      <Filter>Source Files\GPU\Direct Lighting\Texture-based</Filter>
+    </None>
+    <None Include="directLightingGathering_Octree.cu">
+      <Filter>Source Files\GPU\Direct Lighting\Octree-texture-based</Filter>
     </None>
   </ItemGroup>
 </Project>

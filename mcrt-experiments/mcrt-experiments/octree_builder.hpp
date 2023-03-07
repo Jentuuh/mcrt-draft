@@ -10,10 +10,13 @@ namespace mcrt {
 	public:
 		OctreeBuilder(int maxDepth, int octreeTextureRes, Scene& sceneObject);
 
+		void writeGPUOctreeToTxtFile(std::string filePath);
+		void initLeafPositions();
 		glm::ivec3 getTextureDimensions() { return currentCoord; };
 		std::vector<float>& getOctree() { return gpuOctree; };
 
 	private:
+		std::vector<glm::vec3> leafPositions;
 		std::unique_ptr<OctreeNode> root;
 		std::stack<glm::vec3> parentCoordStack;
 		std::vector<float> gpuOctree;

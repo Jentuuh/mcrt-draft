@@ -64,7 +64,8 @@ namespace mcrt {
         std::cout << "MCRT renderer fully set up." << std::endl;
 
         // Initialize irradiance octree textures
-        octreeTextures = std::make_unique<OctreeTexture>(4, scene);
+        octreeTextures = std::make_unique<OctreeTexture>(7, scene);
+
 
         // Direct lighting (preprocess)
         initLightingTextures(1024);
@@ -77,7 +78,7 @@ namespace mcrt {
         }
 
         calculateDirectLighting();
-        calculateIndirectLighting(bias, probeType);
+        //calculateIndirectLighting(bias, probeType);
     }
 
     void Renderer::fillGeometryBuffers()
@@ -897,7 +898,7 @@ namespace mcrt {
     {
         std::cout << "OCTREE TESTING... " << std::endl;
 
-        radianceCellScatterCubeMapPipeline->launchParams.octreeTexture = octreeTextures->getTextureObjects()[0];
+        radianceCellScatterCubeMapPipeline->launchParams.octreeTexture = (float*)octreeTextures->getOctreeGPUMemory().d_pointer();
 
         radianceCellScatterCubeMapPipeline->uploadLaunchParams();
 

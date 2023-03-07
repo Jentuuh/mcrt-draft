@@ -208,6 +208,7 @@
     <None Include="directLightingShaders.cu" />
     <None Include="directLightingShadersGathering.cu" />
     <None Include="cameraRayProgram.cu" />
+    <None Include="directLightingGathering_Octree.cu" />
     <None Include="octreeTesting.cu" />
     <None Include="probeTesting.cu" />
     <None Include="radianceCellGathering3.cu" />

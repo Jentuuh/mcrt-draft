@@ -58,10 +58,21 @@ namespace mcrt {
 
     extern "C" __global__ void __raygen__renderFrame__cell__scattering()
     {
+        
 
-        float test1 = tex3D<float>(optixLaunchParams.octreeTexture, 0, 0, 0);
-        float test2 = tex3D<float>(optixLaunchParams.octreeTexture, 1, 0, 0);
-        float test3 = tex3D<float>(optixLaunchParams.octreeTexture, 2, 0, 0);
+        //float test1 = tex3D<float>(optixLaunchParams.octreeTexture, 4, 0, 0);
+        //float test2 = tex3D<float>(optixLaunchParams.octreeTexture, 5, 0, 0);
+        //float test3 = tex3D<float>(optixLaunchParams.octreeTexture, 6, 0, 0);
+
+        float test1 = optixLaunchParams.octreeTexture[4];
+        float test2 = optixLaunchParams.octreeTexture[5];
+        float test3 = optixLaunchParams.octreeTexture[6];
+
+        write_octree(glm::vec3{ 0.03f, 0.8f, 0.03f }, glm::vec3{5.0f, 4.0f, 3.0f}, optixLaunchParams.octreeTexture);
+        glm::vec3 readValue = read_octree(glm::vec3{0.03f, 0.8f, 0.03f}, optixLaunchParams.octreeTexture);
+
+        printf("Read from octree: %f %f %f \n", readValue.x, readValue.y, readValue.z);
+
 
         printf("Texture value 1: %f \n", test1);
         printf("Texture value 2: %f \n", test2);
