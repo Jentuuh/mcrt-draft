@@ -28,6 +28,7 @@ namespace mcrt {
 
 		gpuOctree.resize(totalOctreeSize);
 		initLeafPositions();
+
 		std::cout << "Octree building done. Total number of nodes: " << numNodes << std::endl;
 	}
 

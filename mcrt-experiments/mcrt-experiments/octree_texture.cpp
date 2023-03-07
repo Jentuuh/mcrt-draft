@@ -80,6 +80,10 @@ namespace mcrt {
 		// TODO: build octree data structure into initialization vector
 		OctreeBuilder builder{ d, resolution, sceneObject };
 
+		leafPositions = builder.getLeafPositions();
+		kernelGranularity = sqrt(leafPositions.size());
+		std::cout << "Kernel granularity: " << kernelGranularity << std::endl;
+
 		//builder.writeGPUOctreeToTxtFile("../debug_output/octreeTexture.txt");
 
 		// Upload to GPU

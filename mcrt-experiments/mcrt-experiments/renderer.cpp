@@ -66,7 +66,6 @@ namespace mcrt {
         // Initialize irradiance octree textures
         octreeTextures = std::make_unique<OctreeTexture>(7, scene);
 
-
         // Direct lighting (preprocess)
         initLightingTextures(1024);
         prepareUVWorldPositions();
@@ -917,7 +916,6 @@ namespace mcrt {
     }
 
 
-
     void Renderer::calculateRadianceCellScatterUnbiased(int iteration, CUDABuffer& prevBounceTexture, CUDABuffer& dstTexture)
     {
         // TODO: For now we're using the same texture size as for the direct lighting pass, we can downsample in the future to gain performance
@@ -971,6 +969,12 @@ namespace mcrt {
         //// Write the result to an image (for debugging purposes)
         //writeToImage("current_bounce_output" + std::to_string(iteration) + ".png", radianceCellScatterUnbiasedPipeline->launchParams.currentBounceTexture.size, radianceCellScatterUnbiasedPipeline->launchParams.currentBounceTexture.size, current_bounce_result.data());
     }
+
+    void Renderer::calculateDirectLightingOctree()
+    {
+        // TODO
+    }
+
 
     void Renderer::loadLightTexture()
     {

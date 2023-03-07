@@ -14,6 +14,7 @@ namespace mcrt {
 		void initLeafPositions();
 		glm::ivec3 getTextureDimensions() { return currentCoord; };
 		std::vector<float>& getOctree() { return gpuOctree; };
+		std::vector<glm::vec3>& getLeafPositions() { return leafPositions; };
 
 	private:
 		std::vector<glm::vec3> leafPositions;

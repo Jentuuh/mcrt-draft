@@ -85,9 +85,6 @@ namespace mcrt {
 				gpuOctree[cellOffset + childOffset + 2] = float(currentIndirectGridCoord.z);	// B (z index)
 				gpuOctree[cellOffset + childOffset + 3] = 0.5f;	// A (type)
 			}
-			else {
-				children.push_back(nullptr);
-			}
 
 			// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
 			parentCoordStack.push(glm::vec3{ currentIndirectGridCoord.x, currentIndirectGridCoord.y, currentIndirectGridCoord.z });
@@ -109,9 +106,6 @@ namespace mcrt {
 				gpuOctree[cellOffset + childOffset + 1] = float(currentIndirectGridCoord.y);	// G (y index)
 				gpuOctree[cellOffset + childOffset + 2] = float(currentIndirectGridCoord.z);	// B (z index)
 				gpuOctree[cellOffset + childOffset + 3] = 0.5f;	// A (type)
-			}
-			else {
-				children.push_back(nullptr);
 			}
 
 			// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
@@ -135,10 +129,7 @@ namespace mcrt {
 				gpuOctree[cellOffset + childOffset + 2] = float(currentIndirectGridCoord.z);	// B (z index)
 				gpuOctree[cellOffset + childOffset + 3] = 0.5f;	// A (type)
 			}
-			else {
-				children.push_back(nullptr);
-			}
-					
+	
 			// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
 			parentCoordStack.push(glm::vec3{ currentIndirectGridCoord.x, currentIndirectGridCoord.y, currentIndirectGridCoord.z });
 			child3->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, doesChild3Intersect, nodeCount);
@@ -159,9 +150,6 @@ namespace mcrt {
 				gpuOctree[cellOffset + childOffset + 1] = float(currentIndirectGridCoord.y);	// G (y index)
 				gpuOctree[cellOffset + childOffset + 2] = float(currentIndirectGridCoord.z);	// B (z index)
 				gpuOctree[cellOffset + childOffset + 3] = 0.5f;	// A (type)
-			}
-			else {
-				children.push_back(nullptr);
 			}
 
 			// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
@@ -185,10 +173,7 @@ namespace mcrt {
 				gpuOctree[cellOffset + childOffset + 2] = float(currentIndirectGridCoord.z);	// B (z index)
 				gpuOctree[cellOffset + childOffset + 3] = 0.5f;	// A (type)
 			}
-			else {
-				children.push_back(nullptr);
-			}
-
+		
 			// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
 			parentCoordStack.push(glm::vec3{ currentIndirectGridCoord.x, currentIndirectGridCoord.y, currentIndirectGridCoord.z });
 			child5->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, doesChild5Intersect, nodeCount);
@@ -210,10 +195,7 @@ namespace mcrt {
 				gpuOctree[cellOffset + childOffset + 2] = float(currentIndirectGridCoord.z);	// B (z index)
 				gpuOctree[cellOffset + childOffset + 3] = 0.5f;	// A (type)
 			}
-			else {
-				children.push_back(nullptr);
-			}
-
+		
 			// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
 			parentCoordStack.push(glm::vec3{ currentIndirectGridCoord.x, currentIndirectGridCoord.y, currentIndirectGridCoord.z });
 			child6->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, doesChild6Intersect, nodeCount);
@@ -234,9 +216,6 @@ namespace mcrt {
 				gpuOctree[cellOffset + childOffset + 1] = float(currentIndirectGridCoord.y);	// G (y index)
 				gpuOctree[cellOffset + childOffset + 2] = float(currentIndirectGridCoord.z);	// B (z index)
 				gpuOctree[cellOffset + childOffset + 3] = 0.5f;	// A (type)
-			}
-			else {
-				children.push_back(nullptr);
 			}
 
 			// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
@@ -259,9 +238,6 @@ namespace mcrt {
 				gpuOctree[cellOffset + childOffset + 1] = float(currentIndirectGridCoord.y);	// G (y index)
 				gpuOctree[cellOffset + childOffset + 2] = float(currentIndirectGridCoord.z);	// B (z index)
 				gpuOctree[cellOffset + childOffset + 3] = 0.5f;	// A (type)
-			}
-			else {
-				children.push_back(nullptr);
 			}
 
 			// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
@@ -311,22 +287,16 @@ namespace mcrt {
 	{
 		if (children.size() > 0)
 		{
-			// If one of the children is a nullptr they should all be
-			if (children[0] == nullptr && children[1] == nullptr && children[2] == nullptr && children[3] == nullptr && children[4] == nullptr && children[5] == nullptr && children[6] == nullptr && children[7] == nullptr)
+			// Otherwise, we loop over its children and call this function recursively.
+			for (int i = 0; i < 8; i++)
 			{
-				// If the node has no children it is a leaf node, so we push its center to the leafPositions vector.
-				leafPositionsVector.push_back(getCenter());
-			}
-			else {
-				// Otherwise, we loop over its children and call this function recursively.
-				for (int i = 0; i < 8; i++)
-				{
-					children[i]->pushLeafPositions(leafPositionsVector);
-				}
+				children[i]->pushLeafPositions(leafPositionsVector);
 			}
 		}
+		else {
+			// If the node has no children it is a leaf node, so we push its center to the leafPositions vector.
+			leafPositionsVector.push_back(getCenter());
+		}
 	}
-
-
 
 }
