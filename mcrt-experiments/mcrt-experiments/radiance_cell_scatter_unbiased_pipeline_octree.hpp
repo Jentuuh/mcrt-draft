@@ -1,14 +1,15 @@
 #pragma once
 #include "mcrt_pipeline.hpp"
 
+
 namespace mcrt {
-	class RadianceCellScatterCubeMapPipelineOctree : public McrtPipeline
+	class RadianceCellScatterUnbiasedPipelineOctree : public McrtPipeline
 	{
 	public:
-		RadianceCellScatterCubeMapPipelineOctree(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene);
+		RadianceCellScatterUnbiasedPipelineOctree(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene);
 		void uploadLaunchParams() override;
 
-		LaunchParamsRadianceCellScatterCubeMapOctree launchParams;
+		LaunchParamsRadianceCellScatterUnbiasedOctree launchParams;
 		CUDABuffer   launchParamsBuffer;
 	private:
 		void buildModule(OptixDeviceContext& context) override;
@@ -18,4 +19,5 @@ namespace mcrt {
 		OptixTraversableHandle buildAccelerationStructure(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene) override;
 	};
 }
+
 

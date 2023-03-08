@@ -1,7 +1,7 @@
 #include "radiance_cell_scatter_cube_map_pipeline.hpp"
 
 namespace mcrt {
-    extern "C" char embedded_ptx_code_radiance_cell_scattering_cube_map[];
+    extern "C" char embedded_ptx_code_radiance_cell_scattering_cubemap[];
 
     // SBT record for a raygen program
     struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) RaygenRecordRadianceCellScatter
@@ -70,7 +70,7 @@ namespace mcrt {
         // Max # of ray bounces
         pipelineLinkOptions.maxTraceDepth = 3;
 
-        const std::string ptxCode = embedded_ptx_code_radiance_cell_scattering_cube_map;
+        const std::string ptxCode = embedded_ptx_code_radiance_cell_scattering_cubemap;
 
         char log[2048];
         size_t sizeof_log = sizeof(log);

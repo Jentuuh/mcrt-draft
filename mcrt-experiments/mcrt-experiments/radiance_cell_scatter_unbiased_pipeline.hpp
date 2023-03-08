@@ -19,4 +19,3 @@ namespace mcrt {
 			OptixTraversableHandle buildAccelerationStructure(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene) override;
 	};
 }
-

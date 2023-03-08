@@ -88,6 +88,7 @@ namespace mcrt {
 
 		// Upload to GPU
 		octreeGPUMemory.alloc_and_upload(builder.getOctree());
+		octreeGPUMemoryBounce2.alloc_and_upload(builder.getOctree());
 	}
 
 }

@@ -12,9 +12,12 @@
 #include "direct_light_pipeline_octree.hpp"
 #include "radiance_cell_gather_pipeline.hpp"
 #include "radiance_cell_gather_cube_map_pipeline.hpp"
+#include "radiance_cell_gather_cube_map_pipeline_octree.hpp"
 #include "radiance_cell_scatter_pipeline.hpp"
 #include "radiance_cell_scatter_cube_map_pipeline.hpp"
+#include "radiance_cell_scatter_cube_map_pipeline_octree.hpp"
 #include "radiance_cell_scatter_unbiased_pipeline.hpp"
+#include "radiance_cell_scatter_unbiased_pipeline_octree.hpp"
 
 
 #include <stb/stb_image.h>
@@ -136,6 +139,9 @@ namespace mcrt {
 		// Octree texture-based pipelines
 		std::unique_ptr<DefaultPipelineOctree> cameraPipelineOctree;
 		std::unique_ptr<DirectLightPipelineOctree> directLightPipelineOctree;
+		std::unique_ptr<RadianceCellGatherCubeMapPipelineOctree> radianceCellGatherCubeMapPipelineOctree;
+		std::unique_ptr<RadianceCellScatterCubeMapPipelineOctree> radianceCellScatterCubeMapPipelineOctree;
+		std::unique_ptr<RadianceCellScatterUnbiasedPipelineOctree> radianceCellScatterUnbiasedPipelineOctree;
 
 		CUDABuffer lightSourceTexture; // UV map with direct light source (to test the SH projection)
 		CUDABuffer colorBuffer;	// Framebuffer we will write to

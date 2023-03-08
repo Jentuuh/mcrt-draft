@@ -7,6 +7,7 @@
 #include "LaunchParams.hpp"
 #include "glm/glm.hpp"
 
+#include "utils.cuh"
 #include "cube_mapping.cuh"
 
 using namespace mcrt;
@@ -45,25 +46,15 @@ namespace mcrt {
         const float u = optixGetTriangleBarycentrics().x;
         const float v = optixGetTriangleBarycentrics().y;
 
-        // Barycentric tex coords
-        const glm::vec2 tc
-            = (1.f - u - v) * sbtData.texcoord[index.x]
-            + u * sbtData.texcoord[index.y]
-            + v * sbtData.texcoord[index.z];
-
-        const int uTexelCoord = tc.x * optixLaunchParams.lightSourceTexture.size;
-        const int vTexelCoord = tc.y * optixLaunchParams.lightSourceTexture.size;
-
-
-        // Read color (outgoing radiance) at intersection (NOTE THAT WE ASSUME LAMBERTIAN SURFACE HERE)
-        // --> Otherwise BRDF needs to be evaluated for the incoming direction at this point
-        float r = optixLaunchParams.lightSourceTexture.colorBuffer[(vTexelCoord * optixLaunchParams.lightSourceTexture.size * 3) + (uTexelCoord * 3) + 0];
-        float g = optixLaunchParams.lightSourceTexture.colorBuffer[(vTexelCoord * optixLaunchParams.lightSourceTexture.size * 3) + (uTexelCoord * 3) + 1];
-        float b = optixLaunchParams.lightSourceTexture.colorBuffer[(vTexelCoord * optixLaunchParams.lightSourceTexture.size * 3) + (uTexelCoord * 3) + 2];
-
+        const glm::vec3 worldPos =
+            (1.f - u - v) * sbtData.vertex[index.x]
+            + u * sbtData.vertex[index.y]
+            + v * sbtData.vertex[index.z];
+        
+        glm::vec3 incomingRadiance = read_octree(worldPos, optixLaunchParams.lightSourceOctreeTexture);
 
         RadianceCellGatherPRDAlt prd = loadRadianceCellGatherPRD();
-        prd.resultColor = glm::vec3{ r,g,b };
+        prd.resultColor = incomingRadiance;
 
         storeRadianceCellGatherPRD(prd);
     }

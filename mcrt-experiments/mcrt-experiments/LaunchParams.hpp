@@ -165,6 +165,27 @@ namespace mcrt {
 		OptixTraversableHandle sceneTraversable;
 	};
 
+	struct LaunchParamsRadianceCellScatterUnbiasedOctree
+	{
+		struct {
+			UVWorldData* UVDataBuffer;
+			int size;
+		} uvWorldPositions;
+
+		float* prevBounceOctreeTexture;
+		float* currentBounceOctreeTexture;
+
+		glm::vec2* uvsInside;
+		int* uvsInsideOffsets;
+		glm::vec3 cellCenter;
+		float cellSize;
+		int nonEmptyCellIndex;
+		int lightSrcU;
+		int lightSrcV;
+
+		OptixTraversableHandle sceneTraversable;
+	};
+
 
 
 	/**
@@ -223,13 +244,10 @@ namespace mcrt {
 		} uvWorldPositions;
 
 		float cellSize;
-		int divisionResolution;		// The amount of cells the light source texture is divided in both dimensions
 
 		glm::vec3 probePosition;
 		int probeOffset;
 
-		// TODO: replace by octree texture!
-		//PixelBuffer lightSourceTexture;
 		float* lightSourceOctreeTexture;
 
 		float* cubeMaps; // A pointer to cubemap faces
@@ -365,6 +383,8 @@ namespace mcrt {
 		} camera;
 
 		float* octreeTextureDirect;
+		float* octreeTextureSecondBounce;
+		float* octreeTextureThirdBounce;
 
 		OptixTraversableHandle traversable;
 	};

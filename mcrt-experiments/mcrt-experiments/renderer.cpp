@@ -10,7 +10,6 @@
 #include <cassert>
 #include <fstream>
 
-
 #include <stb/stb_image_write.h>
 
 
@@ -18,6 +17,7 @@
 #define STRATIFIED_Y_SIZE 5
 #define SPHERICAL_HARMONIC_BASIS_FUNCTIONS 9
 #define TEXTURE_DIVISION_RES 1024
+#define IRRADIANCE_TEXTURE_RESOLUTION 2048
 
 
 namespace mcrt {
@@ -44,14 +44,38 @@ namespace mcrt {
             cameraPipelineOctree = std::make_unique<DefaultPipelineOctree>(optixContext, geometryData, scene);
             directLightPipelineOctree = std::make_unique<DirectLightPipelineOctree>(optixContext, geometryData, scene);
 
-            // TODO: initialize other pipelines
+            if (bias == BIASED_PROBES)
+            {
+                if (probeType == CUBE_MAP)
+                {
+                    radianceCellGatherCubeMapPipelineOctree = std::make_unique<RadianceCellGatherCubeMapPipelineOctree>(optixContext, geometryData, scene);
+                    radianceCellScatterCubeMapPipelineOctree = std::make_unique<RadianceCellScatterCubeMapPipelineOctree>(optixContext, geometryData, scene);
+                }
+                else if (probeType == SPHERICAL_HARMONICS)
+                {
+                  // ===========
+                  // TODO
+                  // ===========
+                }
+            }
+            else if (bias == UNBIASED)
+            {
+                radianceCellScatterUnbiasedPipelineOctree = std::make_unique<RadianceCellScatterUnbiasedPipelineOctree>(optixContext, geometryData, scene);
+            }
 
             // Initialize irradiance octree textures
-            octreeTextures = std::make_unique<OctreeTexture>(8, scene);
+            octreeTextures = std::make_unique<OctreeTexture>(7, scene);
             prepareUVWorldPositions();
+            prepareUVsInsideBuffer();
             //prepareOctreeLeafPositions();
 
+            if (bias == BIASED_PROBES && probeType == CUBE_MAP)
+            {
+                initLightProbeCubeMaps(64, scene.grid.resolution.x);
+            }
+
             calculateDirectLightingOctree();
+            calculateIndirectLightingOctree(bias, probeType);
         }
         else if (irradianceStorage == TEXTURE_2D) {
             cameraPipeline = std::make_unique<DefaultPipeline>(optixContext, geometryData, scene);
@@ -80,7 +104,6 @@ namespace mcrt {
             prepareUVWorldPositions();
             prepareUVsInsideBuffer();
 
-            // TODO: DON'T FORGET TO ENABLE IN OCTREE MODE AS WELL AFTER OCTREE IS WORKING!
             if (bias == BIASED_PROBES && probeType == CUBE_MAP)
             {
                 initLightProbeCubeMaps(64, scene.grid.resolution.x);
@@ -247,7 +270,9 @@ namespace mcrt {
             // First resize needs to be done before rendering
             if (cameraPipelineOctree->launchParams.frame.size.x == 0) return;
 
+            // Irradiance octree textures
             cameraPipelineOctree->launchParams.octreeTextureDirect = (float*)octreeTextures->getOctreeGPUMemory().d_pointer();
+            cameraPipelineOctree->launchParams.octreeTextureSecondBounce = (float*)octreeTextures->getOctreeGPUMemoryBounce2().d_pointer();
 
             cameraPipelineOctree->uploadLaunchParams();
 
@@ -381,11 +406,22 @@ namespace mcrt {
         std::vector<float> zeros(resolution * resolution * (gridRes) * (gridRes) * (gridRes) * 6 * 3, 0.0f);
         cubeMaps.alloc_and_upload(zeros);
 
-        radianceCellGatherCubeMapPipeline->launchParams.cubeMaps = (float*)cubeMaps.d_pointer();
-        radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution = resolution;
+        if (irradStorageType == OCTREE_TEXTURE)
+        {
+            radianceCellGatherCubeMapPipelineOctree->launchParams.cubeMaps = (float*)cubeMaps.d_pointer();
+            radianceCellGatherCubeMapPipelineOctree->launchParams.cubeMapResolution = resolution;
 
-        radianceCellScatterCubeMapPipeline->launchParams.cubeMaps = (float*)cubeMaps.d_pointer();
-        radianceCellScatterCubeMapPipeline->launchParams.cubeMapResolution = resolution;
+            radianceCellScatterCubeMapPipelineOctree->launchParams.cubeMaps = (float*)cubeMaps.d_pointer();
+            radianceCellScatterCubeMapPipelineOctree->launchParams.cubeMapResolution = resolution;
+        }
+        else if (irradStorageType == TEXTURE_2D)
+        {
+            radianceCellGatherCubeMapPipeline->launchParams.cubeMaps = (float*)cubeMaps.d_pointer();
+            radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution = resolution;
+
+            radianceCellScatterCubeMapPipeline->launchParams.cubeMaps = (float*)cubeMaps.d_pointer();
+            radianceCellScatterCubeMapPipeline->launchParams.cubeMapResolution = resolution;
+        }
     }
 
 
@@ -1038,7 +1074,7 @@ namespace mcrt {
 
     void Renderer::calculateDirectLightingOctree()
     {
-        const int texSize = 2048;
+        const int texSize = IRRADIANCE_TEXTURE_RESOLUTION;
 
         // Get lights data from scene
         std::vector<LightData> lightData = scene.getLightsData();
@@ -1077,23 +1113,223 @@ namespace mcrt {
 
     void Renderer::calculateIndirectLightingOctree(BIAS_MODE bias, PROBE_MODE mode)
     {
-        // TODO
+        if (bias == BIASED_PROBES)
+        {
+            if (mode == SPHERICAL_HARMONICS)
+            {
+                std::cout << "========================================================" << std::endl;
+                std::cout << "== TODO == INDIRECT LIGHTING CALCULATION (SH) == TODO == " << std::endl;
+                std::cout << "========================================================" << std::endl;
+
+                // =======
+                // TODO
+                // =======
+               /* for (int i = 0; i < 1; i++)
+                {
+                    std::cout << "Calculating radiance cell gather pass " << i << "..." << std::endl;
+
+                    switch (i)
+                    {
+                    case 0:
+                        calculateRadianceCellGatherPass(directLightingTexture);
+                        std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
+                        calculateRadianceCellScatterPass(i, secondBounceTexture);
+                        break;
+                    case 1:
+                        calculateRadianceCellGatherPass(secondBounceTexture);
+                        std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
+                        calculateRadianceCellScatterPass(i, thirdBounceTexture);
+                        break;
+                    default:
+                        break;
+                    }
+                }*/
+            }
+            else if (mode == CUBE_MAP)
+            {
+                std::cout << "====================================================" << std::endl;
+                std::cout << "      INDIRECT LIGHTING CALCULATION (CUBEMAP)       " << std::endl;
+                std::cout << "====================================================" << std::endl;
+
+                for (int i = 0; i < 1; i++)
+                {
+                    std::cout << "Calculating radiance cell gather pass " << i << "..." << std::endl;
+
+                    switch (i)
+                    {
+                    case 0:
+                        calculateRadianceCellGatherPassCubeMapAltOctree(octreeTextures->getOctreeGPUMemory());
+                        std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
+                        calculateRadianceCellScatterPassCubeMapOctree(i, octreeTextures->getOctreeGPUMemory(), octreeTextures->getOctreeGPUMemoryBounce2());
+                        break;
+                    case 1:
+    /*                    calculateRadianceCellGatherPassCubeMapAltOctree(secondBounceTexture);
+                        std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
+                        calculateRadianceCellScatterPassCubeMapOctree(i, secondBounceTexture, thirdBounceTexture);*/
+                        break;
+                    default:
+                        break;
+                    }
+                }
+            }
+        }
+        else if (bias == UNBIASED)
+        {
+            std::cout << "==================================================" << std::endl;
+            std::cout << "     INDIRECT LIGHTING CALCULATION (UNBIASED)     " << std::endl;
+            std::cout << "==================================================" << std::endl;
+
+            for (int i = 0; i < 2; i++)
+            {
+                std::cout << "Unbiased approach iteration " << i << "..." << std::endl;
+                switch (i)
+                {
+                case 0:
+                    calculateRadianceCellScatterUnbiasedOctree(i, octreeTextures->getOctreeGPUMemory(), octreeTextures->getOctreeGPUMemoryBounce2());
+                    break;
+                case 1:
+  /*                  calculateRadianceCellScatterUnbiasedOctree(i, secondBounceTexture, thirdBounceTexture);*/
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
     }
 
     void Renderer::calculateRadianceCellGatherPassCubeMapAltOctree(CUDABuffer& previousPassLightSourceOctreeTexture)
     {
-        // TODO
+        // TODO: For now we're using the same texture size as for the direct lighting pass, we can downsample in the future to gain performance
+        const int texSize = IRRADIANCE_TEXTURE_RESOLUTION;
+        const float cellSize = scene.grid.getCellSize();
+
+        // Initialize Light Source Octree Texture data on GPU
+        radianceCellGatherCubeMapPipelineOctree->launchParams.lightSourceOctreeTexture = (float*)previousPassLightSourceOctreeTexture.d_pointer();
+
+        // Initialize UV World positions data on GPU
+        radianceCellGatherCubeMapPipelineOctree->launchParams.uvWorldPositions.size = texSize * texSize;
+        radianceCellGatherCubeMapPipelineOctree->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+
+        // Initialize cell size in launch params
+        radianceCellGatherCubeMapPipelineOctree->launchParams.cellSize = cellSize;
+
+        for (int z = 0; z < scene.grid.resolution.z; z++)
+        {
+            for (int y = 0; y < scene.grid.resolution.y; y++)
+            {
+                for (int x = 0; x < scene.grid.resolution.x; x++)
+                {
+                    int currentProbeOffset = ((z * scene.grid.resolution.x * scene.grid.resolution.y) + (y * scene.grid.resolution.x) + (x)) * 6 * radianceCellGatherCubeMapPipelineOctree->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipelineOctree->launchParams.cubeMapResolution;
+                    radianceCellGatherCubeMapPipelineOctree->launchParams.probeOffset = currentProbeOffset;
+                    radianceCellGatherCubeMapPipelineOctree->launchParams.probePosition = glm::vec3{ x * cellSize + (0.5f * cellSize), y * cellSize + (0.5f * cellSize), z * cellSize + (0.5f * cellSize) }; // Probes are centered in each radiance cell
+                    radianceCellGatherCubeMapPipelineOctree->uploadLaunchParams();
+
+                    OPTIX_CHECK(optixLaunch(
+                        radianceCellGatherCubeMapPipelineOctree->pipeline, stream,
+                        radianceCellGatherCubeMapPipelineOctree->launchParamsBuffer.d_pointer(),
+                        radianceCellGatherCubeMapPipelineOctree->launchParamsBuffer.sizeInBytes,
+                        &radianceCellGatherCubeMapPipelineOctree->sbt,
+                        radianceCellGatherCubeMapPipelineOctree->launchParams.cubeMapResolution,          // dimension X: divisionResX: width of cubemap face texture
+                        radianceCellGatherCubeMapPipelineOctree->launchParams.cubeMapResolution,          // dimension Y: divisionResY: height of cubemap face texture
+                        6                                                                                 // dimension Z: amount of cubemap faces
+                        // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
+                    ));
+                }
+            }
+        }
     }
 
 
     void Renderer::calculateRadianceCellScatterPassCubeMapOctree(int iteration, CUDABuffer& prevBounceOctreeTexture, CUDABuffer& dstOctreeTexture)
     {
-        // TODO
+        // TODO: For now we're using the same texture size as for the direct lighting pass, we can downsample in the future to gain performance
+        const int texSize = IRRADIANCE_TEXTURE_RESOLUTION;
+        NonEmptyCells nonEmpties = scene.grid.getNonEmptyCells();
+
+        for (int i = 0; i < nonEmpties.nonEmptyCells.size(); i++)
+        {
+            radianceCellScatterCubeMapPipelineOctree->launchParams.nonEmptyCellIndex = i;
+            radianceCellScatterCubeMapPipelineOctree->launchParams.cellCoords = nonEmpties.nonEmptyCells[i]->getCellCoords();
+            radianceCellScatterCubeMapPipelineOctree->launchParams.probeWidthRes = scene.grid.resolution.x;
+            radianceCellScatterCubeMapPipelineOctree->launchParams.probeHeightRes = scene.grid.resolution.y;
+
+            // Texture that we write to
+            radianceCellScatterCubeMapPipelineOctree->launchParams.currentBounceOctreeTexture = (float*)dstOctreeTexture.d_pointer();
+
+            // Indirect light source texture that we read from (in case of local ray tracing)
+            radianceCellScatterCubeMapPipelineOctree->launchParams.prevBounceOctreeTexture = (float*)prevBounceOctreeTexture.d_pointer();
+
+            // Load uvs per cell 
+            std::vector<glm::vec2> cellUVs = nonEmpties.nonEmptyCells[i]->getUVsInside();
+            std::cout << "Iteration " << i << ": UVs in this cell: " << cellUVs.size() << std::endl;
+
+            // Radiance cell data
+            radianceCellScatterCubeMapPipelineOctree->launchParams.cellCenter = nonEmpties.nonEmptyCells[i]->getCenter();
+            radianceCellScatterCubeMapPipelineOctree->launchParams.cellSize = scene.grid.getCellSize();
+
+            // UV world position data
+            radianceCellScatterCubeMapPipelineOctree->launchParams.uvWorldPositions.size = texSize;
+            radianceCellScatterCubeMapPipelineOctree->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+
+            radianceCellScatterCubeMapPipelineOctree->uploadLaunchParams();
+
+            OPTIX_CHECK(optixLaunch(
+                radianceCellScatterCubeMapPipelineOctree->pipeline, stream,
+                radianceCellScatterCubeMapPipelineOctree->launchParamsBuffer.d_pointer(),
+                radianceCellScatterCubeMapPipelineOctree->launchParamsBuffer.sizeInBytes,
+                &radianceCellScatterCubeMapPipelineOctree->sbt,
+                cellUVs.size(),                     // dimension X: amount of UV texels in the cell
+                1,                                  // dimension Y: 1
+                1                                   // dimension Z: 1
+                // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
+            ));
+
+            CUDA_SYNC_CHECK();
+        }
     }
 
     void Renderer::calculateRadianceCellScatterUnbiasedOctree(int iteration, CUDABuffer& prevBounceOctreeTexture, CUDABuffer& dstOctreeTexture)
     {
-        // TODO
+        // TODO: For now we're using the same texture size as for the direct lighting pass, we can downsample in the future to gain performance
+        const int texSize = IRRADIANCE_TEXTURE_RESOLUTION;
+        NonEmptyCells nonEmpties = scene.grid.getNonEmptyCells();
+
+        for (int i = 0; i < nonEmpties.nonEmptyCells.size(); i++)
+        {
+            radianceCellScatterUnbiasedPipelineOctree->launchParams.nonEmptyCellIndex = i;
+
+            // Light source texture data
+            radianceCellScatterUnbiasedPipelineOctree->launchParams.prevBounceOctreeTexture = (float*)prevBounceOctreeTexture.d_pointer();
+
+            // Destination texture data
+            radianceCellScatterUnbiasedPipelineOctree->launchParams.currentBounceOctreeTexture = (float*)dstOctreeTexture.d_pointer();
+
+            // Load uvs per cell 
+            std::vector<glm::vec2> cellUVs = nonEmpties.nonEmptyCells[i]->getUVsInside();
+            std::cout << "Non-empty cell " << i << ": UVs in this cell: " << cellUVs.size() << std::endl;
+
+            // Radiance cell data
+            radianceCellScatterUnbiasedPipelineOctree->launchParams.cellCenter = nonEmpties.nonEmptyCells[i]->getCenter();
+            radianceCellScatterUnbiasedPipelineOctree->launchParams.cellSize = scene.grid.getCellSize();
+
+            // UV world position data
+            radianceCellScatterUnbiasedPipelineOctree->launchParams.uvWorldPositions.size = texSize;
+            radianceCellScatterUnbiasedPipelineOctree->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+
+            radianceCellScatterUnbiasedPipelineOctree->uploadLaunchParams();
+
+            OPTIX_CHECK(optixLaunch(
+                radianceCellScatterUnbiasedPipelineOctree->pipeline, stream,
+                radianceCellScatterUnbiasedPipelineOctree->launchParamsBuffer.d_pointer(),
+                radianceCellScatterUnbiasedPipelineOctree->launchParamsBuffer.sizeInBytes,
+                &radianceCellScatterUnbiasedPipelineOctree->sbt,
+                cellUVs.size(),                                        // dimension X: amount of UV texels in the cell
+                1,                                                     // dimension Y: 1
+                1                                                      // dimension Z: 1
+            ));
+
+            CUDA_SYNC_CHECK();
+        }
     }
 
 
@@ -1163,7 +1399,7 @@ namespace mcrt {
         int texSize;
         if (irradStorageType == OCTREE_TEXTURE)
         {
-            texSize = 2048;
+            texSize = IRRADIANCE_TEXTURE_RESOLUTION;
         }
         else if (irradStorageType == TEXTURE_2D)
         {
@@ -1223,22 +1459,40 @@ namespace mcrt {
         UVsInsideBuffer.alloc_and_upload(cellUVs);
         UVsInsideOffsets.alloc_and_upload(offsets);
 
-        if (radianceCellScatterPipeline != nullptr)
-        {
-            radianceCellScatterPipeline->launchParams.uvsInside = (glm::vec2*)UVsInsideBuffer.d_pointer();
-            radianceCellScatterPipeline->launchParams.uvsInsideOffsets = (int*)UVsInsideOffsets.d_pointer();
-        }
 
-        if (radianceCellScatterCubeMapPipeline != nullptr)
+        if (irradStorageType == OCTREE_TEXTURE)
         {
-            radianceCellScatterCubeMapPipeline->launchParams.uvsInside = (glm::vec2*)UVsInsideBuffer.d_pointer();
-            radianceCellScatterCubeMapPipeline->launchParams.uvsInsideOffsets = (int*)UVsInsideOffsets.d_pointer();
-        }
+            if (radianceCellScatterCubeMapPipelineOctree != nullptr)
+            {
+                radianceCellScatterCubeMapPipelineOctree->launchParams.uvsInside = (glm::vec2*)UVsInsideBuffer.d_pointer();
+                radianceCellScatterCubeMapPipelineOctree->launchParams.uvsInsideOffsets = (int*)UVsInsideOffsets.d_pointer();
+            }
 
-        if (radianceCellScatterUnbiasedPipeline != nullptr)
+            if (radianceCellScatterUnbiasedPipelineOctree != nullptr)
+            {
+                radianceCellScatterUnbiasedPipelineOctree->launchParams.uvsInside = (glm::vec2*)UVsInsideBuffer.d_pointer();
+                radianceCellScatterUnbiasedPipelineOctree->launchParams.uvsInsideOffsets = (int*)UVsInsideOffsets.d_pointer();
+            }
+        }
+        else if (irradStorageType == TEXTURE_2D)
         {
-            radianceCellScatterUnbiasedPipeline->launchParams.uvsInside = (glm::vec2*)UVsInsideBuffer.d_pointer();
-            radianceCellScatterUnbiasedPipeline->launchParams.uvsInsideOffsets = (int*)UVsInsideOffsets.d_pointer();
+            if (radianceCellScatterPipeline != nullptr)
+            {
+                radianceCellScatterPipeline->launchParams.uvsInside = (glm::vec2*)UVsInsideBuffer.d_pointer();
+                radianceCellScatterPipeline->launchParams.uvsInsideOffsets = (int*)UVsInsideOffsets.d_pointer();
+            }
+
+            if (radianceCellScatterCubeMapPipeline != nullptr)
+            {
+                radianceCellScatterCubeMapPipeline->launchParams.uvsInside = (glm::vec2*)UVsInsideBuffer.d_pointer();
+                radianceCellScatterCubeMapPipeline->launchParams.uvsInsideOffsets = (int*)UVsInsideOffsets.d_pointer();
+            }
+
+            if (radianceCellScatterUnbiasedPipeline != nullptr)
+            {
+                radianceCellScatterUnbiasedPipeline->launchParams.uvsInside = (glm::vec2*)UVsInsideBuffer.d_pointer();
+                radianceCellScatterUnbiasedPipeline->launchParams.uvsInsideOffsets = (int*)UVsInsideOffsets.d_pointer();
+            }
         }
     }
 

@@ -72,6 +72,9 @@ namespace mcrt {
             + v * sbtData.vertex[index.z];
 
         const glm::vec3 directColor = read_octree(surfPos, optixLaunchParams.octreeTextureDirect);
+        const glm::vec3 secondBounceColor = read_octree(surfPos, optixLaunchParams.octreeTextureSecondBounce);
+        //const glm::vec3 thirdBounceColor = read_octree(surfPos, optixLaunchParams.octreeTextureThirdBounce);
+
         //const float r_direct = optixLaunchParams.lightTexture.colorBuffer[(int(tc.y * optixLaunchParams.lightTexture.size) * optixLaunchParams.lightTexture.size * 3) + int(tc.x * optixLaunchParams.lightTexture.size) * 3];
         //const float g_direct = optixLaunchParams.lightTexture.colorBuffer[(int(tc.y * optixLaunchParams.lightTexture.size) * optixLaunchParams.lightTexture.size * 3) + int(tc.x * optixLaunchParams.lightTexture.size) * 3 + 1];
         //const float b_direct = optixLaunchParams.lightTexture.colorBuffer[(int(tc.y * optixLaunchParams.lightTexture.size) * optixLaunchParams.lightTexture.size * 3) + int(tc.x * optixLaunchParams.lightTexture.size) * 3 + 2];
@@ -89,7 +92,7 @@ namespace mcrt {
         //const glm::vec3 diffuseColor_second = { r_second, g_second, b_second };
         //const glm::vec3 diffuseColor_third = { r_third, g_third, b_third };
 
-        const glm::vec3 diffuseTotal = directColor; // diffuseColor_direct + diffuseColor_second + diffuseColor_third;
+        const glm::vec3 diffuseTotal = directColor + secondBounceColor; // diffuseColor_direct + diffuseColor_second + diffuseColor_third;
 
         //// ==========================
         //// HDR Reinhard Tone Mapping

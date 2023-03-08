@@ -18,7 +18,7 @@ using namespace mcrt;
 
 
 namespace mcrt {
-    extern "C" __constant__ LaunchParamsRadianceCellScatterCubeMap optixLaunchParams;
+    extern "C" __constant__ LaunchParamsRadianceCellScatterCubeMapOctree optixLaunchParams;
 
     static __forceinline__ __device__ RadianceCellScatterPRDHybrid loadRadianceCellScatterPRD()
     {
@@ -51,24 +51,16 @@ namespace mcrt {
         const float u = optixGetTriangleBarycentrics().x;
         const float v = optixGetTriangleBarycentrics().y;
 
-        // Barycentric tex coords
-        const glm::vec2 tc
-            = (1.f - u - v) * sbtData.texcoord[index.x]
-            + u * sbtData.texcoord[index.y]
-            + v * sbtData.texcoord[index.z];
+        const glm::vec3 worldPos =
+            (1.f - u - v) * sbtData.vertex[index.x]
+            + u * sbtData.vertex[index.y]
+            + v * sbtData.vertex[index.z];
 
-        const int uTexelCoord = tc.x * optixLaunchParams.prevBounceTexture.size;
-        const int vTexelCoord = tc.y * optixLaunchParams.prevBounceTexture.size;
-
-        // Read color (outgoing radiance) at intersection (NOTE THAT WE ASSUME LAMBERTIAN SURFACE HERE)
-        // --> Otherwise BRDF needs to be evaluated for the incoming direction at this point
-        float r = optixLaunchParams.prevBounceTexture.colorBuffer[(vTexelCoord * optixLaunchParams.prevBounceTexture.size * 3) + (uTexelCoord * 3) + 0];
-        float g = optixLaunchParams.prevBounceTexture.colorBuffer[(vTexelCoord * optixLaunchParams.prevBounceTexture.size * 3) + (uTexelCoord * 3) + 1];
-        float b = optixLaunchParams.prevBounceTexture.colorBuffer[(vTexelCoord * optixLaunchParams.prevBounceTexture.size * 3) + (uTexelCoord * 3) + 2];
+        glm::vec3 incomingRadiance = read_octree(worldPos, optixLaunchParams.prevBounceOctreeTexture);
 
         RadianceCellScatterPRDHybrid prd = loadRadianceCellScatterPRD();
         prd.hitFound = 1;
-        prd.resultColor = glm::vec3{ r,g,b };
+        prd.resultColor = incomingRadiance;
         storeRadianceCellScatterPRD(prd);
     }
 
@@ -83,6 +75,7 @@ namespace mcrt {
 
     extern "C" __global__ void __raygen__renderFrame__cell__scattering()
     {
+
         const int uvIndex = optixGetLaunchIndex().x;
         const int nonEmptyCellIndex = optixLaunchParams.nonEmptyCellIndex;
         const glm::ivec3 cellCoords = optixLaunchParams.cellCoords;
@@ -247,8 +240,11 @@ namespace mcrt {
         const float g = totalRadiance.y / (float(numSamples) * PI);
         const float b = totalRadiance.z / (float(numSamples) * PI);
 
-        optixLaunchParams.currentBounceTexture.colorBuffer[(v * optixLaunchParams.currentBounceTexture.size * 3) + (u * 3) + 0] = r;
-        optixLaunchParams.currentBounceTexture.colorBuffer[(v * optixLaunchParams.currentBounceTexture.size * 3) + (u * 3) + 1] = g;
-        optixLaunchParams.currentBounceTexture.colorBuffer[(v * optixLaunchParams.currentBounceTexture.size * 3) + (u * 3) + 2] = b;
+        if ((UVWorldPos.x < 0.0f || UVWorldPos.x > 1.0f) || (UVWorldPos.y < 0.0f || UVWorldPos.y > 1.0f) || (UVWorldPos.z < 0.0f || UVWorldPos.z > 1.0f))
+        {
+            printf("OUT OF SCENE BOUNDS! %f %f %f\n", UVWorldPos.x, UVWorldPos.y, UVWorldPos.z);
+        }
+
+        write_octree(UVWorldPos, glm::vec3{r,g,b}, optixLaunchParams.currentBounceOctreeTexture);
     }
 }

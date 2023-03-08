@@ -91,6 +91,18 @@
     <Filter Include="Source Files\GPU\Camera pass\Texture-based">
       <UniqueIdentifier>{2969b17e-f270-4c72-b415-4e6b6b68d8ae}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\GPU\Cubemap\Octree-texture-based">
+      <UniqueIdentifier>{0136a714-3530-4ba0-be57-db6dcdbc22cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GPU\Cubemap\Texture-based">
+      <UniqueIdentifier>{1add4e7b-ca5c-4ae2-947f-45423e3ca78d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GPU\Unbiased\Texture-based">
+      <UniqueIdentifier>{1d84b77e-90c9-4d99-bdeb-d5e1ed0212bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GPU\Unbiased\Octree-texture-based">
+      <UniqueIdentifier>{5fd8a405-c97e-495a-8ec8-6661ec8d74cf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -141,17 +153,8 @@
     <ClCompile Include="radianceCellGathering_embedded.c">
       <Filter>Source Files\GPU\Spherical Harmonics</Filter>
     </ClCompile>
-    <ClCompile Include="radianceCellGathering_Cubemap_embedded.c">
-      <Filter>Source Files\GPU\Cubemap</Filter>
-    </ClCompile>
-    <ClCompile Include="radianceCellScattering_Cubemap_embedded.c">
-      <Filter>Source Files\GPU\Cubemap</Filter>
-    </ClCompile>
     <ClCompile Include="image.cpp">
       <Filter>Source Files\Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="unbiasedScattering_embedded.c">
-      <Filter>Source Files\GPU\Unbiased</Filter>
     </ClCompile>
     <ClCompile Include="octree_texture.cpp">
       <Filter>Source Files\Octree Textures</Filter>
@@ -209,6 +212,33 @@
     </ClCompile>
     <ClCompile Include="directLightingShadersGathering_embedded_octree.c">
       <Filter>Source Files\GPU\Direct Lighting\Octree-texture-based</Filter>
+    </ClCompile>
+    <ClCompile Include="radiance_cell_gather_cube_map_pipeline_octree.cpp">
+      <Filter>Source Files\Pipelines\Octree-texture-based</Filter>
+    </ClCompile>
+    <ClCompile Include="radianceCellGathering_Cubemap_embedded.c">
+      <Filter>Source Files\GPU\Cubemap\Texture-based</Filter>
+    </ClCompile>
+    <ClCompile Include="radianceCellScattering_Cubemap_embedded.c">
+      <Filter>Source Files\GPU\Cubemap\Texture-based</Filter>
+    </ClCompile>
+    <ClCompile Include="radiance_cell_scatter_cube_map_pipeline_octree.cpp">
+      <Filter>Source Files\Pipelines\Octree-texture-based</Filter>
+    </ClCompile>
+    <ClCompile Include="radianceCellGathering_Cubemap_embedded_octree.c">
+      <Filter>Source Files\GPU\Cubemap\Octree-texture-based</Filter>
+    </ClCompile>
+    <ClCompile Include="radianceCellScattering_Cubemap_embedded_octree.c">
+      <Filter>Source Files\GPU\Cubemap\Octree-texture-based</Filter>
+    </ClCompile>
+    <ClCompile Include="radiance_cell_scatter_unbiased_pipeline_octree.cpp">
+      <Filter>Source Files\Pipelines\Octree-texture-based</Filter>
+    </ClCompile>
+    <ClCompile Include="unbiasedScattering_embedded.c">
+      <Filter>Source Files\GPU\Unbiased\Texture-based</Filter>
+    </ClCompile>
+    <ClCompile Include="unbiasedScattering_embedded_octree.c">
+      <Filter>Source Files\GPU\Unbiased\Octree-texture-based</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -308,6 +338,15 @@
     <ClInclude Include="direct_light_pipeline_octree.hpp">
       <Filter>Header Files\Pipelines\Octree-texture-based</Filter>
     </ClInclude>
+    <ClInclude Include="radiance_cell_gather_cube_map_pipeline_octree.hpp">
+      <Filter>Header Files\Pipelines\Octree-texture-based</Filter>
+    </ClInclude>
+    <ClInclude Include="radiance_cell_scatter_cube_map_pipeline_octree.hpp">
+      <Filter>Header Files\Pipelines\Octree-texture-based</Filter>
+    </ClInclude>
+    <ClInclude Include="radiance_cell_scatter_unbiased_pipeline_octree.hpp">
+      <Filter>Header Files\Pipelines\Octree-texture-based</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="radianceCellScattering_trilinear2.cu">
@@ -334,38 +373,8 @@
     <None Include="spherical_harmonics.cuh">
       <Filter>Source Files\GPU\Spherical Harmonics</Filter>
     </None>
-    <None Include="cube_mapping.cuh">
-      <Filter>Source Files\GPU\Cubemap</Filter>
-    </None>
-    <None Include="radianceCellGathering_Cubemap.cu">
-      <Filter>Source Files\GPU\Cubemap</Filter>
-    </None>
-    <None Include="radianceCellScattering_Cubemap.cu">
-      <Filter>Source Files\GPU\Cubemap</Filter>
-    </None>
     <None Include="utils.cuh">
       <Filter>Source Files\GPU</Filter>
-    </None>
-    <None Include="radianceCellGathering_Cubemap2.cu">
-      <Filter>Source Files\GPU\Cubemap</Filter>
-    </None>
-    <None Include="radianceCellScattering_Cubemap2.cu">
-      <Filter>Source Files\GPU\Cubemap</Filter>
-    </None>
-    <None Include="radianceCellScattering_Cubemap3.cu">
-      <Filter>Source Files\GPU\Cubemap</Filter>
-    </None>
-    <None Include="unbiasedScattering.cu">
-      <Filter>Source Files\GPU\Unbiased</Filter>
-    </None>
-    <None Include="unbiasedScattering2.cu">
-      <Filter>Source Files\GPU\Unbiased</Filter>
-    </None>
-    <None Include="radianceCellScattering_Cubemap_hybrid.cu">
-      <Filter>Source Files\GPU\Cubemap</Filter>
-    </None>
-    <None Include="radianceCellGathering_Cubemap3.cu">
-      <Filter>Source Files\GPU\Cubemap</Filter>
     </None>
     <None Include="probeTesting.cu">
       <Filter>Source Files\GPU\Testing</Filter>
@@ -390,6 +399,45 @@
     </None>
     <None Include="cameraRayProgramOctree.cu">
       <Filter>Source Files\GPU\Camera pass\Octree-texture-based</Filter>
+    </None>
+    <None Include="cube_mapping.cuh">
+      <Filter>Source Files\GPU\Cubemap\Texture-based</Filter>
+    </None>
+    <None Include="radianceCellGathering_Cubemap.cu">
+      <Filter>Source Files\GPU\Cubemap\Texture-based</Filter>
+    </None>
+    <None Include="radianceCellGathering_Cubemap2.cu">
+      <Filter>Source Files\GPU\Cubemap\Texture-based</Filter>
+    </None>
+    <None Include="radianceCellGathering_Cubemap3.cu">
+      <Filter>Source Files\GPU\Cubemap\Texture-based</Filter>
+    </None>
+    <None Include="radianceCellScattering_Cubemap.cu">
+      <Filter>Source Files\GPU\Cubemap\Texture-based</Filter>
+    </None>
+    <None Include="radianceCellScattering_Cubemap_hybrid.cu">
+      <Filter>Source Files\GPU\Cubemap\Texture-based</Filter>
+    </None>
+    <None Include="radianceCellScattering_Cubemap2.cu">
+      <Filter>Source Files\GPU\Cubemap\Texture-based</Filter>
+    </None>
+    <None Include="radianceCellScattering_Cubemap3.cu">
+      <Filter>Source Files\GPU\Cubemap\Texture-based</Filter>
+    </None>
+    <None Include="radianceCellGathering_Cubemap_Octree.cu">
+      <Filter>Source Files\GPU\Cubemap\Octree-texture-based</Filter>
+    </None>
+    <None Include="radianceCellScattering_Cubemap_hybrid_Octree.cu">
+      <Filter>Source Files\GPU\Cubemap\Octree-texture-based</Filter>
+    </None>
+    <None Include="unbiasedScattering.cu">
+      <Filter>Source Files\GPU\Unbiased\Texture-based</Filter>
+    </None>
+    <None Include="unbiasedScattering2.cu">
+      <Filter>Source Files\GPU\Unbiased\Texture-based</Filter>
+    </None>
+    <None Include="unbiasedScatteringOctree.cu">
+      <Filter>Source Files\GPU\Unbiased\Octree-texture-based</Filter>
     </None>
   </ItemGroup>
 </Project>
