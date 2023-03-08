@@ -22,7 +22,7 @@
 
 namespace mcrt {
 
-    Renderer::Renderer(Scene& scene, const Camera& camera, BIAS_MODE bias, PROBE_MODE probeType): renderCamera{camera}, scene{scene}
+    Renderer::Renderer(Scene& scene, const Camera& camera, BIAS_MODE bias, PROBE_MODE probeType, IRRADIANCE_STORAGE_TYPE irradianceStorage): renderCamera{camera}, scene{scene}, irradStorageType{irradianceStorage}
     {
         initOptix();
         updateCamera(camera);
@@ -33,51 +33,65 @@ namespace mcrt {
         std::cout << "Filling geometry buffers..." << std::endl;
         fillGeometryBuffers();
 
-        std::cout << "Loading textures..." << std::endl;
-        createTextures();
+        //std::cout << "Loading textures..." << std::endl;
+        //createTextures();
 
         std::cout << "Setting up pipelines..." << std::endl;
         GeometryBufferHandle geometryData = GeometryBufferHandle{ vertexBuffers, indexBuffers, normalBuffers, texcoordBuffers, textureObjects, amountVertices, amountIndices };
 
-        cameraPipeline = std::make_unique<DefaultPipeline>(optixContext, geometryData, scene);
-        directLightPipeline = std::make_unique<DirectLightPipeline>(optixContext, geometryData, scene);
-
-        if (bias == BIASED_PROBES)
+        if (irradianceStorage == OCTREE_TEXTURE)
         {
-            if (probeType == CUBE_MAP)
-            {
-                radianceCellGatherCubeMapPipeline = std::make_unique<RadianceCellGatherCubeMapPipeline>(optixContext, geometryData, scene);
-                radianceCellScatterCubeMapPipeline = std::make_unique<RadianceCellScatterCubeMapPipeline>(optixContext, geometryData, scene);
-            }
-            else if (probeType == SPHERICAL_HARMONICS)
-            {
-                radianceCellGatherPipeline = std::make_unique<RadianceCellGatherPipeline>(optixContext, geometryData, scene); // For now we can use normal geometry instead of proxy
-                radianceCellScatterPipeline = std::make_unique<RadianceCellScatterPipeline>(optixContext, geometryData, scene);
-            }
+            cameraPipelineOctree = std::make_unique<DefaultPipelineOctree>(optixContext, geometryData, scene);
+            directLightPipelineOctree = std::make_unique<DirectLightPipelineOctree>(optixContext, geometryData, scene);
+
+            // TODO: initialize other pipelines
+
+            // Initialize irradiance octree textures
+            octreeTextures = std::make_unique<OctreeTexture>(8, scene);
+            prepareUVWorldPositions();
+            //prepareOctreeLeafPositions();
+
+            calculateDirectLightingOctree();
         }
-        else if (bias == UNBIASED)
-        {
-            radianceCellScatterUnbiasedPipeline = std::make_unique<RadianceCellScatterUnbiasedPipeline>(optixContext, geometryData, scene);
+        else if (irradianceStorage == TEXTURE_2D) {
+            cameraPipeline = std::make_unique<DefaultPipeline>(optixContext, geometryData, scene);
+            directLightPipeline = std::make_unique<DirectLightPipeline>(optixContext, geometryData, scene);
+
+            if (bias == BIASED_PROBES)
+            {
+                if (probeType == CUBE_MAP)
+                {
+                    radianceCellGatherCubeMapPipeline = std::make_unique<RadianceCellGatherCubeMapPipeline>(optixContext, geometryData, scene);
+                    radianceCellScatterCubeMapPipeline = std::make_unique<RadianceCellScatterCubeMapPipeline>(optixContext, geometryData, scene);
+                }
+                else if (probeType == SPHERICAL_HARMONICS)
+                {
+                    radianceCellGatherPipeline = std::make_unique<RadianceCellGatherPipeline>(optixContext, geometryData, scene); // For now we can use normal geometry instead of proxy
+                    radianceCellScatterPipeline = std::make_unique<RadianceCellScatterPipeline>(optixContext, geometryData, scene);
+                }
+            }
+            else if (bias == UNBIASED)
+            {
+                radianceCellScatterUnbiasedPipeline = std::make_unique<RadianceCellScatterUnbiasedPipeline>(optixContext, geometryData, scene);
+            }
+
+            // Initialize 2D textures + UV world data
+            initLightingTextures(1024);
+            prepareUVWorldPositions();
+            prepareUVsInsideBuffer();
+
+            // TODO: DON'T FORGET TO ENABLE IN OCTREE MODE AS WELL AFTER OCTREE IS WORKING!
+            if (bias == BIASED_PROBES && probeType == CUBE_MAP)
+            {
+                initLightProbeCubeMaps(64, scene.grid.resolution.x);
+            }
+
+            calculateDirectLighting();
+            calculateIndirectLighting(bias, probeType);
         }
 
-        std::cout << "Context, module, pipeline, etc, all set up." << std::endl;
+        std::cout << "Context, module, pipelines, etc, all set up." << std::endl;
         std::cout << "MCRT renderer fully set up." << std::endl;
-
-        // Initialize irradiance octree textures
-        octreeTextures = std::make_unique<OctreeTexture>(7, scene);
-
-        // Direct lighting (preprocess)
-        initLightingTextures(1024);
-        prepareUVWorldPositions();
-        prepareUVsInsideBuffer();
-        
-        if (bias == BIASED_PROBES && probeType == CUBE_MAP)
-        {
-            initLightProbeCubeMaps(64, scene.grid.resolution.x);
-        }
-
-        calculateDirectLighting();
-        //calculateIndirectLighting(bias, probeType);
     }
 
     void Renderer::fillGeometryBuffers()
@@ -228,56 +242,108 @@ namespace mcrt {
     // Render loop
     void Renderer::render()
     {
-        // First resize needs to be done before rendering
-        if (cameraPipeline->launchParams.frame.size.x == 0) return;
+        if (irradStorageType == OCTREE_TEXTURE)
+        {
+            // First resize needs to be done before rendering
+            if (cameraPipelineOctree->launchParams.frame.size.x == 0) return;
 
-        // Light bounce textures
-        cameraPipeline->launchParams.lightTexture.colorBuffer = (float*)directLightingTexture.d_pointer();
-        cameraPipeline->launchParams.lightTexture.size = directLightPipeline->launchParams.directLightingTexture.size;
-        cameraPipeline->launchParams.lightTextureSecondBounce.colorBuffer = (float*)secondBounceTexture.d_pointer();
-        cameraPipeline->launchParams.lightTextureSecondBounce.size = 1024;
-        cameraPipeline->launchParams.lightTextureThirdBounce.colorBuffer = (float*)thirdBounceTexture.d_pointer();
-        cameraPipeline->launchParams.lightTextureThirdBounce.size = 1024;
+            cameraPipelineOctree->launchParams.octreeTextureDirect = (float*)octreeTextures->getOctreeGPUMemory().d_pointer();
 
-        cameraPipeline->uploadLaunchParams();
+            cameraPipelineOctree->uploadLaunchParams();
 
-        // Launch render pipeline
-        OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
-            cameraPipeline->pipeline, stream,
-            /*! launch parameters and SBT */
-            cameraPipeline->launchParamsBuffer.d_pointer(),
-            cameraPipeline->launchParamsBuffer.sizeInBytes,
-            &cameraPipeline->sbt,
-            /*! dimensions of the launch: */
-            cameraPipeline->launchParams.frame.size.x,
-            cameraPipeline->launchParams.frame.size.y,
-            1
-        ));
+            // Launch render pipeline
+            OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
+                cameraPipelineOctree->pipeline, stream,
+                /*! launch parameters and SBT */
+                cameraPipelineOctree->launchParamsBuffer.d_pointer(),
+                cameraPipelineOctree->launchParamsBuffer.sizeInBytes,
+                &cameraPipelineOctree->sbt,
+                /*! dimensions of the launch: */
+                cameraPipelineOctree->launchParams.frame.size.x,
+                cameraPipelineOctree->launchParams.frame.size.y,
+                1
+            ));
 
 
-        // TODO: implement double buffering!!!
-        // sync - make sure the frame is rendered before we download and
-        // display (obviously, for a high-performance application you
-        // want to use streams and double-buffering, but for this simple
-        // example, this will have to do)
-        CUDA_SYNC_CHECK();
+            // TODO: implement double buffering!!!
+            // sync - make sure the frame is rendered before we download and
+            // display (obviously, for a high-performance application you
+            // want to use streams and double-buffering, but for this simple
+            // example, this will have to do)
+            CUDA_SYNC_CHECK();
+        }
+        else if (irradStorageType == TEXTURE_2D)
+        {
+            // First resize needs to be done before rendering
+            if (cameraPipeline->launchParams.frame.size.x == 0) return;
+
+            // Light bounce textures
+            cameraPipeline->launchParams.lightTexture.colorBuffer = (float*)directLightingTexture.d_pointer();
+            cameraPipeline->launchParams.lightTexture.size = directLightPipeline->launchParams.directLightingTexture.size;
+            cameraPipeline->launchParams.lightTextureSecondBounce.colorBuffer = (float*)secondBounceTexture.d_pointer();
+            cameraPipeline->launchParams.lightTextureSecondBounce.size = 1024;
+            cameraPipeline->launchParams.lightTextureThirdBounce.colorBuffer = (float*)thirdBounceTexture.d_pointer();
+            cameraPipeline->launchParams.lightTextureThirdBounce.size = 1024;
+
+            cameraPipeline->uploadLaunchParams();
+
+            // Launch render pipeline
+            OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
+                cameraPipeline->pipeline, stream,
+                /*! launch parameters and SBT */
+                cameraPipeline->launchParamsBuffer.d_pointer(),
+                cameraPipeline->launchParamsBuffer.sizeInBytes,
+                &cameraPipeline->sbt,
+                /*! dimensions of the launch: */
+                cameraPipeline->launchParams.frame.size.x,
+                cameraPipeline->launchParams.frame.size.y,
+                1
+            ));
+
+            // TODO: implement double buffering!!!
+            // sync - make sure the frame is rendered before we download and
+            // display (obviously, for a high-performance application you
+            // want to use streams and double-buffering, but for this simple
+            // example, this will have to do)
+            CUDA_SYNC_CHECK();
+        }
     }
 
     void Renderer::updateCamera(const Camera& camera)
     {
-        if (cameraPipeline != nullptr)
+        if (irradStorageType == OCTREE_TEXTURE)
         {
-            renderCamera = camera;
-            cameraPipeline->launchParams.camera.position = camera.position;
-            cameraPipeline->launchParams.camera.direction = normalize(camera.target - camera.position);
-            const float cosFovy = 0.66f;
-            const float aspect = float(cameraPipeline->launchParams.frame.size.x) / float(cameraPipeline->launchParams.frame.size.y);
-            cameraPipeline->launchParams.camera.horizontal
-                = cosFovy * aspect * normalize(cross(cameraPipeline->launchParams.camera.direction,
-                    camera.up));
-            cameraPipeline->launchParams.camera.vertical
-                = cosFovy * normalize(cross(cameraPipeline->launchParams.camera.horizontal,
-                    cameraPipeline->launchParams.camera.direction));
+            if (cameraPipelineOctree != nullptr)
+            {
+                renderCamera = camera;
+                cameraPipelineOctree->launchParams.camera.position = camera.position;
+                cameraPipelineOctree->launchParams.camera.direction = normalize(camera.target - camera.position);
+                const float cosFovy = 0.66f;
+                const float aspect = float(cameraPipelineOctree->launchParams.frame.size.x) / float(cameraPipelineOctree->launchParams.frame.size.y);
+                cameraPipelineOctree->launchParams.camera.horizontal
+                    = cosFovy * aspect * normalize(cross(cameraPipelineOctree->launchParams.camera.direction,
+                        camera.up));
+                cameraPipelineOctree->launchParams.camera.vertical
+                    = cosFovy * normalize(cross(cameraPipelineOctree->launchParams.camera.horizontal,
+                        cameraPipelineOctree->launchParams.camera.direction));
+            }
+        }
+        else if (irradStorageType == TEXTURE_2D)
+        {
+            if (cameraPipeline != nullptr)
+            {
+                renderCamera = camera;
+                cameraPipeline->launchParams.camera.position = camera.position;
+                cameraPipeline->launchParams.camera.direction = normalize(camera.target - camera.position);
+                const float cosFovy = 0.66f;
+                const float aspect = float(cameraPipeline->launchParams.frame.size.x) / float(cameraPipeline->launchParams.frame.size.y);
+                cameraPipeline->launchParams.camera.horizontal
+                    = cosFovy * aspect * normalize(cross(cameraPipeline->launchParams.camera.direction,
+                        camera.up));
+                cameraPipeline->launchParams.camera.vertical
+                    = cosFovy * normalize(cross(cameraPipeline->launchParams.camera.horizontal,
+                        cameraPipeline->launchParams.camera.direction));
+            }
         }
     }
 
@@ -421,9 +487,9 @@ namespace mcrt {
                     case 0:
                         calculateRadianceCellGatherPassCubeMapAlt(directLightingTexture);
                         std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
-                        //calculateRadianceCellScatterPassCubeMap(i, directLightingTexture, secondBounceTexture);
+                        calculateRadianceCellScatterPassCubeMap(i, directLightingTexture, secondBounceTexture);
                         //lightProbeTest(i, directLightingTexture, secondBounceTexture);
-                        octreeTextureTest();
+                        //octreeTextureTest();
 
                         break;
                     case 1:
@@ -972,8 +1038,64 @@ namespace mcrt {
 
     void Renderer::calculateDirectLightingOctree()
     {
+        const int texSize = 2048;
+
+        // Get lights data from scene
+        std::vector<LightData> lightData = scene.getLightsData();
+
+        // Allocate device space for the light data buffer, then upload the light data to the device
+        lightDataBuffer.resize(lightData.size() * sizeof(LightData));
+        lightDataBuffer.upload(lightData.data(), 1);
+
+        directLightPipelineOctree->launchParams.amountLights = lightData.size();
+        directLightPipelineOctree->launchParams.lights = (LightData*)lightDataBuffer.d_pointer();
+        directLightPipelineOctree->launchParams.stratifyResX = STRATIFIED_X_SIZE;
+        directLightPipelineOctree->launchParams.stratifyResY = STRATIFIED_Y_SIZE;
+
+        // Octree data
+        int granularity = octreeTextures->getKernelGranularity();
+        directLightPipelineOctree->launchParams.granularity = granularity;
+        directLightPipelineOctree->launchParams.octreeTexture = (float*)octreeTextures->getOctreeGPUMemory().d_pointer();
+        directLightPipelineOctree->launchParams.UVWorldPosTextureResolution = texSize;
+
+        directLightPipelineOctree->uploadLaunchParams();
+
+        // Launch direct lighting pipeline
+        OPTIX_CHECK(optixLaunch(
+            directLightPipelineOctree->pipeline, stream,
+            directLightPipelineOctree->launchParamsBuffer.d_pointer(),
+            directLightPipelineOctree->launchParamsBuffer.sizeInBytes,
+            &directLightPipelineOctree->sbt,
+            texSize,                    // dimension X: texture size (UV world positions)
+            texSize,                    // dimension Y: texture size (UV world positions)
+            1                           // dimension Z: 1
+            // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
+        ));
+
+        CUDA_SYNC_CHECK();
+    }
+
+    void Renderer::calculateIndirectLightingOctree(BIAS_MODE bias, PROBE_MODE mode)
+    {
         // TODO
     }
+
+    void Renderer::calculateRadianceCellGatherPassCubeMapAltOctree(CUDABuffer& previousPassLightSourceOctreeTexture)
+    {
+        // TODO
+    }
+
+
+    void Renderer::calculateRadianceCellScatterPassCubeMapOctree(int iteration, CUDABuffer& prevBounceOctreeTexture, CUDABuffer& dstOctreeTexture)
+    {
+        // TODO
+    }
+
+    void Renderer::calculateRadianceCellScatterUnbiasedOctree(int iteration, CUDABuffer& prevBounceOctreeTexture, CUDABuffer& dstOctreeTexture)
+    {
+        // TODO
+    }
+
 
 
     void Renderer::loadLightTexture()
@@ -1038,7 +1160,16 @@ namespace mcrt {
 
     void Renderer::prepareUVWorldPositions()
     {
-        const int texSize = directLightPipeline->launchParams.directLightingTexture.size;
+        int texSize;
+        if (irradStorageType == OCTREE_TEXTURE)
+        {
+            texSize = 2048;
+        }
+        else if (irradStorageType == TEXTURE_2D)
+        {
+            texSize = directLightPipeline->launchParams.directLightingTexture.size;
+        }
+
         assert( (texSize > 0) && "Direct lighting texture needs to be initialized before preparing UV indices!");
         
         std::vector<UVWorldData> UVData(texSize * texSize, { glm::vec3{-1000.0f, -1000.0f, -1000.0f}, glm::vec3{-1000.0f, -1000.0f, -1000.0f} });    // Scene is scaled within (0;1) so this should not form a problem
@@ -1057,8 +1188,17 @@ namespace mcrt {
 
         // Upload world positions to the GPU and pass a pointer to this memory into the launch params
         UVWorldPositionDeviceBuffer.alloc_and_upload(UVData);
-        directLightPipeline->launchParams.uvWorldPositions.size = texSize * texSize;
-        directLightPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+
+        if (irradStorageType == OCTREE_TEXTURE)
+        {
+            directLightPipelineOctree->launchParams.uvWorldPositions.size = texSize * texSize;
+            directLightPipelineOctree->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+        }
+        else if (irradStorageType == TEXTURE_2D)
+        {
+            directLightPipeline->launchParams.uvWorldPositions.size = texSize * texSize;
+            directLightPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+        }
     }
 
     // Note that this function must be called after "prepareUVWorldPositions", because the UVs have to be assigned to each cell first
@@ -1101,6 +1241,17 @@ namespace mcrt {
             radianceCellScatterUnbiasedPipeline->launchParams.uvsInsideOffsets = (int*)UVsInsideOffsets.d_pointer();
         }
     }
+
+    void Renderer::prepareOctreeLeafPositions()
+    {
+   /*     octreeLeafPositionsBuffer.alloc_and_upload(octreeTextures->getLeafPositions());
+
+        directLightPipelineOctree->launchParams.octreeLeafPositions.positions = (glm::vec3*)octreeLeafPositionsBuffer.d_pointer();
+        directLightPipelineOctree->launchParams.octreeLeafPositions.size = octreeTextures->getLeafPositions().size();*/
+
+        // TODO: add initialization of other pipelines
+    }
+
 
     void Renderer::writeUVsPerCellToImage(std::vector<int>& offsets, std::vector<glm::vec2>& uvs, int texRes)
     {
@@ -1186,8 +1337,16 @@ namespace mcrt {
         colorBuffer.resize(newSize.x * newSize.y * sizeof(uint32_t));
     
         // Update launch parameters that are passed to OptiX launch
-        cameraPipeline->launchParams.frame.size = newSize;
-        cameraPipeline->launchParams.frame.colorBuffer = (uint32_t*)colorBuffer.d_pointer();
+        if (irradStorageType == OCTREE_TEXTURE)
+        {
+            cameraPipelineOctree->launchParams.frame.size = newSize;
+            cameraPipelineOctree->launchParams.frame.colorBuffer = (uint32_t*)colorBuffer.d_pointer();
+        }
+        else if (irradStorageType == TEXTURE_2D)
+        {
+            cameraPipeline->launchParams.frame.size = newSize;
+            cameraPipeline->launchParams.frame.colorBuffer = (uint32_t*)colorBuffer.d_pointer();
+        }
 
         // Reset camera, aspect may have changed
         updateCamera(renderCamera);
@@ -1196,8 +1355,16 @@ namespace mcrt {
     // Copy rendered color buffer from device to host memory for display
     void Renderer::downloadPixels(uint32_t h_pixels[])
     {
-        colorBuffer.download(h_pixels,
-            cameraPipeline->launchParams.frame.size.x * cameraPipeline->launchParams.frame.size.y);
+        if (irradStorageType == OCTREE_TEXTURE)
+        {
+            colorBuffer.download(h_pixels,
+                cameraPipelineOctree->launchParams.frame.size.x * cameraPipelineOctree->launchParams.frame.size.y);
+        } 
+        else if (irradStorageType == TEXTURE_2D)
+        {
+            colorBuffer.download(h_pixels,
+                cameraPipeline->launchParams.frame.size.x * cameraPipeline->launchParams.frame.size.y);
+        }
     }
 
     void Renderer::downloadDirectLighting(uint32_t h_pixels[])

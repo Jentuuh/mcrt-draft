@@ -37,7 +37,6 @@ namespace mcrt {
 
 	void App::loadScene()
 	{
-		//scene.loadModelFromOBJ("../models/sponza/sponza.obj");
 		scene.loadModelFromOBJ("../models/cornell/cornell.obj");
 		std::cout << "Loaded scene: " << scene.amountVertices() << " vertices. Scene Max: " << glm::to_string(scene.maxCoord()) << " Scene Min: " << glm::to_string(scene.minCoord()) << std::endl;
 		

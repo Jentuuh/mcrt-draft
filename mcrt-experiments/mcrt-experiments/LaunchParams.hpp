@@ -56,7 +56,6 @@ namespace mcrt {
 		int cellIndex;
 	};
 
-
 	struct LaunchParamsRadianceCellScatter {
 		struct {
 			UVWorldData* UVDataBuffer;
@@ -89,6 +88,38 @@ namespace mcrt {
 
 		PixelBuffer prevBounceTexture;
 		PixelBuffer currentBounceTexture;
+
+		glm::vec2* uvsInside;
+		int* uvsInsideOffsets;
+		glm::vec3 cellCenter;
+		float cellSize;
+
+		glm::ivec3 cellCoords;
+		int probeWidthRes;	// Amount of probes in the x-direction
+		int probeHeightRes;	// Amount of probes in the y-direction
+		int nonEmptyCellIndex;
+
+		float* cubeMaps; // A pointer to cubemap faces
+		int cubeMapResolution;
+
+		float* octreeTexture;
+
+		OptixTraversableHandle sceneTraversable;
+	};
+
+	struct LaunchParamsRadianceCellScatterCubeMapOctree
+	{
+		struct {
+			UVWorldData* UVDataBuffer;
+			int size;
+		} uvWorldPositions;
+
+		// TODO: replace by octree textures!
+		//PixelBuffer prevBounceTexture;
+		//PixelBuffer currentBounceTexture;
+
+		float* prevBounceOctreeTexture;
+		float* currentBounceOctreeTexture;
 
 		glm::vec2* uvsInside;
 		int* uvsInsideOffsets;
@@ -185,6 +216,29 @@ namespace mcrt {
 		OptixTraversableHandle sceneTraversable;
 	};
 
+	struct LaunchParamsRadianceCellGatherCubeMapOctree {
+		struct {
+			UVWorldData* UVDataBuffer;
+			int size;
+		} uvWorldPositions;
+
+		float cellSize;
+		int divisionResolution;		// The amount of cells the light source texture is divided in both dimensions
+
+		glm::vec3 probePosition;
+		int probeOffset;
+
+		// TODO: replace by octree texture!
+		//PixelBuffer lightSourceTexture;
+		float* lightSourceOctreeTexture;
+
+		float* cubeMaps; // A pointer to cubemap faces
+		int cubeMapResolution;
+
+		OptixTraversableHandle sceneTraversable;
+	};
+
+
 	struct LaunchParamsRadianceCellGather {
 		struct {
 			UVWorldData* UVDataBuffer;
@@ -251,6 +305,29 @@ namespace mcrt {
 		OptixTraversableHandle traversable;
 	};
 
+	struct LaunchParamsDirectLightingOctree {
+		//struct {
+		//	glm::vec3* positions;
+		//	int size;
+		//} octreeLeafPositions;
+
+		struct {
+			UVWorldData* UVDataBuffer;
+			int size;
+		} uvWorldPositions;
+
+		int UVWorldPosTextureResolution;
+		int granularity;
+		float* octreeTexture;
+
+		LightData* lights;
+		int amountLights;
+		int stratifyResX;
+		int stratifyResY;
+
+		OptixTraversableHandle traversable;
+	};
+
 
 	/**
 	* =======================
@@ -271,8 +348,29 @@ namespace mcrt {
 		int objectType;
 	};
 
+	struct LaunchParamsCameraPassOctree
+	{
+		int frameID = 0;
 
-	struct LaunchParamsTutorial
+		struct {
+			uint32_t* colorBuffer;
+			glm::ivec2 size;
+		} frame;
+
+		struct {
+			glm::vec3 position;
+			glm::vec3 direction;
+			glm::vec3 horizontal;
+			glm::vec3 vertical;
+		} camera;
+
+		float* octreeTextureDirect;
+
+		OptixTraversableHandle traversable;
+	};
+
+
+	struct LaunchParamsCameraPass
 	{
 		int frameID = 0;
 

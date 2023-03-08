@@ -70,6 +70,27 @@
     <Filter Include="Source Files\GPU\Direct Lighting\Octree-texture-based">
       <UniqueIdentifier>{88c66d8f-af1c-4f77-9a8d-8a8328e58914}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Pipelines\Texture-based">
+      <UniqueIdentifier>{d3f71a1d-20d6-4d34-8945-ca612164761a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Pipelines\Octree-texture-based">
+      <UniqueIdentifier>{d06dbe83-685a-449f-b606-4218f447ec24}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Pipelines\Texture-based">
+      <UniqueIdentifier>{8e142f53-6b52-4f0c-b90c-26abfad44f4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Pipelines\Octree-texture-based">
+      <UniqueIdentifier>{65ab25ec-7558-426f-8129-4aaca47a3456}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GPU\Camera pass">
+      <UniqueIdentifier>{4cd04b64-28a3-455f-b55d-b7b48243bdc0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GPU\Camera pass\Octree-texture-based">
+      <UniqueIdentifier>{89218089-8c41-4e01-a451-e8e21e50f701}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GPU\Camera pass\Texture-based">
+      <UniqueIdentifier>{2969b17e-f270-4c72-b415-4e6b6b68d8ae}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -90,9 +111,6 @@
     <ClCompile Include="scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="devicePrograms_embedded.c">
-      <Filter>Source Files\GPU</Filter>
-    </ClCompile>
     <ClCompile Include="game_object.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -105,20 +123,8 @@
     <ClCompile Include="radiance_grid.cpp">
       <Filter>Source Files\Radiance Grid</Filter>
     </ClCompile>
-    <ClCompile Include="mcrt_pipeline.cpp">
-      <Filter>Source Files\Pipelines</Filter>
-    </ClCompile>
-    <ClCompile Include="default_pipeline.cpp">
-      <Filter>Source Files\Pipelines</Filter>
-    </ClCompile>
     <ClCompile Include="area_light.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="direct_light_pipeline.cpp">
-      <Filter>Source Files\Pipelines</Filter>
-    </ClCompile>
-    <ClCompile Include="radiance_cell_gather_pipeline.cpp">
-      <Filter>Source Files\Pipelines</Filter>
     </ClCompile>
     <ClCompile Include="voxelizer.cpp">
       <Filter>Source Files\Radiance Grid</Filter>
@@ -128,15 +134,6 @@
     </ClCompile>
     <ClCompile Include="ias.cpp">
       <Filter>Source Files\Acceleration Structures</Filter>
-    </ClCompile>
-    <ClCompile Include="radiance_cell_scatter_pipeline.cpp">
-      <Filter>Source Files\Pipelines</Filter>
-    </ClCompile>
-    <ClCompile Include="radiance_cell_gather_cube_map_pipeline.cpp">
-      <Filter>Source Files\Pipelines</Filter>
-    </ClCompile>
-    <ClCompile Include="radiance_cell_scatter_cube_map_pipeline.cpp">
-      <Filter>Source Files\Pipelines</Filter>
     </ClCompile>
     <ClCompile Include="radianceCellScattering_embedded.c">
       <Filter>Source Files\GPU\Spherical Harmonics</Filter>
@@ -153,9 +150,6 @@
     <ClCompile Include="image.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
-    <ClCompile Include="radiance_cell_scatter_unbiased_pipeline.cpp">
-      <Filter>Source Files\Pipelines</Filter>
-    </ClCompile>
     <ClCompile Include="unbiasedScattering_embedded.c">
       <Filter>Source Files\GPU\Unbiased</Filter>
     </ClCompile>
@@ -171,11 +165,50 @@
     <ClCompile Include="intersection_tester.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
-    <ClCompile Include="directLightingShadersGathering_embedded.c">
-      <Filter>Source Files\GPU\Direct Lighting</Filter>
+    <ClCompile Include="default_pipeline.cpp">
+      <Filter>Source Files\Pipelines\Texture-based</Filter>
+    </ClCompile>
+    <ClCompile Include="direct_light_pipeline.cpp">
+      <Filter>Source Files\Pipelines\Texture-based</Filter>
+    </ClCompile>
+    <ClCompile Include="radiance_cell_gather_cube_map_pipeline.cpp">
+      <Filter>Source Files\Pipelines\Texture-based</Filter>
+    </ClCompile>
+    <ClCompile Include="radiance_cell_gather_pipeline.cpp">
+      <Filter>Source Files\Pipelines\Texture-based</Filter>
+    </ClCompile>
+    <ClCompile Include="radiance_cell_scatter_cube_map_pipeline.cpp">
+      <Filter>Source Files\Pipelines\Texture-based</Filter>
+    </ClCompile>
+    <ClCompile Include="radiance_cell_scatter_pipeline.cpp">
+      <Filter>Source Files\Pipelines\Texture-based</Filter>
+    </ClCompile>
+    <ClCompile Include="radiance_cell_scatter_unbiased_pipeline.cpp">
+      <Filter>Source Files\Pipelines\Texture-based</Filter>
+    </ClCompile>
+    <ClCompile Include="mcrt_pipeline.cpp">
+      <Filter>Source Files\Pipelines</Filter>
+    </ClCompile>
+    <ClCompile Include="default_pipeline_octree.cpp">
+      <Filter>Source Files\Pipelines\Octree-texture-based</Filter>
+    </ClCompile>
+    <ClCompile Include="direct_light_pipeline_octree.cpp">
+      <Filter>Source Files\Pipelines\Octree-texture-based</Filter>
+    </ClCompile>
+    <ClCompile Include="devicePrograms_embedded_octree.c">
+      <Filter>Source Files\GPU\Camera pass\Octree-texture-based</Filter>
+    </ClCompile>
+    <ClCompile Include="devicePrograms_embedded.c">
+      <Filter>Source Files\GPU\Camera pass\Texture-based</Filter>
     </ClCompile>
     <ClCompile Include="directLightingShaders_embedded.c">
-      <Filter>Source Files\GPU\Direct Lighting</Filter>
+      <Filter>Source Files\GPU\Direct Lighting\Texture-based</Filter>
+    </ClCompile>
+    <ClCompile Include="directLightingShadersGathering_embedded.c">
+      <Filter>Source Files\GPU\Direct Lighting\Texture-based</Filter>
+    </ClCompile>
+    <ClCompile Include="directLightingShadersGathering_embedded_octree.c">
+      <Filter>Source Files\GPU\Direct Lighting\Octree-texture-based</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -218,20 +251,8 @@
     <ClInclude Include="helpers.hpp">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="mcrt_pipeline.hpp">
-      <Filter>Header Files\Pipelines</Filter>
-    </ClInclude>
-    <ClInclude Include="default_pipeline.hpp">
-      <Filter>Header Files\Pipelines</Filter>
-    </ClInclude>
     <ClInclude Include="area_light.hpp">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="direct_light_pipeline.hpp">
-      <Filter>Header Files\Pipelines</Filter>
-    </ClInclude>
-    <ClInclude Include="radiance_cell_gather_pipeline.hpp">
-      <Filter>Header Files\Pipelines</Filter>
     </ClInclude>
     <ClInclude Include="voxelizer.hpp">
       <Filter>Header Files\Radiance Grid</Filter>
@@ -242,20 +263,8 @@
     <ClInclude Include="ias.hpp">
       <Filter>Header Files\Acceleration Structures</Filter>
     </ClInclude>
-    <ClInclude Include="radiance_cell_scatter_pipeline.hpp">
-      <Filter>Header Files\Pipelines</Filter>
-    </ClInclude>
-    <ClInclude Include="radiance_cell_gather_cube_map_pipeline.hpp">
-      <Filter>Header Files\Pipelines</Filter>
-    </ClInclude>
-    <ClInclude Include="radiance_cell_scatter_cube_map_pipeline.hpp">
-      <Filter>Header Files\Pipelines</Filter>
-    </ClInclude>
     <ClInclude Include="image.hpp">
       <Filter>Header Files\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="radiance_cell_scatter_unbiased_pipeline.hpp">
-      <Filter>Header Files\Pipelines</Filter>
     </ClInclude>
     <ClInclude Include="octree_texture.hpp">
       <Filter>Header Files\Octree Textures</Filter>
@@ -269,14 +278,38 @@
     <ClInclude Include="intersection_tester.hpp">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
+    <ClInclude Include="default_pipeline.hpp">
+      <Filter>Header Files\Pipelines\Texture-based</Filter>
+    </ClInclude>
+    <ClInclude Include="direct_light_pipeline.hpp">
+      <Filter>Header Files\Pipelines\Texture-based</Filter>
+    </ClInclude>
+    <ClInclude Include="radiance_cell_gather_cube_map_pipeline.hpp">
+      <Filter>Header Files\Pipelines\Texture-based</Filter>
+    </ClInclude>
+    <ClInclude Include="radiance_cell_gather_pipeline.hpp">
+      <Filter>Header Files\Pipelines\Texture-based</Filter>
+    </ClInclude>
+    <ClInclude Include="radiance_cell_scatter_cube_map_pipeline.hpp">
+      <Filter>Header Files\Pipelines\Texture-based</Filter>
+    </ClInclude>
+    <ClInclude Include="radiance_cell_scatter_pipeline.hpp">
+      <Filter>Header Files\Pipelines\Texture-based</Filter>
+    </ClInclude>
+    <ClInclude Include="radiance_cell_scatter_unbiased_pipeline.hpp">
+      <Filter>Header Files\Pipelines\Texture-based</Filter>
+    </ClInclude>
+    <ClInclude Include="mcrt_pipeline.hpp">
+      <Filter>Header Files\Pipelines</Filter>
+    </ClInclude>
+    <ClInclude Include="default_pipeline_octree.hpp">
+      <Filter>Header Files\Pipelines\Octree-texture-based</Filter>
+    </ClInclude>
+    <ClInclude Include="direct_light_pipeline_octree.hpp">
+      <Filter>Header Files\Pipelines\Octree-texture-based</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="devicePrograms.cu">
-      <Filter>Source Files\GPU</Filter>
-    </None>
-    <None Include="cameraRayProgram.cu">
-      <Filter>Source Files\GPU</Filter>
-    </None>
     <None Include="radianceCellScattering_trilinear2.cu">
       <Filter>Source Files\GPU\Spherical Harmonics</Filter>
     </None>
@@ -346,8 +379,17 @@
     <None Include="directLightingShadersGathering.cu">
       <Filter>Source Files\GPU\Direct Lighting\Texture-based</Filter>
     </None>
-    <None Include="directLightingGathering_Octree.cu">
+    <None Include="directLightingShadersGatheringOctree.cu">
       <Filter>Source Files\GPU\Direct Lighting\Octree-texture-based</Filter>
+    </None>
+    <None Include="devicePrograms.cu">
+      <Filter>Source Files\GPU\Camera pass</Filter>
+    </None>
+    <None Include="cameraRayProgram.cu">
+      <Filter>Source Files\GPU\Camera pass\Texture-based</Filter>
+    </None>
+    <None Include="cameraRayProgramOctree.cu">
+      <Filter>Source Files\GPU\Camera pass\Octree-texture-based</Filter>
     </None>
   </ItemGroup>
 </Project>

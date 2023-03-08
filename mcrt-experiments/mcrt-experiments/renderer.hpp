@@ -7,12 +7,15 @@
 #include "scene.hpp"
 #include "helpers.hpp"
 #include "default_pipeline.hpp"
+#include "default_pipeline_octree.hpp"
 #include "direct_light_pipeline.hpp"
+#include "direct_light_pipeline_octree.hpp"
 #include "radiance_cell_gather_pipeline.hpp"
 #include "radiance_cell_gather_cube_map_pipeline.hpp"
 #include "radiance_cell_scatter_pipeline.hpp"
 #include "radiance_cell_scatter_cube_map_pipeline.hpp"
 #include "radiance_cell_scatter_unbiased_pipeline.hpp"
+
 
 #include <stb/stb_image.h>
 
@@ -29,11 +32,16 @@ namespace mcrt {
 		NA
 	};
 
+	enum IRRADIANCE_STORAGE_TYPE {
+		TEXTURE_2D,
+		OCTREE_TEXTURE
+	};
+
 	class Renderer {
 	public:
 		/*! Constructor : performs setup, including initializing OptiX, creation of module
 		 pipelines, programs, SBT etc. */
-		Renderer(Scene& scene, const Camera& camera, BIAS_MODE bias, PROBE_MODE probeType);
+		Renderer(Scene& scene, const Camera& camera, BIAS_MODE bias, PROBE_MODE probeType, IRRADIANCE_STORAGE_TYPE irradianceStorage);
 
 		void render();
 
@@ -51,6 +59,7 @@ namespace mcrt {
 		void writeToImage(std::string fileName, int resX, int resY, void* data);
 		void initLightingTextures(int size);
 		void initLightProbeCubeMaps(int resolution, int gridRes);
+
 		void calculateDirectLighting();
 		void calculateIndirectLighting(BIAS_MODE bias, PROBE_MODE mode);
 		void initSHWeightsBuffer(int amountNonEmptyCells);
@@ -62,6 +71,12 @@ namespace mcrt {
 		void calculateRadianceCellScatterPassCubeMap(int iteration, CUDABuffer& prevBounceTexture, CUDABuffer& dstTexture);
 		void calculateRadianceCellScatterUnbiased(int iteration, CUDABuffer& prevBounceTexture, CUDABuffer& dstTexture);
 
+		void calculateDirectLightingOctree();
+		void calculateIndirectLightingOctree(BIAS_MODE bias, PROBE_MODE mode);
+		void calculateRadianceCellGatherPassCubeMapAltOctree(CUDABuffer& previousPassLightSourceOctreeTexture);
+		void calculateRadianceCellScatterPassCubeMapOctree(int iteration, CUDABuffer& prevBounceOctreeTexture, CUDABuffer& dstOctreeTexture);
+		void calculateRadianceCellScatterUnbiasedOctree(int iteration, CUDABuffer& prevBounceOctreeTexture, CUDABuffer& dstOctreeTexture);
+
 		void lightProbeTest(int iteration, CUDABuffer& prevBounceTexture, CUDABuffer& dstTexture);
 		void octreeTextureTest();
 
@@ -70,6 +85,8 @@ namespace mcrt {
 
 		void prepareUVWorldPositions();
 		void prepareUVsInsideBuffer();
+
+		void prepareOctreeLeafPositions();
 
 		// Helpers
 		float area(glm::vec2 a, glm::vec2 b, glm::vec2 c);
@@ -95,6 +112,9 @@ namespace mcrt {
 		void createTextures();
 
 	protected:
+		// Renderer properties
+		IRRADIANCE_STORAGE_TYPE irradStorageType;
+
 		// CUDA device context + stream that OptiX pipeline will run on,
 		// and device properties of the device
 		CUcontext			cudaContext;
@@ -104,7 +124,7 @@ namespace mcrt {
 		// OptiX context that pipeline will run in
 		OptixDeviceContext	optixContext;
 
-		// Pipelines
+		// 2D texture-based pipelines
 		std::unique_ptr<DefaultPipeline> cameraPipeline;
 		std::unique_ptr<DirectLightPipeline> directLightPipeline;
 		std::unique_ptr<RadianceCellGatherPipeline> radianceCellGatherPipeline;
@@ -112,6 +132,10 @@ namespace mcrt {
 		std::unique_ptr<RadianceCellScatterPipeline> radianceCellScatterPipeline;
 		std::unique_ptr<RadianceCellScatterCubeMapPipeline> radianceCellScatterCubeMapPipeline;
 		std::unique_ptr<RadianceCellScatterUnbiasedPipeline> radianceCellScatterUnbiasedPipeline;
+
+		// Octree texture-based pipelines
+		std::unique_ptr<DefaultPipelineOctree> cameraPipelineOctree;
+		std::unique_ptr<DirectLightPipelineOctree> directLightPipelineOctree;
 
 		CUDABuffer lightSourceTexture; // UV map with direct light source (to test the SH projection)
 		CUDABuffer colorBuffer;	// Framebuffer we will write to
@@ -132,6 +156,7 @@ namespace mcrt {
 		CUDABuffer UVsInsideOffsets;	// In this buffer we'll store the offsets to index the UVsInsideBuffer
 
 		std::unique_ptr<OctreeTexture> octreeTextures;
+		CUDABuffer octreeLeafPositionsBuffer;
 
 		Camera renderCamera;
 

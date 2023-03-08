@@ -138,10 +138,14 @@
     <ClCompile Include="area_light.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="default_pipeline.cpp" />
+    <ClCompile Include="default_pipeline_octree.cpp" />
     <ClCompile Include="devicePrograms_embedded.c" />
+    <ClCompile Include="devicePrograms_embedded_octree.c" />
     <ClCompile Include="directLightingShadersGathering_embedded.c" />
+    <ClCompile Include="directLightingShadersGathering_embedded_octree.c" />
     <ClCompile Include="directLightingShaders_embedded.c" />
     <ClCompile Include="direct_light_pipeline.cpp" />
+    <ClCompile Include="direct_light_pipeline_octree.cpp" />
     <ClCompile Include="game_object.cpp" />
     <ClCompile Include="gas.cpp" />
     <ClCompile Include="GLFWindow.cpp" />
@@ -176,7 +180,9 @@
     <ClInclude Include="camera.hpp" />
     <ClInclude Include="CUDABuffer.hpp" />
     <ClInclude Include="default_pipeline.hpp" />
+    <ClInclude Include="default_pipeline_octree.hpp" />
     <ClInclude Include="direct_light_pipeline.hpp" />
+    <ClInclude Include="direct_light_pipeline_octree.hpp" />
     <ClInclude Include="game_object.hpp" />
     <ClInclude Include="gas.hpp" />
     <ClInclude Include="GLFWindow.hpp" />
@@ -203,12 +209,13 @@
     <ClInclude Include="voxelizer.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="cameraRayProgramOctree.cu" />
     <None Include="cube_mapping.cuh" />
     <None Include="devicePrograms.cu" />
     <None Include="directLightingShaders.cu" />
     <None Include="directLightingShadersGathering.cu" />
     <None Include="cameraRayProgram.cu" />
-    <None Include="directLightingGathering_Octree.cu" />
+    <None Include="directLightingShadersGatheringOctree.cu" />
     <None Include="octreeTesting.cu" />
     <None Include="probeTesting.cu" />
     <None Include="radianceCellGathering3.cu" />

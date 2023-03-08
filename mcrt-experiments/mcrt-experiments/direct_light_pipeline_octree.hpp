@@ -2,15 +2,13 @@
 #include "mcrt_pipeline.hpp"
 
 namespace mcrt {
-
-	class DefaultPipeline : public McrtPipeline
+	class DirectLightPipelineOctree : public McrtPipeline
 	{
 	public:
-		DefaultPipeline(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene);
-
+		DirectLightPipelineOctree(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene);
 		void uploadLaunchParams() override;
 
-		LaunchParamsCameraPass launchParams;
+		LaunchParamsDirectLightingOctree launchParams;
 		CUDABuffer   launchParamsBuffer;
 	private:
 		void buildModule(OptixDeviceContext& context) override;
@@ -21,4 +19,5 @@ namespace mcrt {
 	};
 
 }
+
 

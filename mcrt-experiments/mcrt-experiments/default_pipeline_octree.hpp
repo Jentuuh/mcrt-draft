@@ -3,14 +3,14 @@
 
 namespace mcrt {
 
-	class DefaultPipeline : public McrtPipeline
+	class DefaultPipelineOctree : public McrtPipeline
 	{
 	public:
-		DefaultPipeline(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene);
+		DefaultPipelineOctree(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene);
 
 		void uploadLaunchParams() override;
 
-		LaunchParamsCameraPass launchParams;
+		LaunchParamsCameraPassOctree launchParams;
 		CUDABuffer   launchParamsBuffer;
 	private:
 		void buildModule(OptixDeviceContext& context) override;
@@ -20,5 +20,5 @@ namespace mcrt {
 		OptixTraversableHandle buildAccelerationStructure(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene) override;
 	};
 
-}
 
+}

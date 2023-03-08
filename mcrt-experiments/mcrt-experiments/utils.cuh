@@ -77,7 +77,7 @@ namespace mcrt {
 
 		glm::vec3 boxHalfSize = 0.5f * (max - min);
 		glm::vec3 center = min + boxHalfSize;
-		printf("Center: %f %f %f \n", center.x, center.y, center.z);
+		//printf("Center: %f %f %f \n", center.x, center.y, center.z);
 
 		// Index 0
 		glm::vec3 min0 = center - glm::vec3{ boxHalfSize.x, 0.0f, boxHalfSize.z };
@@ -86,7 +86,7 @@ namespace mcrt {
 
 		if (isPointInBox(min0, max0, vertexPosition))
 		{
-			printf("IN 0! \n");
+			//printf("IN 0! \n");
 			result.min = min0;
 			result.max = max0;
 			result.index = 0;
@@ -99,8 +99,7 @@ namespace mcrt {
 
 		if (isPointInBox(min1, max1, vertexPosition))
 		{
-			printf("IN 1! \n");
-
+			//printf("IN 1! \n");
 			result.min = min1;
 			result.max = max1;
 			result.index = 1;
@@ -113,8 +112,7 @@ namespace mcrt {
 
 		if (isPointInBox(min2, max2, vertexPosition))
 		{
-			printf("IN 2! \n");
-
+			//printf("IN 2! \n");
 			result.min = min2;
 			result.max = max2;
 			result.index = 2;
@@ -127,8 +125,7 @@ namespace mcrt {
 
 		if (isPointInBox(min3, max3, vertexPosition))
 		{
-			printf("IN 3! \n");
-
+			//printf("IN 3! \n");
 			result.min = min3;
 			result.max = max3;
 			result.index = 3;
@@ -141,8 +138,7 @@ namespace mcrt {
 
 		if (isPointInBox(min4, max4, vertexPosition))
 		{
-			printf("IN 4! \n");
-
+			//printf("IN 4! \n");
 			result.min = min4;
 			result.max = max4;
 			result.index = 4;
@@ -155,8 +151,7 @@ namespace mcrt {
 
 		if (isPointInBox(min5, max5, vertexPosition))
 		{
-			printf("IN 5! \n");
-
+			//printf("IN 5! \n");
 			result.min = min5;
 			result.max = max5;
 			result.index = 5;
@@ -169,8 +164,7 @@ namespace mcrt {
 
 		if (isPointInBox(min6, max6, vertexPosition))
 		{
-			printf("IN 6! \n");
-
+			//printf("IN 6! \n");
 			result.min = min6;
 			result.max = max6;
 			result.index = 6;
@@ -183,15 +177,14 @@ namespace mcrt {
 
 		if (isPointInBox(min7, max7, vertexPosition))
 		{
-			printf("IN 7! \n");
-
+			//printf("IN 7! \n");
 			result.min = min7;
 			result.max = max7;
 			result.index = 7;
 			return result;
 		}
 
-		printf("AT END! \n");
+		//printf("AT END! \n");
 
 	}
 	static __forceinline__ __device__ glm::vec3 read_octree(glm::vec3 worldCoordinate, float* octree)
@@ -221,7 +214,7 @@ namespace mcrt {
 			depth++;
 		}
 
-		printf("Octree value found! Depth traversed: %d\n", depth);
+		//printf("Octree value found! Depth traversed: %d\n", depth);
 		return pointerOrValue;
 	}
 
@@ -237,9 +230,9 @@ namespace mcrt {
 		while (!isLeafNode)
 		{
 			ChildInfo nextNode = find_child(min, max, worldCoordinate);
-			printf("Next index: %d\n", nextNode.index);
-			printf("Next min: %f %f %f\n", nextNode.min.x, nextNode.min.y, nextNode.min.z);
-			printf("Next max: %f %f %f\n", nextNode.max.x, nextNode.max.y, nextNode.max.z);
+			//printf("Next index: %d\n", nextNode.index);
+			//printf("Next min: %f %f %f\n", nextNode.min.x, nextNode.min.y, nextNode.min.z);
+			//printf("Next max: %f %f %f\n", nextNode.max.x, nextNode.max.y, nextNode.max.z);
 
 			pointerOrValue = glm::vec3{ octree[parentOffset + nextNode.index * 4 + 0], octree[parentOffset + nextNode.index * 4 + 1], octree[parentOffset + nextNode.index * 4 + 2] };
 			isLeafNode = octree[parentOffset + nextNode.index * 4 + 3] != 0.5f;	// If the node is not a pointer type, it is a leaf node (either empty or containing a value)
@@ -258,7 +251,7 @@ namespace mcrt {
 			depth++;
 		}
 
-		printf("Wrote value to octree! Depth traversed: %d\n", depth);
+		//printf("Wrote value to octree! Depth traversed: %d\n", depth);
 	}
 
 }

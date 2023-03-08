@@ -1,10 +1,12 @@
-#include "radiance_cell_scatter_cube_map_pipeline.hpp"
+#include "radiance_cell_gather_cube_map_pipeline_octree.hpp"
+#include <iostream>
 
 namespace mcrt {
-    extern "C" char embedded_ptx_code_radiance_cell_scattering_cube_map[];
+
+    extern "C" char embedded_ptx_code_radiance_cell_gathering_cubemap_octree[];
 
     // SBT record for a raygen program
-    struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) RaygenRecordRadianceCellScatter
+    struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) RaygenRecordRadianceCellGather
     {
         __align__(OPTIX_SBT_RECORD_ALIGNMENT) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
         // just a dummy value - later examples will use more interesting
@@ -13,7 +15,7 @@ namespace mcrt {
     };
 
     // SBT record for a miss program
-    struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) MissRecordRadianceCellScatter
+    struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) MissRecordRadianceCellGather
     {
         __align__(OPTIX_SBT_RECORD_ALIGNMENT) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
         // just a dummy value - later examples will use more interesting
@@ -22,21 +24,20 @@ namespace mcrt {
     };
 
     // SBT record for a hitgroup program
-    struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) HitgroupRecordRadianceCellScatter
+    struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) HitgroupRecordRadianceCellGather
     {
         __align__(OPTIX_SBT_RECORD_ALIGNMENT) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
         // just a dummy value - later examples will use more interesting
         // data here
-        MeshSBTDataRadianceCellScatter data;
+        MeshSBTDataRadianceCellGather data;
     };
 
-    // TODO: We build GAS for each pipeline separately now, while most pipelines use the same, can't we reuse that one?
-    RadianceCellScatterCubeMapPipeline::RadianceCellScatterCubeMapPipeline(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene) : McrtPipeline(context, geometryBuffers, scene)
+    RadianceCellGatherCubeMapPipelineOctree::RadianceCellGatherCubeMapPipelineOctree(OptixDeviceContext& context, GeometryBufferHandle& proxyGeometry, Scene& scene) : McrtPipeline(context, proxyGeometry, scene)
     {
-        init(context, geometryBuffers, scene);
+        initRadianceCellGather(context, proxyGeometry, scene);
 
         std::vector<GeometryBufferHandle> geometries;
-        geometries.push_back(geometryBuffers);
+        geometries.push_back(proxyGeometry);
         int numSceneObjects = scene.numObjects();
         std::vector<int> numsBuildInputs = { numSceneObjects };
         std::vector<bool> disableAnyHit = { true };
@@ -48,12 +49,21 @@ namespace mcrt {
         launchParamsBuffer.alloc(sizeof(launchParams));
     }
 
-    void RadianceCellScatterCubeMapPipeline::uploadLaunchParams()
+    void RadianceCellGatherCubeMapPipelineOctree::uploadLaunchParams()
     {
         launchParamsBuffer.upload(&launchParams, 1);
     }
 
-    void RadianceCellScatterCubeMapPipeline::buildModule(OptixDeviceContext& context)
+    void RadianceCellGatherCubeMapPipelineOctree::initRadianceCellGather(OptixDeviceContext& context, GeometryBufferHandle& proxyGeometry, Scene& scene)
+    {
+        buildModule(context);
+        buildDevicePrograms(context);
+        buildPipeline(context);
+        buildSBTRadianceCellGather(proxyGeometry, scene);
+    }
+
+
+    void RadianceCellGatherCubeMapPipelineOctree::buildModule(OptixDeviceContext& context)
     {
         moduleCompileOptions.maxRegisterCount = 50;
         moduleCompileOptions.optLevel = OPTIX_COMPILE_OPTIMIZATION_DEFAULT;
@@ -62,15 +72,15 @@ namespace mcrt {
         pipelineCompileOptions = {};
         pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY;
         pipelineCompileOptions.usesMotionBlur = false;
-        pipelineCompileOptions.numPayloadValues = 4;
+        pipelineCompileOptions.numPayloadValues = 3;
         pipelineCompileOptions.numAttributeValues = 2;
         pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE;
         pipelineCompileOptions.pipelineLaunchParamsVariableName = "optixLaunchParams";
 
         // Max # of ray bounces
-        pipelineLinkOptions.maxTraceDepth = 3;
+        pipelineLinkOptions.maxTraceDepth = 2;
 
-        const std::string ptxCode = embedded_ptx_code_radiance_cell_scattering_cube_map;
+        const std::string ptxCode = embedded_ptx_code_radiance_cell_gathering_cubemap_octree;
 
         char log[2048];
         size_t sizeof_log = sizeof(log);
@@ -88,7 +98,7 @@ namespace mcrt {
         }
     }
 
-    void RadianceCellScatterCubeMapPipeline::buildDevicePrograms(OptixDeviceContext& context)
+    void RadianceCellGatherCubeMapPipelineOctree::buildDevicePrograms(OptixDeviceContext& context)
     {
         //---------------------------------------
         //  RAYGEN PROGRAMS
@@ -99,7 +109,7 @@ namespace mcrt {
         OptixProgramGroupDesc pgDescRaygen = {};
         pgDescRaygen.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
         pgDescRaygen.raygen.module = module;
-        pgDescRaygen.raygen.entryFunctionName = "__raygen__renderFrame__cell__scattering";
+        pgDescRaygen.raygen.entryFunctionName = "__raygen__renderFrame__cell__gathering";
 
         // OptixProgramGroup raypg;
         char log[2048];
@@ -126,7 +136,7 @@ namespace mcrt {
         OptixProgramGroupDesc pgDescMiss = {};
         pgDescMiss.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
         pgDescMiss.miss.module = module;
-        pgDescMiss.miss.entryFunctionName = "__miss__radiance__cell__scattering";
+        pgDescMiss.miss.entryFunctionName = "__miss__radiance__cell__gathering";
 
         OPTIX_CHECK(optixProgramGroupCreate(context,
             &pgDescMiss,
@@ -153,8 +163,8 @@ namespace mcrt {
         pgDescHitgroupScene.hitgroup.moduleCH = module;
         pgDescHitgroupScene.hitgroup.moduleAH = module;
 
-        pgDescHitgroupScene.hitgroup.entryFunctionNameCH = "__closesthit__radiance__cell__scattering__scene";
-        pgDescHitgroupScene.hitgroup.entryFunctionNameAH = "__anyhit__radiance__cell__scattering__scene";
+        pgDescHitgroupScene.hitgroup.entryFunctionNameCH = "__closesthit__radiance__cell__gathering__scene";
+        pgDescHitgroupScene.hitgroup.entryFunctionNameAH = "__anyhit__radiance__cell__gathering__scene";
 
         OPTIX_CHECK(optixProgramGroupCreate(context,
             &pgDescHitgroupScene,
@@ -163,16 +173,27 @@ namespace mcrt {
             log, &sizeof_log,
             &hitgroupPGs[0]
         ));
+
+
+        if (sizeof_log > 1)
+        {
+            std::cout << log << std::endl;
+        }
     }
 
-    void RadianceCellScatterCubeMapPipeline::buildSBT(GeometryBufferHandle& geometryBuffers, Scene& scene)
+    void RadianceCellGatherCubeMapPipelineOctree::buildSBT(GeometryBufferHandle& geometryBuffers, Scene& scene)
+    {
+        // No implementation in this subclass, this class has its own version of buildSBT
+    }
+
+    void RadianceCellGatherCubeMapPipelineOctree::buildSBTRadianceCellGather(GeometryBufferHandle& proxyGeometry, Scene& scene)
     {
         // ----------------------------------------
-      // Build raygen records
-      // ----------------------------------------
-        std::vector<RaygenRecordRadianceCellScatter> raygenRecords;
+        // Build raygen records
+        // ----------------------------------------
+        std::vector<RaygenRecordRadianceCellGather> raygenRecords;
         for (int i = 0; i < raygenPGs.size(); i++) {
-            RaygenRecordRadianceCellScatter rec;
+            RaygenRecordRadianceCellGather rec;
             OPTIX_CHECK(optixSbtRecordPackHeader(raygenPGs[i], &rec));
             rec.data = nullptr; /* for now ... */
             raygenRecords.push_back(rec);
@@ -186,9 +207,9 @@ namespace mcrt {
         // ----------------------------------------
         // Build miss records
         // ----------------------------------------
-        std::vector<MissRecordRadianceCellScatter> missRecords;
+        std::vector<MissRecordRadianceCellGather> missRecords;
         for (int i = 0; i < missPGs.size(); i++) {
-            MissRecordRadianceCellScatter rec;
+            MissRecordRadianceCellGather rec;
             OPTIX_CHECK(optixSbtRecordPackHeader(missPGs[i], &rec));
             rec.data = nullptr; /* for now ... */
             missRecords.push_back(rec);
@@ -197,38 +218,45 @@ namespace mcrt {
         missRecordsBuffer.alloc_and_upload(missRecords);
         // Maintain a pointer to the device memory
         sbt.missRecordBase = missRecordsBuffer.d_pointer();
-
-        sbt.missRecordStrideInBytes = sizeof(MissRecordRadianceCellScatter);
+        sbt.missRecordStrideInBytes = sizeof(MissRecordRadianceCellGather);
         sbt.missRecordCount = (int)missRecords.size();
 
 
         // ----------------------------------------
         // Build hitgroup records
         // ----------------------------------------
+        std::vector<HitgroupRecordRadianceCellGather> hitgroupRecords;
         int numObjects = scene.numObjects();
-        std::vector<HitgroupRecordRadianceCellScatter> hitgroupRecords;
+
+        // Scene geometry
         for (int i = 0; i < numObjects; i++) {
             auto mesh = scene.getGameObjects()[i]->model->mesh;
 
-            HitgroupRecordRadianceCellScatter rec;
-            OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec));
+            HitgroupRecordRadianceCellGather rec_scene;
+            OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec_scene));
 
-            rec.data.vertex = (glm::vec3*)geometryBuffers.vertices[i].d_pointer();
-            rec.data.index = (glm::ivec3*)geometryBuffers.indices[i].d_pointer();
-            rec.data.normal = (glm::vec3*)geometryBuffers.normals[i].d_pointer();
-            rec.data.texcoord = (glm::vec2*)geometryBuffers.texCoords[i].d_pointer();
-            hitgroupRecords.push_back(rec);
+            rec_scene.data.vertex = (glm::vec3*)proxyGeometry.vertices[i].d_pointer();
+            rec_scene.data.index = (glm::ivec3*)proxyGeometry.indices[i].d_pointer();
+            rec_scene.data.normal = (glm::vec3*)proxyGeometry.normals[i].d_pointer();
+            rec_scene.data.texcoord = (glm::vec2*)proxyGeometry.texCoords[i].d_pointer();
+
+            hitgroupRecords.push_back(rec_scene);
         }
+
+        NonEmptyCells nonEmptyCells = scene.grid.getNonEmptyCells();
+        int numNonEmptyCells = nonEmptyCells.nonEmptyCells.size();
 
         // Upload records to device
         hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);
+
         // Maintain a pointer to the device memory
         sbt.hitgroupRecordBase = hitgroupRecordsBuffer.d_pointer();
-        sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecordRadianceCellScatter);
+        sbt.hitgroupRecordStrideInBytes = sizeof(HitgroupRecordRadianceCellGather);
         sbt.hitgroupRecordCount = (int)hitgroupRecords.size();
     }
 
-    void RadianceCellScatterCubeMapPipeline::buildPipeline(OptixDeviceContext& context)
+
+    void RadianceCellGatherCubeMapPipelineOctree::buildPipeline(OptixDeviceContext& context)
     {
         // Gather all program groups
         std::vector<OptixProgramGroup> programGroups;
@@ -271,8 +299,11 @@ namespace mcrt {
             2))
     }
 
-    OptixTraversableHandle RadianceCellScatterCubeMapPipeline::buildAccelerationStructure(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene)
+
+    OptixTraversableHandle RadianceCellGatherCubeMapPipelineOctree::buildAccelerationStructure(OptixDeviceContext& context, GeometryBufferHandle& geometryBuffers, Scene& scene)
     {
+        // No implementation in this subclass, this class has its own version of buildAccelerationStructure
         return NULL;
     }
+
 }
