@@ -17,15 +17,16 @@ namespace mcrt {
 		CUDABuffer& getOctreeGPUMemory() { return octreeGPUMemory; }; 
 		CUDABuffer& getOctreeGPUMemoryBounce2() { return octreeGPUMemoryBounce2; };
 
-		std::vector<glm::vec3>& getLeafPositions() { return leafPositions; };
+		//std::vector<glm::vec3>& getLeafPositions() { return leafPositions; };
+		float getLeafFaceArea() { return leafFaceArea; };
 		int getKernelGranularity() { return kernelGranularity; };
 
 	private:
 		void initOctreeTexture(int d, Scene& sceneObject);
 		CUDABuffer octreeGPUMemory;
 		CUDABuffer octreeGPUMemoryBounce2;
-		std::vector<glm::vec3> leafPositions;
+
 		int kernelGranularity;
-		//std::vector<cudaTextureObject_t> textureObjects;
+		float leafFaceArea;
 	};
 }

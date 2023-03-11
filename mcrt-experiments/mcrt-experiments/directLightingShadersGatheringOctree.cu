@@ -131,12 +131,14 @@ namespace mcrt {
         const auto& lights = optixLaunchParams.lights;
 
         // Get thread indices
-        const int uIndex = optixGetLaunchIndex().x;
-        const int vIndex = optixGetLaunchIndex().y;
+        //const int uIndex = optixGetLaunchIndex().x;
+        //const int vIndex = optixGetLaunchIndex().y;
+        const int launchIndex = optixGetLaunchIndex().x;
 
-        glm::vec3 UVWorldPos = optixLaunchParams.uvWorldPositions.UVDataBuffer[vIndex * optixLaunchParams.UVWorldPosTextureResolution + uIndex].worldPosition;
-        const glm::vec3 UVNormal = optixLaunchParams.uvWorldPositions.UVDataBuffer[vIndex * optixLaunchParams.UVWorldPosTextureResolution + uIndex].worldNormal;
-        const glm::vec3 diffuseColor = optixLaunchParams.uvWorldPositions.UVDataBuffer[vIndex * optixLaunchParams.UVWorldPosTextureResolution + uIndex].diffuseColor;
+        glm::vec3 UVWorldPos = optixLaunchParams.uvWorldPositions.UVDataBuffer[launchIndex].worldPosition;
+        const glm::vec3 UVNormal = optixLaunchParams.uvWorldPositions.UVDataBuffer[launchIndex].worldNormal;
+        const glm::vec3 diffuseColor = optixLaunchParams.uvWorldPositions.UVDataBuffer[launchIndex].diffuseColor;
+
 
         if ((UVWorldPos.x > 0.0f && UVWorldPos.x < 1.0f) && (UVWorldPos.y > 0.0f && UVWorldPos.y < 1.0f) && (UVWorldPos.z > 0.0f && UVWorldPos.z < 1.0f))
         {        
@@ -146,7 +148,7 @@ namespace mcrt {
             // Iterate over all lights
             for (int i = 0; i < optixLaunchParams.amountLights; i++)
             {
-                unsigned int seed = tea<4>(vIndex * optixLaunchParams.UVWorldPosTextureResolution + uIndex, i);
+                unsigned int seed = tea<4>(launchIndex, i);
 
                 // Look up the light properties for the light in question
                 LightData lightProperties = optixLaunchParams.lights[i];

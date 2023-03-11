@@ -47,7 +47,7 @@ namespace mcrt {
 	}
 
 
-	void OctreeNode::recursiveSplit(int currentLevel, int maxDepth, Scene& sceneObject, std::vector<float>& gpuOctree, std::stack<glm::vec3>& parentCoordStack, glm::ivec3& currentIndirectGridCoord, bool nodeIntersectsWithSceneGeometry, int* nodeCount)
+	void OctreeNode::recursiveSplit(int currentLevel, int maxDepth, Scene& sceneObject, std::vector<float>& gpuOctree, std::stack<glm::vec3>& parentCoordStack, glm::ivec3& currentIndirectGridCoord, bool nodeIntersectsWithSceneGeometry, int* nodeCount, std::function<void(int)> progressCallback)
 	{
 		// The location of the current node in the octree vector (necessary to calculate the offset into this vector)
 		glm::vec3 currentNodeCoord = parentCoordStack.top();
@@ -88,7 +88,7 @@ namespace mcrt {
 
 			// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
 			parentCoordStack.push(glm::vec3{ currentIndirectGridCoord.x, currentIndirectGridCoord.y, currentIndirectGridCoord.z });
-			child1->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, doesChild1Intersect, nodeCount);
+			child1->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, doesChild1Intersect, nodeCount, progressCallback);
 			currentChild++;
 
 			// =======================================================
@@ -110,7 +110,7 @@ namespace mcrt {
 
 			// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
 			parentCoordStack.push(glm::vec3{ currentIndirectGridCoord.x, currentIndirectGridCoord.y, currentIndirectGridCoord.z });
-			child2->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, doesChild2Intersect, nodeCount);
+			child2->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, doesChild2Intersect, nodeCount, progressCallback);
 			currentChild++;
 
 			// =======================================================
@@ -132,7 +132,7 @@ namespace mcrt {
 	
 			// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
 			parentCoordStack.push(glm::vec3{ currentIndirectGridCoord.x, currentIndirectGridCoord.y, currentIndirectGridCoord.z });
-			child3->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, doesChild3Intersect, nodeCount);
+			child3->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, doesChild3Intersect, nodeCount, progressCallback);
 			currentChild++;
 
 			// =======================================================
@@ -154,7 +154,7 @@ namespace mcrt {
 
 			// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
 			parentCoordStack.push(glm::vec3{ currentIndirectGridCoord.x, currentIndirectGridCoord.y, currentIndirectGridCoord.z });
-			child4->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, doesChild4Intersect, nodeCount);
+			child4->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, doesChild4Intersect, nodeCount, progressCallback);
 			currentChild++;
 
 			// =======================================================
@@ -176,7 +176,7 @@ namespace mcrt {
 		
 			// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
 			parentCoordStack.push(glm::vec3{ currentIndirectGridCoord.x, currentIndirectGridCoord.y, currentIndirectGridCoord.z });
-			child5->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, doesChild5Intersect, nodeCount);
+			child5->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, doesChild5Intersect, nodeCount, progressCallback);
 			currentChild++;
 
 			// =======================================================
@@ -198,7 +198,7 @@ namespace mcrt {
 		
 			// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
 			parentCoordStack.push(glm::vec3{ currentIndirectGridCoord.x, currentIndirectGridCoord.y, currentIndirectGridCoord.z });
-			child6->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, doesChild6Intersect, nodeCount);
+			child6->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, doesChild6Intersect, nodeCount, progressCallback);
 			currentChild++;
 
 			// =======================================================
@@ -220,7 +220,7 @@ namespace mcrt {
 
 			// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
 			parentCoordStack.push(glm::vec3{ currentIndirectGridCoord.x, currentIndirectGridCoord.y, currentIndirectGridCoord.z });
-			child7->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, doesChild7Intersect, nodeCount);
+			child7->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, doesChild7Intersect, nodeCount, progressCallback);
 			currentChild++;
 
 			// =======================================================
@@ -242,12 +242,18 @@ namespace mcrt {
 
 			// Push relative coordinate (index) of new child onto the stack, so we can access it in further recursion calls
 			parentCoordStack.push(glm::vec3{ currentIndirectGridCoord.x, currentIndirectGridCoord.y, currentIndirectGridCoord.z });
-			child8->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, doesChild8Intersect, nodeCount);
+			child8->recursiveSplit(currentLevel + 1, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentIndirectGridCoord, doesChild8Intersect, nodeCount, progressCallback);
 
+
+			if (currentLevel == 1) {
+				progressCallback(currentLevel);
+			}
 			parentCoordStack.pop();
 			return;
 		}
-
+		if (currentLevel == 1) {
+			progressCallback(currentLevel);
+		}
 	}
 
 	bool OctreeNode::boxHasIntersections(glm::vec3 minBox, glm::vec3 maxBox, Scene& sceneObject)
@@ -281,22 +287,6 @@ namespace mcrt {
 			}
 		}
 		return false;
-	}	
-
-	void OctreeNode::pushLeafPositions(std::vector<glm::vec3>& leafPositionsVector)
-	{
-		if (children.size() > 0)
-		{
-			// Otherwise, we loop over its children and call this function recursively.
-			for (int i = 0; i < 8; i++)
-			{
-				children[i]->pushLeafPositions(leafPositionsVector);
-			}
-		}
-		else {
-			// If the node has no children it is a leaf node, so we push its center to the leafPositions vector.
-			leafPositionsVector.push_back(getCenter());
-		}
 	}
 
 }

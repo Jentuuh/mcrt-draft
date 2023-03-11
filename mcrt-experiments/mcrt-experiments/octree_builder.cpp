@@ -13,29 +13,23 @@ namespace mcrt {
 		currentCoord = glm::ivec3{ 0, 0, 0};
 		parentCoordStack.push(glm::vec3{0, 0, 0});
 		numNodes = 0;
+		progress = 0.0f;
 
 		// Make root and start recursive splitting
 		root = std::make_unique<OctreeNode>(glm::vec3{0.0f, 0.0f, 0.0f}, glm::vec3{ 1.0f, 1.0f, 1.0f },octreeTextureRes,gpuOctree, parentCoordStack, currentCoord, &numNodes);
 		bool doesRootIntersect = OctreeNode::boxHasIntersections(glm::vec3{ 0.0f, 0.0f, 0.0f }, glm::vec3{ 1.0f, 1.0f, 1.0f }, sceneObject);
-		root->recursiveSplit(0, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentCoord, doesRootIntersect, &numNodes);
+
+		auto increaseProgressCallback = std::bind(&OctreeBuilder::increaseProgress, this, std::placeholders::_1);
+		root->recursiveSplit(0, maxDepth, sceneObject, gpuOctree, parentCoordStack, currentCoord, doesRootIntersect, &numNodes, increaseProgressCallback);
 
 		// After build report
 		int totalOctreeSize = currentCoord.z * octreeTextureRes * octreeTextureRes + currentCoord.y * octreeTextureRes + currentCoord.x * 32;
-		std::cout << "Total octree size in floats: " << totalOctreeSize << std::endl;
+		std::cout << "Total octree size in floats: " << totalOctreeSize << ". Total size in MB: " << ((totalOctreeSize * 4) / 10e6) << " MB." << std::endl;
 
-		//int octreeAllocationSize = currentCoord.z > 0 ? octreeTextureRes * octreeTextureRes * (currentCoord.z + 1) : octreeTextureRes * (currentCoord.y + 1);
-		//std::cout << "Octree allocation size (amount of floats): " << octreeAllocationSize << std::endl; // Resize the octree to conform to the CUDA 3D texture allocator (and to save as much space as possible)
-
+		// Save unnecessary space
 		gpuOctree.resize(totalOctreeSize);
-		initLeafPositions();
 
 		std::cout << "Octree building done. Total number of nodes: " << numNodes << std::endl;
-	}
-
-	void OctreeBuilder::initLeafPositions()
-	{
-		root->pushLeafPositions(leafPositions);
-		std::cout << "Leaf positions initialized. Length: " << leafPositions.size() << std::endl;
 	}
 
 	// For debugging purposes
@@ -57,5 +51,12 @@ namespace mcrt {
 			outputFile << "\n";
 		}
 	}
+
+	void OctreeBuilder::increaseProgress(int reportDepthLevel)
+	{
+		progress += 1 / powf(8, reportDepthLevel);
+		std::cout << "Octree building progress: " << (progress / 1.0f) << "%." << std::endl;
+	}
+
 
 }

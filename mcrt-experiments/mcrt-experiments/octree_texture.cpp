@@ -76,13 +76,9 @@ namespace mcrt {
 	void OctreeTexture::initOctreeTexture(int d, Scene& sceneObject)
 	{
 		int resolution = 1024;
+		leafFaceArea = (1.0f / powf(2, d)) * (1.0f / powf(2, d));
 
-		// TODO: build octree data structure into initialization vector
 		OctreeBuilder builder{ d, resolution, sceneObject };
-
-		leafPositions = builder.getLeafPositions();
-		kernelGranularity = sqrt(leafPositions.size());
-		std::cout << "Kernel granularity: " << kernelGranularity << std::endl;
 
 		//builder.writeGPUOctreeToTxtFile("../debug_output/octreeTexture.txt");
 

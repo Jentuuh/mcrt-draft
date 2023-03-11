@@ -19,7 +19,6 @@
 #include "radiance_cell_scatter_unbiased_pipeline.hpp"
 #include "radiance_cell_scatter_unbiased_pipeline_octree.hpp"
 
-
 #include <stb/stb_image.h>
 
 namespace mcrt {
@@ -88,11 +87,14 @@ namespace mcrt {
 
 		void prepareUVWorldPositions();
 		void prepareUVsInsideBuffer();
+		void prepareWorldSamplePoints(float octreeLeafFaceArea);
 
 		void prepareOctreeLeafPositions();
 
 		// Helpers
-		float area(glm::vec2 a, glm::vec2 b, glm::vec2 c);
+		float triangleArea2D(glm::vec2 a, glm::vec2 b, glm::vec2 c);
+		float triangleArea3D(glm::vec3 a, glm::vec3 b, glm::vec3 c);
+		void barycentricCoordinates(glm::vec3 p, glm::vec3 a, glm::vec3 b, glm::vec3 c, float& u, float& v, float& w);
 		UVWorldData UVto3D(glm::vec2 uv);
 		void writeUVsPerCellToImage(std::vector<int>& offsets, std::vector<glm::vec2>& uvs, int texRes);
 

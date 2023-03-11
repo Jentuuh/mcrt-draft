@@ -9,6 +9,7 @@
 #include <iostream>
 #include <cassert>
 #include <fstream>
+#include <random>
 
 #include <stb/stb_image_write.h>
 
@@ -33,8 +34,8 @@ namespace mcrt {
         std::cout << "Filling geometry buffers..." << std::endl;
         fillGeometryBuffers();
 
-        //std::cout << "Loading textures..." << std::endl;
-        //createTextures();
+        std::cout << "Loading textures..." << std::endl;
+        createTextures();
 
         std::cout << "Setting up pipelines..." << std::endl;
         GeometryBufferHandle geometryData = GeometryBufferHandle{ vertexBuffers, indexBuffers, normalBuffers, texcoordBuffers, textureObjects, amountVertices, amountIndices };
@@ -64,10 +65,10 @@ namespace mcrt {
             }
 
             // Initialize irradiance octree textures
-            octreeTextures = std::make_unique<OctreeTexture>(7, scene);
-            prepareUVWorldPositions();
-            prepareUVsInsideBuffer();
-            //prepareOctreeLeafPositions();
+            octreeTextures = std::make_unique<OctreeTexture>(4, scene);
+            //prepareUVWorldPositions();
+            //prepareUVsInsideBuffer();
+            prepareWorldSamplePoints(octreeTextures->getLeafFaceArea());
 
             if (bias == BIASED_PROBES && probeType == CUBE_MAP)
             {
@@ -75,7 +76,7 @@ namespace mcrt {
             }
 
             calculateDirectLightingOctree();
-            calculateIndirectLightingOctree(bias, probeType);
+            //calculateIndirectLightingOctree(bias, probeType);
         }
         else if (irradianceStorage == TEXTURE_2D) {
             cameraPipeline = std::make_unique<DefaultPipeline>(optixContext, geometryData, scene);
@@ -1102,9 +1103,9 @@ namespace mcrt {
             directLightPipelineOctree->launchParamsBuffer.d_pointer(),
             directLightPipelineOctree->launchParamsBuffer.sizeInBytes,
             &directLightPipelineOctree->sbt,
-            texSize,                    // dimension X: texture size (UV world positions)
-            texSize,                    // dimension Y: texture size (UV world positions)
-            1                           // dimension Z: 1
+            directLightPipelineOctree->launchParams.uvWorldPositions.size,                    // dimension X: texture size (UV world positions)
+            1,                                                                                // dimension Y: texture size (UV world positions)
+            1                                                                                 // dimension Z: 1
             // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
         ));
 
@@ -1496,6 +1497,72 @@ namespace mcrt {
         }
     }
 
+    void Renderer::prepareWorldSamplePoints(float octreeLeafFaceArea)
+    {
+        std::vector<UVWorldData> samplePointWorldData;
+
+        // Loop through all game objects in the scene
+        for (auto& g : scene.getGameObjects())
+        {
+            // Loop through all triangles
+            for (auto& triangle : g->model->mesh->indices)
+            {
+                glm::vec3 v1 = g->model->mesh->vertices[triangle[0]];
+                glm::vec3 v2 = g->model->mesh->vertices[triangle[1]];
+                glm::vec3 v3 = g->model->mesh->vertices[triangle[2]];
+
+                float u,v,w;
+             
+                float triangleSurfaceArea = triangleArea3D(v1, v2, v3);
+                int amountOfPointsToGenerate = 5; //std::ceil(triangleSurfaceArea / octreeLeafFaceArea);
+
+                for (int i = 0; i < amountOfPointsToGenerate; i++)
+                {
+                    const int range_from = 0.0f;
+                    const int range_to = 1.0f;
+                    std::random_device                  rand_dev;
+                    std::mt19937                        generator(rand_dev());
+                    std::uniform_real_distribution<float>  distr(range_from, range_to);
+
+                    float u0 = distr(generator);
+                    float u1 = distr(generator);
+
+                    float sqrtU0 = sqrtf(u0);
+
+                    glm::vec3 uniformRandomPointInTriangle = (1- sqrtU0) * v1 + (sqrtU0 *(1 - u1)) * v2 + (u1 * sqrtU0) * v3;
+                    //std::cout << glm::to_string(uniformRandomPointInTriangle) << std::endl;
+                    barycentricCoordinates(uniformRandomPointInTriangle, v1, v2, v3, u, v, w);
+
+                    // Transform from object space to world space
+                    uniformRandomPointInTriangle = g->worldTransform.object2World * glm::vec4{ uniformRandomPointInTriangle, 1.0f };
+
+                    UVWorldData newSamplePoint;
+                    newSamplePoint.worldPosition = uniformRandomPointInTriangle;
+                    // Barycentric interpolated shading normal (alternative: geometric normal from triangle) 
+                    newSamplePoint.worldNormal = glm::normalize(w * g->model->mesh->normals[triangle[0]] + u * g->model->mesh->normals[triangle[1]] + v * g->model->mesh->normals[triangle[2]]);
+                    newSamplePoint.diffuseColor = g->model->mesh->diffuse;
+                    samplePointWorldData.push_back(newSamplePoint);
+                }
+            }
+        }
+        // Upload world positions to the GPU and pass a pointer to this memory into the launch params
+        UVWorldPositionDeviceBuffer.alloc_and_upload(samplePointWorldData);
+
+        if (irradStorageType == OCTREE_TEXTURE)
+        {
+            directLightPipelineOctree->launchParams.uvWorldPositions.size = samplePointWorldData.size();
+            directLightPipelineOctree->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+        }
+        else if (irradStorageType == TEXTURE_2D)
+        {
+            directLightPipeline->launchParams.uvWorldPositions.size = samplePointWorldData.size();
+            directLightPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+        }
+
+        std::cout << "Done generating world sample points. Amount of points generated: " << samplePointWorldData.size() << std::endl;
+    }
+
+
     void Renderer::prepareOctreeLeafPositions()
     {
    /*     octreeLeafPositionsBuffer.alloc_and_upload(octreeTextures->getLeafPositions());
@@ -1534,12 +1601,35 @@ namespace mcrt {
     }
 
 
-    float Renderer::area(glm::vec2 a, glm::vec2 b, glm::vec2 c)
+    float Renderer::triangleArea2D(glm::vec2 a, glm::vec2 b, glm::vec2 c)
     {
-        // (w * h) / 2
+        // cross product / 2
         glm::vec2 v1 = a - c;
         glm::vec2 v2 = b - c;
         return (v1.x * v2.y - v1.y * v2.x) / 2.0f;
+    }
+
+    float Renderer::triangleArea3D(glm::vec3 a, glm::vec3 b, glm::vec3 c)
+    {
+        // length of cross product (area of parallellogram) divided by 2
+        return glm::length(glm::cross(b-a, c-a)) / 2.0f;
+    }
+
+    void Renderer::barycentricCoordinates(glm::vec3 p, glm::vec3 a, glm::vec3 b, glm::vec3 c, float& u, float& v, float& w)
+    {
+        // ==============================================================================================================
+        // https://gamedev.stackexchange.com/questions/23743/whats-the-most-efficient-way-to-find-barycentric-coordinates
+        // ==============================================================================================================
+        glm::vec3 v0 = b - a, v1 = c - a, v2 = p - a;
+        float d00 = glm::dot(v0, v0);
+        float d01 = glm::dot(v0, v1);
+        float d11 = glm::dot(v1, v1);
+        float d20 = glm::dot(v2, v0);
+        float d21 = glm::dot(v2, v1);
+        float invDenom = 1.0f / (d00 * d11 - d01 * d01);
+        v = (d11 * d20 - d01 * d21) * invDenom;
+        w = (d00 * d21 - d01 * d20) * invDenom;
+        u = 1.0f - v - w;
     }
 
     UVWorldData Renderer::UVto3D(glm::vec2 uv)
@@ -1560,13 +1650,13 @@ namespace mcrt {
                 glm::vec2 f2 = uv2 - uv;
                 glm::vec2 f3 = uv3 - uv;
 
-                float a = area(uv1, uv2, uv3);
+                float a = triangleArea2D(uv1, uv2, uv3);
                 if (a == 0.0f) continue;
 
                 // Barycentric coordinates
-                float a1 = area(uv2, uv3, uv) / a; if (a1 < 0) continue;
-                float a2 = area(uv3, uv1, uv) / a; if (a2 < 0) continue;
-                float a3 = area(uv1, uv2, uv) / a; if (a3 < 0) continue;
+                float a1 = triangleArea2D(uv2, uv3, uv) / a; if (a1 < 0) continue;
+                float a2 = triangleArea2D(uv3, uv1, uv) / a; if (a2 < 0) continue;
+                float a3 = triangleArea2D(uv1, uv2, uv) / a; if (a3 < 0) continue;
 
                 //std::cout << "UV found!" << std::endl;
                 glm::vec3 uvPosition = a1 * g->model->mesh->vertices[triangle[0]] + a2 * g->model->mesh->vertices[triangle[1]] + a3 * g->model->mesh->vertices[triangle[2]];
