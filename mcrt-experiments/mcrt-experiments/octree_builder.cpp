@@ -1,6 +1,7 @@
 #include "octree_builder.hpp"
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 namespace mcrt {
 	OctreeBuilder::OctreeBuilder(int maxDepth, int octreeTextureRes, Scene& sceneObject)
@@ -30,6 +31,35 @@ namespace mcrt {
 		gpuOctree.resize(totalOctreeSize);
 
 		std::cout << "Octree building done. Total number of nodes: " << numNodes << std::endl;
+	}
+
+	// Constructor that loads from file
+	OctreeBuilder::OctreeBuilder(std::string loadOctreePath)
+	{
+		std::ifstream octreeFile; 
+		octreeFile.open(loadOctreePath);
+
+		std::string line;
+		while (std::getline(octreeFile, line))
+		{
+			std::istringstream iss(line);
+			float nextEntry;
+			if (!(iss >> nextEntry)) { break; } // error
+			gpuOctree.push_back(nextEntry);
+		}
+
+		std::cout << "Loaded octree. Total octree size in floats: " << gpuOctree.size() << ". Total size in MB: " << ((gpuOctree.size() * 4) / 10e6) << " MB." << std::endl;
+	}
+
+	// Save built octree to file
+	void OctreeBuilder::saveOctreeToFile(std::string filePath)
+	{
+		std::ofstream outputFile;
+		outputFile.open(filePath);
+		for (int e = 0; e < gpuOctree.size(); e++)
+		{
+			outputFile << gpuOctree[e] << "\n";
+		}
 	}
 
 	// For debugging purposes

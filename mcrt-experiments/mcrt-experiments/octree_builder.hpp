@@ -3,13 +3,16 @@
 #include "scene.hpp"
 #include <stack>
 #include <memory>
+#include <string>
 
 namespace mcrt {
 	class OctreeBuilder
 	{
 	public:
 		OctreeBuilder(int maxDepth, int octreeTextureRes, Scene& sceneObject);
+		OctreeBuilder(std::string loadOctreePath);
 
+		void saveOctreeToFile(std::string filePath);
 		void writeGPUOctreeToTxtFile(std::string filePath);
 		glm::ivec3 getTextureDimensions() { return currentCoord; };
 		std::vector<float>& getOctree() { return gpuOctree; };

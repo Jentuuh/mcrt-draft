@@ -89,8 +89,6 @@ namespace mcrt {
 		void prepareUVsInsideBuffer();
 		void prepareWorldSamplePoints(float octreeLeafFaceArea);
 
-		void prepareOctreeLeafPositions();
-
 		// Helpers
 		float triangleArea2D(glm::vec2 a, glm::vec2 b, glm::vec2 c);
 		float triangleArea3D(glm::vec3 a, glm::vec3 b, glm::vec3 c);
@@ -159,7 +157,7 @@ namespace mcrt {
 		CUDABuffer SHWeightsDataBuffer; // In this buffer we'll store the SH weights
 		CUDABuffer SHAccumulatorsBuffer; // In this buffer we'll store the SH accumulators
 		CUDABuffer numSamplesAccumulatorsBuffer; // In this buffer we'll store the numSamples accumulators per radiance cell SH
-		CUDABuffer UVWorldPositionDeviceBuffer; // In this buffer we'll store the world positions for each of our UV texels (starting from 0,0 --> 1,1), this means this array starts at the left bottom of the actual texture image
+		CUDABuffer samplePointWorldPositionDeviceBuffer; // In this buffer we'll store the world positions for each of our UV texels (starting from 0,0 --> 1,1), this means this array starts at the left bottom of the actual texture image
 		CUDABuffer UVsInsideBuffer;		// In this buffer we'll store the UV worldpositions for all texels inside each cell
 		CUDABuffer UVsInsideOffsets;	// In this buffer we'll store the offsets to index the UVsInsideBuffer
 

@@ -65,8 +65,9 @@ namespace mcrt {
             }
 
             // Initialize irradiance octree textures
-            octreeTextures = std::make_unique<OctreeTexture>(4, scene);
-            //prepareUVWorldPositions();
+            octreeTextures = std::make_unique<OctreeTexture>(10, scene);
+            
+            // TODO: find world positions alternative!
             //prepareUVsInsideBuffer();
             prepareWorldSamplePoints(octreeTextures->getLeafFaceArea());
 
@@ -628,7 +629,7 @@ namespace mcrt {
 
         // Initialize UV World positions data on GPU
         radianceCellGatherPipeline->launchParams.uvWorldPositions.size = texSize * texSize;
-        radianceCellGatherPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+        radianceCellGatherPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)samplePointWorldPositionDeviceBuffer.d_pointer();
         
         // Initialize cell size in launch params
         radianceCellGatherPipeline->launchParams.cellSize = scene.grid.getCellSize();
@@ -704,7 +705,7 @@ namespace mcrt {
 
         // Initialize UV World positions data on GPU
         radianceCellGatherCubeMapPipeline->launchParams.uvWorldPositions.size = texSize * texSize;
-        radianceCellGatherCubeMapPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+        radianceCellGatherCubeMapPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)samplePointWorldPositionDeviceBuffer.d_pointer();
 
         // Initialize cell size in launch params
         radianceCellGatherCubeMapPipeline->launchParams.cellSize = cellSize;
@@ -780,7 +781,7 @@ namespace mcrt {
 
         // Initialize UV World positions data on GPU
         radianceCellGatherCubeMapPipeline->launchParams.uvWorldPositions.size = texSize * texSize;
-        radianceCellGatherCubeMapPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+        radianceCellGatherCubeMapPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)samplePointWorldPositionDeviceBuffer.d_pointer();
 
         // Initialize cell size in launch params
         radianceCellGatherCubeMapPipeline->launchParams.cellSize = cellSize;
@@ -869,7 +870,7 @@ namespace mcrt {
 
             // UV world position data
             radianceCellScatterPipeline->launchParams.uvWorldPositions.size = texSize;
-            radianceCellScatterPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+            radianceCellScatterPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)samplePointWorldPositionDeviceBuffer.d_pointer();
 
             // Stratified sampling parameters
             radianceCellScatterPipeline->launchParams.stratifyResX = STRATIFIED_X_SIZE;
@@ -932,7 +933,7 @@ namespace mcrt {
 
             // UV world position data
             radianceCellScatterCubeMapPipeline->launchParams.uvWorldPositions.size = texSize;
-            radianceCellScatterCubeMapPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+            radianceCellScatterCubeMapPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)samplePointWorldPositionDeviceBuffer.d_pointer();
 
             radianceCellScatterCubeMapPipeline->uploadLaunchParams();
 
@@ -978,7 +979,7 @@ namespace mcrt {
 
         // UV world position data
         radianceCellScatterCubeMapPipeline->launchParams.uvWorldPositions.size = texSize;
-        radianceCellScatterCubeMapPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+        radianceCellScatterCubeMapPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)samplePointWorldPositionDeviceBuffer.d_pointer();
 
         radianceCellScatterCubeMapPipeline->uploadLaunchParams();
 
@@ -1047,7 +1048,7 @@ namespace mcrt {
 
             // UV world position data
             radianceCellScatterUnbiasedPipeline->launchParams.uvWorldPositions.size = texSize;
-            radianceCellScatterUnbiasedPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+            radianceCellScatterUnbiasedPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)samplePointWorldPositionDeviceBuffer.d_pointer();
 
             radianceCellScatterUnbiasedPipeline->uploadLaunchParams();
 
@@ -1209,7 +1210,7 @@ namespace mcrt {
 
         // Initialize UV World positions data on GPU
         radianceCellGatherCubeMapPipelineOctree->launchParams.uvWorldPositions.size = texSize * texSize;
-        radianceCellGatherCubeMapPipelineOctree->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+        radianceCellGatherCubeMapPipelineOctree->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)samplePointWorldPositionDeviceBuffer.d_pointer();
 
         // Initialize cell size in launch params
         radianceCellGatherCubeMapPipelineOctree->launchParams.cellSize = cellSize;
@@ -1270,7 +1271,7 @@ namespace mcrt {
 
             // UV world position data
             radianceCellScatterCubeMapPipelineOctree->launchParams.uvWorldPositions.size = texSize;
-            radianceCellScatterCubeMapPipelineOctree->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+            radianceCellScatterCubeMapPipelineOctree->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)samplePointWorldPositionDeviceBuffer.d_pointer();
 
             radianceCellScatterCubeMapPipelineOctree->uploadLaunchParams();
 
@@ -1315,7 +1316,7 @@ namespace mcrt {
 
             // UV world position data
             radianceCellScatterUnbiasedPipelineOctree->launchParams.uvWorldPositions.size = texSize;
-            radianceCellScatterUnbiasedPipelineOctree->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+            radianceCellScatterUnbiasedPipelineOctree->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)samplePointWorldPositionDeviceBuffer.d_pointer();
 
             radianceCellScatterUnbiasedPipelineOctree->uploadLaunchParams();
 
@@ -1424,17 +1425,12 @@ namespace mcrt {
         }
 
         // Upload world positions to the GPU and pass a pointer to this memory into the launch params
-        UVWorldPositionDeviceBuffer.alloc_and_upload(UVData);
-
-        if (irradStorageType == OCTREE_TEXTURE)
-        {
-            directLightPipelineOctree->launchParams.uvWorldPositions.size = texSize * texSize;
-            directLightPipelineOctree->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
-        }
-        else if (irradStorageType == TEXTURE_2D)
+        samplePointWorldPositionDeviceBuffer.alloc_and_upload(UVData);
+        
+        if (irradStorageType == TEXTURE_2D)
         {
             directLightPipeline->launchParams.uvWorldPositions.size = texSize * texSize;
-            directLightPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+            directLightPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)samplePointWorldPositionDeviceBuffer.d_pointer();
         }
     }
 
@@ -1499,7 +1495,7 @@ namespace mcrt {
 
     void Renderer::prepareWorldSamplePoints(float octreeLeafFaceArea)
     {
-        std::vector<UVWorldData> samplePointWorldData;
+        std::vector<WorldSamplePointData> samplePointWorldData;
 
         // Loop through all game objects in the scene
         for (auto& g : scene.getGameObjects())
@@ -1511,10 +1507,14 @@ namespace mcrt {
                 glm::vec3 v2 = g->model->mesh->vertices[triangle[1]];
                 glm::vec3 v3 = g->model->mesh->vertices[triangle[2]];
 
+                v1 = g->worldTransform.object2World * glm::vec4{ v1, 1.0f };
+                v2 = g->worldTransform.object2World * glm::vec4{ v2, 1.0f };
+                v3 = g->worldTransform.object2World * glm::vec4{ v3, 1.0f };
+
                 float u,v,w;
              
                 float triangleSurfaceArea = triangleArea3D(v1, v2, v3);
-                int amountOfPointsToGenerate = 5; //std::ceil(triangleSurfaceArea / octreeLeafFaceArea);
+                int amountOfPointsToGenerate = 2 * std::ceil(triangleSurfaceArea / octreeLeafFaceArea);
 
                 for (int i = 0; i < amountOfPointsToGenerate; i++)
                 {
@@ -1530,47 +1530,38 @@ namespace mcrt {
                     float sqrtU0 = sqrtf(u0);
 
                     glm::vec3 uniformRandomPointInTriangle = (1- sqrtU0) * v1 + (sqrtU0 *(1 - u1)) * v2 + (u1 * sqrtU0) * v3;
-                    //std::cout << glm::to_string(uniformRandomPointInTriangle) << std::endl;
+
                     barycentricCoordinates(uniformRandomPointInTriangle, v1, v2, v3, u, v, w);
 
-                    // Transform from object space to world space
-                    uniformRandomPointInTriangle = g->worldTransform.object2World * glm::vec4{ uniformRandomPointInTriangle, 1.0f };
-
-                    UVWorldData newSamplePoint;
+                    WorldSamplePointData newSamplePoint;
                     newSamplePoint.worldPosition = uniformRandomPointInTriangle;
-                    // Barycentric interpolated shading normal (alternative: geometric normal from triangle) 
+                    // Barycentric interpolated shading normal (alternative: geometric normal from triangle) and barycentric interpolated UV coords
                     newSamplePoint.worldNormal = glm::normalize(w * g->model->mesh->normals[triangle[0]] + u * g->model->mesh->normals[triangle[1]] + v * g->model->mesh->normals[triangle[2]]);
                     newSamplePoint.diffuseColor = g->model->mesh->diffuse;
+                    newSamplePoint.hasTexture = false;
+
+                    // Texture data
+                    if (g->model->mesh->diffuseTextureID >= 0)
+                    {   
+                        newSamplePoint.hasTexture = true;
+                        newSamplePoint.textureObject = textureObjects[g->model->mesh->diffuseTextureID];
+                        newSamplePoint.uvCoords = w * g->model->mesh->texCoords[triangle[0]] + u * g->model->mesh->texCoords[triangle[1]] + v * g->model->mesh->texCoords[triangle[2]];
+                    }
+                    
                     samplePointWorldData.push_back(newSamplePoint);
                 }
             }
         }
         // Upload world positions to the GPU and pass a pointer to this memory into the launch params
-        UVWorldPositionDeviceBuffer.alloc_and_upload(samplePointWorldData);
+        samplePointWorldPositionDeviceBuffer.alloc_and_upload(samplePointWorldData);
 
         if (irradStorageType == OCTREE_TEXTURE)
         {
             directLightPipelineOctree->launchParams.uvWorldPositions.size = samplePointWorldData.size();
-            directLightPipelineOctree->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
-        }
-        else if (irradStorageType == TEXTURE_2D)
-        {
-            directLightPipeline->launchParams.uvWorldPositions.size = samplePointWorldData.size();
-            directLightPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)UVWorldPositionDeviceBuffer.d_pointer();
+            directLightPipelineOctree->launchParams.uvWorldPositions.UVDataBuffer = (WorldSamplePointData*)samplePointWorldPositionDeviceBuffer.d_pointer();
         }
 
         std::cout << "Done generating world sample points. Amount of points generated: " << samplePointWorldData.size() << std::endl;
-    }
-
-
-    void Renderer::prepareOctreeLeafPositions()
-    {
-   /*     octreeLeafPositionsBuffer.alloc_and_upload(octreeTextures->getLeafPositions());
-
-        directLightPipelineOctree->launchParams.octreeLeafPositions.positions = (glm::vec3*)octreeLeafPositionsBuffer.d_pointer();
-        directLightPipelineOctree->launchParams.octreeLeafPositions.size = octreeTextures->getLeafPositions().size();*/
-
-        // TODO: add initialization of other pipelines
     }
 
 

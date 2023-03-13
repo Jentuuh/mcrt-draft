@@ -137,14 +137,29 @@ namespace mcrt {
 
         glm::vec3 UVWorldPos = optixLaunchParams.uvWorldPositions.UVDataBuffer[launchIndex].worldPosition;
         const glm::vec3 UVNormal = optixLaunchParams.uvWorldPositions.UVDataBuffer[launchIndex].worldNormal;
-        const glm::vec3 diffuseColor = optixLaunchParams.uvWorldPositions.UVDataBuffer[launchIndex].diffuseColor;
+        //const glm::vec3 diffuseColor = optixLaunchParams.uvWorldPositions.UVDataBuffer[launchIndex].diffuseColor;
 
+        // ------------------------------------------------------------------
+        // compute diffuse material color, including diffuse texture, if
+        // available
+        // ------------------------------------------------------------------
+        glm::vec3 diffuseColor = optixLaunchParams.uvWorldPositions.UVDataBuffer[launchIndex].diffuseColor;
+
+        if (optixLaunchParams.uvWorldPositions.UVDataBuffer[launchIndex].hasTexture) {
+
+            const glm::vec2 UVTexCoords = optixLaunchParams.uvWorldPositions.UVDataBuffer[launchIndex].uvCoords;
+
+            float4 fromTexf4 = tex2D<float4>(optixLaunchParams.uvWorldPositions.UVDataBuffer[launchIndex].textureObject, UVTexCoords.x, UVTexCoords.y);
+            glm::vec4 fromTexture = glm::vec4{ fromTexf4.x,fromTexf4.y,fromTexf4.z,fromTexf4.w };
+
+            diffuseColor = (glm::vec3)fromTexture;
+        }
+
+        // We apply a small offset of 0.00001f in the direction of the normal to the UV world pos, to 'mitigate' floating point rounding errors causing false occlusions/illuminations
+        UVWorldPos = glm::vec3{ UVWorldPos.x + UVNormal.x * 0.00001f, UVWorldPos.y + UVNormal.y * 0.00001f, UVWorldPos.z + UVNormal.z * 0.00001f };
 
         if ((UVWorldPos.x > 0.0f && UVWorldPos.x < 1.0f) && (UVWorldPos.y > 0.0f && UVWorldPos.y < 1.0f) && (UVWorldPos.z > 0.0f && UVWorldPos.z < 1.0f))
-        {        
-            // We apply a small offset of 0.00001f in the direction of the normal to the UV world pos, to 'mitigate' floating point rounding errors causing false occlusions/illuminations
-            UVWorldPos = glm::vec3{ UVWorldPos.x + UVNormal.x * 0.00001f, UVWorldPos.y + UVNormal.y * 0.00001f, UVWorldPos.z + UVNormal.z * 0.00001f };
-
+        {
             // Iterate over all lights
             for (int i = 0; i < optixLaunchParams.amountLights; i++)
             {
@@ -212,8 +227,8 @@ namespace mcrt {
                             {
                                 // TODO: (Note that BRDF is currently omitted here)
                                 //float intensity = 255.99f * cosContribution * prd.resultColor.x * lightProperties.power.x;
-                                float intensity = cosContribution * prd.resultColor.x * lightProperties.power.x;
-                                totalLightContribution += intensity * diffuseColor;
+                                float radianceIntensity = cosContribution * prd.resultColor.x * lightProperties.power.x;
+                                totalLightContribution += radianceIntensity * diffuseColor;
                             }
                         }
                     }
@@ -235,12 +250,6 @@ namespace mcrt {
                 //    | (r << 0) | (g << 8) | (b << 16);
 
                 write_octree(UVWorldPos, totalLightContribution, optixLaunchParams.octreeTexture);
-
-                //int uvIndex = (vIndex * optixLaunchParams.directLightingTexture.size * 3) + (uIndex * 3);
-                //optixLaunchParams.directLightingTexture.colorBuffer[uvIndex + 0] = totalLightContribution.x;
-                //optixLaunchParams.directLightingTexture.colorBuffer[uvIndex + 1] = totalLightContribution.y;
-                //optixLaunchParams.directLightingTexture.colorBuffer[uvIndex + 2] = totalLightContribution.z;
-                //optixLaunchParams.directLightingTexture.colorBuffer[uvIndex] += rgba;
             }
         }
     }

@@ -26,6 +26,15 @@ namespace mcrt {
 		int amountBasisFunctions;
 	};
 
+	struct WorldSamplePointData {
+		glm::vec3 worldPosition;
+		glm::vec3 worldNormal;
+		glm::vec3 diffuseColor;
+		glm::vec2 uvCoords;
+		bool hasTexture;
+		cudaTextureObject_t textureObject;
+	};
+
 	struct UVWorldData {
 		glm::vec3 worldPosition;
 		glm::vec3 worldNormal;
@@ -304,6 +313,9 @@ namespace mcrt {
 		glm::vec3* normal;
 		glm::vec2* texcoord;
 		glm::ivec3* index;
+
+		bool hasTexture;
+		cudaTextureObject_t texture;
 	};
 
 
@@ -330,7 +342,7 @@ namespace mcrt {
 		//} octreeLeafPositions;
 
 		struct {
-			UVWorldData* UVDataBuffer;
+			WorldSamplePointData* UVDataBuffer;
 			int size;
 		} uvWorldPositions;
 

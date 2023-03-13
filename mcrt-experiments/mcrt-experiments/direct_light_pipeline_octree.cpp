@@ -215,6 +215,14 @@ namespace mcrt {
             HitgroupRecordDirect rec;
             OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec));
 
+            if (mesh->diffuseTextureID >= 0) {
+                rec.data.hasTexture = true;
+                rec.data.texture = geometryBuffers.textureObjects[mesh->diffuseTextureID];
+            }
+            else {
+                rec.data.hasTexture = false;
+            }
+
             rec.data.diffuseColor = mesh->diffuse;
             rec.data.vertex = (glm::vec3*)geometryBuffers.vertices[i].d_pointer();
             rec.data.index = (glm::ivec3*)geometryBuffers.indices[i].d_pointer();
