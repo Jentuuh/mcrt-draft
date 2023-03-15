@@ -1,6 +1,7 @@
 #pragma once
 #include "glm/glm.hpp"
 #include "model.hpp"
+#include "geometry_utils.hpp"
 #include <memory>
 
 namespace mcrt {
@@ -29,6 +30,7 @@ namespace mcrt {
 		AABB getWorldAABB();
 		int amountVertices() { return model->mesh->vertices.size(); };
 
+		float surfaceArea();
 		void setPosition(glm::vec3 position);
 		void translate(glm::vec3 translation);
 		void rotate(glm::vec3 rotation);

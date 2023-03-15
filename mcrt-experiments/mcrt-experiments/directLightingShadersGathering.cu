@@ -130,12 +130,14 @@ namespace mcrt {
         const auto& lights = optixLaunchParams.lights;
 
         // Get thread indices
-        const int uIndex = optixGetLaunchIndex().x;
-        const int vIndex = optixGetLaunchIndex().y;
+        //const int uIndex = optixGetLaunchIndex().x;
+        //const int vIndex = optixGetLaunchIndex().y;
 
-        glm::vec3 UVWorldPos = optixLaunchParams.uvWorldPositions.UVDataBuffer[vIndex * optixLaunchParams.directLightingTexture.size + uIndex].worldPosition;
-        const glm::vec3 UVNormal = optixLaunchParams.uvWorldPositions.UVDataBuffer[vIndex * optixLaunchParams.directLightingTexture.size + uIndex].worldNormal;
-        const glm::vec3 diffuseColor = optixLaunchParams.uvWorldPositions.UVDataBuffer[vIndex * optixLaunchParams.directLightingTexture.size + uIndex].diffuseColor;
+        const int pixelIndex = optixGetLaunchIndex().x;
+
+        glm::vec3 UVWorldPos = optixLaunchParams.uvWorldPositions.UVDataBuffer[pixelIndex].worldPosition;
+        const glm::vec3 UVNormal = optixLaunchParams.uvWorldPositions.UVDataBuffer[pixelIndex].worldNormal;
+        const glm::vec3 diffuseColor = optixLaunchParams.uvWorldPositions.UVDataBuffer[pixelIndex].diffuseColor;
 
         // We apply a small offset of 0.00001f in the direction of the normal to the UV world pos, to 'mitigate' floating point rounding errors causing false occlusions/illuminations
         UVWorldPos = glm::vec3{ UVWorldPos.x + UVNormal.x * 0.00001f, UVWorldPos.y + UVNormal.y * 0.00001f, UVWorldPos.z + UVNormal.z * 0.00001f };
@@ -143,13 +145,12 @@ namespace mcrt {
         // Iterate over all lights
         for (int i = 0; i < optixLaunchParams.amountLights; i++)
         {
-            unsigned int seed = tea<4>(vIndex * optixLaunchParams.directLightingTexture.size + uIndex, i);
+            unsigned int seed = tea<4>(pixelIndex, i);
 
             // Look up the light properties for the light in question
             LightData lightProperties = optixLaunchParams.lights[i];
             float stratifyCellWidth = lightProperties.width / optixLaunchParams.stratifyResX;
             float stratifyCellHeight = lightProperties.height / optixLaunchParams.stratifyResY;
-
 
             glm::vec3 totalLightContribution = { 0.0f, 0.0f, 0.0f };
             for (int stratifyIndexX = 0; stratifyIndexX < optixLaunchParams.stratifyResX; stratifyIndexX++)
@@ -219,20 +220,10 @@ namespace mcrt {
             totalLightContribution /= NUM_SAMPLES_PER_STRATIFY_CELL * optixLaunchParams.stratifyResX * optixLaunchParams.stratifyResY;
             // totalLightContribution /= PI;
 
-            //const int r = int(totalLightContribution.x);
-            //const int g = int(totalLightContribution.y);
-            //const int b = int(totalLightContribution.z);
-
-            // convert to 32-bit rgba value (we explicitly set alpha to 0xff
-            // to make stb_image_write happy ...
-            //const uint32_t rgba = 0xff000000
-            //    | (r << 0) | (g << 8) | (b << 16);
-
-            int uvIndex = (vIndex * optixLaunchParams.directLightingTexture.size * 3) + (uIndex * 3);
+            int uvIndex = pixelIndex * 3;
             optixLaunchParams.directLightingTexture.colorBuffer[uvIndex + 0] = totalLightContribution.x;
             optixLaunchParams.directLightingTexture.colorBuffer[uvIndex + 1] = totalLightContribution.y;
             optixLaunchParams.directLightingTexture.colorBuffer[uvIndex + 2] = totalLightContribution.z;
-            //optixLaunchParams.directLightingTexture.colorBuffer[uvIndex] += rgba;
         }
     }
 }

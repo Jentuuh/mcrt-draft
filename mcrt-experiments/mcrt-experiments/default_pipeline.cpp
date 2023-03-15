@@ -262,7 +262,7 @@ namespace mcrt {
                     rec.data.hasTexture = false;
                 }
 
-                rec.data.objectType = 0;
+                rec.data.objectNr = i;
                 rec.data.vertex = (glm::vec3*)geometryBuffers.vertices[i].d_pointer();
                 rec.data.index = (glm::ivec3*)geometryBuffers.indices[i].d_pointer();
                 rec.data.normal = (glm::vec3*)geometryBuffers.normals[i].d_pointer();

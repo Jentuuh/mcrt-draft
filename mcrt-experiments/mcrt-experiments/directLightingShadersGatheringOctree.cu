@@ -137,7 +137,6 @@ namespace mcrt {
 
         glm::vec3 UVWorldPos = optixLaunchParams.uvWorldPositions.UVDataBuffer[launchIndex].worldPosition;
         const glm::vec3 UVNormal = optixLaunchParams.uvWorldPositions.UVDataBuffer[launchIndex].worldNormal;
-        //const glm::vec3 diffuseColor = optixLaunchParams.uvWorldPositions.UVDataBuffer[launchIndex].diffuseColor;
 
         // ------------------------------------------------------------------
         // compute diffuse material color, including diffuse texture, if

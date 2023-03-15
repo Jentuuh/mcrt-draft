@@ -1,7 +1,7 @@
 #include "game_object.hpp"
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
+#include <iostream>
 
 namespace mcrt {
 	Transform::Transform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scale):translation{pos}, rotation{rot}, scale{scale}
@@ -108,6 +108,28 @@ namespace mcrt {
 		}
 		return worldAABB;
 	}
+
+	float GameObject::surfaceArea()
+	{
+		float totalObjectArea = 0.0f;
+		// Loop over all the mesh triangles
+		for (auto& t : model->mesh->indices)
+		{
+			glm::vec3 v1 = model->mesh->vertices[t.x];
+			glm::vec3 v2 = model->mesh->vertices[t.y];
+			glm::vec3 v3 = model->mesh->vertices[t.z];
+
+			v1 = worldTransform.object2World * glm::vec4{ v1, 1.0f };
+			v2 = worldTransform.object2World * glm::vec4{ v2, 1.0f };
+			v3 = worldTransform.object2World * glm::vec4{ v3, 1.0f };
+
+			float triangleArea = GeometryUtils::triangleArea3D(v1, v2, v3);
+			totalObjectArea += triangleArea;
+		}
+
+		return totalObjectArea;
+	}
+
 
 	void GameObject::setPosition(glm::vec3 position)
 	{

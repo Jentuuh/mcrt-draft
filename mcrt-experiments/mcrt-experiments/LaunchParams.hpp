@@ -375,7 +375,7 @@ namespace mcrt {
 		bool hasTexture;
 		cudaTextureObject_t texture;
 
-		int objectType;
+		int objectNr;
 	};
 
 	struct LaunchParamsCameraPassOctree
@@ -417,6 +417,9 @@ namespace mcrt {
 			glm::vec3 horizontal;
 			glm::vec3 vertical;
 		} camera;
+
+		int* textureOffsets;
+		int* textureSizes;
 
 		PixelBuffer lightTexture;
 		PixelBuffer lightTextureSecondBounce;

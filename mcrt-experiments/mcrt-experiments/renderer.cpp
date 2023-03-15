@@ -102,9 +102,12 @@ namespace mcrt {
             }
 
             // Initialize 2D textures + UV world data
-            initLightingTextures(1024);
-            prepareUVWorldPositions();
-            prepareUVsInsideBuffer();
+            //initLightingTextures(1024);
+            //prepareUVWorldPositions();
+            //prepareUVsInsideBuffer();
+
+            initLightingTexturesPerObject();
+
 
             if (bias == BIASED_PROBES && probeType == CUBE_MAP)
             {
@@ -112,7 +115,7 @@ namespace mcrt {
             }
 
             calculateDirectLighting();
-            calculateIndirectLighting(bias, probeType);
+            //calculateIndirectLighting(bias, probeType);
         }
 
         std::cout << "Context, module, pipelines, etc, all set up." << std::endl;
@@ -305,12 +308,18 @@ namespace mcrt {
             if (cameraPipeline->launchParams.frame.size.x == 0) return;
 
             // Light bounce textures
-            cameraPipeline->launchParams.lightTexture.colorBuffer = (float*)directLightingTexture.d_pointer();
+            //cameraPipeline->launchParams.lightTexture.colorBuffer = (float*)directLightingTexture.d_pointer();
+            //cameraPipeline->launchParams.lightTexture.size = directLightPipeline->launchParams.directLightingTexture.size;
+            //cameraPipeline->launchParams.lightTextureSecondBounce.colorBuffer = (float*)secondBounceTexture.d_pointer();
+            //cameraPipeline->launchParams.lightTextureSecondBounce.size = 1024;
+            //cameraPipeline->launchParams.lightTextureThirdBounce.colorBuffer = (float*)thirdBounceTexture.d_pointer();
+            //cameraPipeline->launchParams.lightTextureThirdBounce.size = 1024;
+
+            cameraPipeline->launchParams.lightTexture.colorBuffer = (float*)directLightingTextures.d_pointer();
             cameraPipeline->launchParams.lightTexture.size = directLightPipeline->launchParams.directLightingTexture.size;
-            cameraPipeline->launchParams.lightTextureSecondBounce.colorBuffer = (float*)secondBounceTexture.d_pointer();
-            cameraPipeline->launchParams.lightTextureSecondBounce.size = 1024;
-            cameraPipeline->launchParams.lightTextureThirdBounce.colorBuffer = (float*)thirdBounceTexture.d_pointer();
-            cameraPipeline->launchParams.lightTextureThirdBounce.size = 1024;
+
+            cameraPipeline->launchParams.textureOffsets = (int*)textureOffsets.d_pointer();
+            cameraPipeline->launchParams.textureSizes = (int*)textureSizes.d_pointer();
 
             cameraPipeline->uploadLaunchParams();
 
@@ -402,6 +411,52 @@ namespace mcrt {
         thirdBounceTexture.alloc_and_upload(zeros);
     }
 
+    void Renderer::initLightingTexturesPerObject()
+    {   
+        // A separate texture for each game object
+        samplePointsPerObjectBuffers.resize(scene.getGameObjects().size());
+
+        std::vector<int> textureSizesVector;
+        std::vector<int> textureOffsetsVector;
+        std::vector<UVWorldData> UVDataAllObjects;
+
+        int totalTextureSize = 0;
+        for (auto o : scene.getGameObjects())
+        {   
+            float objectArea = o->surfaceArea();
+            int texRes = objectArea * 512;
+            texRes = GeneralUtils::pow2roundup(texRes);
+
+            // We cannot have textures of 0x0
+            if(texRes == 0)
+                texRes = 1;
+
+            textureSizesVector.push_back(texRes);
+            textureOffsetsVector.push_back(totalTextureSize);
+            totalTextureSize += texRes * texRes * 3;
+
+            prepareUVWorldPositionsPerObject(texRes, UVDataAllObjects, o);
+        }
+
+
+        std::vector<float> zeros(totalTextureSize, 0.0f);
+        directLightingTextures.alloc_and_upload(zeros);
+        samplePointsPerObjectBuffers.alloc_and_upload(UVDataAllObjects);
+
+        directLightPipeline->launchParams.directLightingTexture.colorBuffer = (float*)directLightingTextures.d_pointer();
+        directLightPipeline->launchParams.directLightingTexture.size = int(totalTextureSize / 3); // Each pixel has 3 components
+        directLightPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)samplePointsPerObjectBuffers.d_pointer();
+        directLightPipeline->launchParams.uvWorldPositions.size = UVDataAllObjects.size();
+
+        textureSizes.alloc_and_upload(textureSizesVector);
+        textureOffsets.alloc_and_upload(textureOffsetsVector);
+
+        std::cout << "Texture sizes: " << textureSizesVector.size() << std::endl;
+        std::cout << "Texture offsets: " << textureOffsetsVector.size() << std::endl;
+        // TODO indirect lighting textures
+    }
+
+
     void Renderer::initLightProbeCubeMaps(int resolution, int gridRes)
     {
         // For a `gridRes x gridRes` cell grid, we have `gridRes x gridRes` light probes (in each cell center 1)
@@ -429,6 +484,10 @@ namespace mcrt {
 
     void Renderer::calculateDirectLighting()
     {
+        std::cout << "=======================================================" << std::endl;
+        std::cout << "        CALCULATE DIRECT LIGHTING (TEXTURE 2D)         " << std::endl;
+        std::cout << "=======================================================" << std::endl;
+        
         // Get lights data from scene
         std::vector<LightData> lightData = scene.getLightsData();
 
@@ -442,6 +501,21 @@ namespace mcrt {
         directLightPipeline->launchParams.stratifyResY = STRATIFIED_Y_SIZE;
         directLightPipeline->uploadLaunchParams();
 
+        //// Launch direct lighting pipeline
+        //OPTIX_CHECK(optixLaunch(
+        //    directLightPipeline->pipeline, stream,
+        //    directLightPipeline->launchParamsBuffer.d_pointer(),
+        //    directLightPipeline->launchParamsBuffer.sizeInBytes,
+        //    &directLightPipeline->sbt,
+        //    directLightPipeline->launchParams.directLightingTexture.size,       // dimension X: x resolution of UV map
+        //    directLightPipeline->launchParams.directLightingTexture.size,       // dimension Y: y resolution of UV map
+        //    1                                                                   // dimension Z: 1
+        //    // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
+        //));
+
+        //CUDA_SYNC_CHECK();
+
+
         // Launch direct lighting pipeline
         OPTIX_CHECK(optixLaunch(
             directLightPipeline->pipeline, stream,
@@ -449,12 +523,13 @@ namespace mcrt {
             directLightPipeline->launchParamsBuffer.sizeInBytes,
             &directLightPipeline->sbt,
             directLightPipeline->launchParams.directLightingTexture.size,       // dimension X: x resolution of UV map
-            directLightPipeline->launchParams.directLightingTexture.size,       // dimension Y: y resolution of UV map
+            1,                                                                  // dimension Y: 1
             1                                                                   // dimension Z: 1
             // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
         ));
 
         CUDA_SYNC_CHECK();
+
 
         //// Download resulting texture from GPU
         //std::vector<uint32_t> direct_lighting_result(directLightPipeline->launchParams.directLightingTexture.size * directLightPipeline->launchParams.directLightingTexture.size);
@@ -1076,6 +1151,10 @@ namespace mcrt {
 
     void Renderer::calculateDirectLightingOctree()
     {
+        std::cout << "=======================================================" << std::endl;
+        std::cout << "      CALCULATE DIRECT LIGHTING (OCTREE TEXTURE)       " << std::endl;
+        std::cout << "=======================================================" << std::endl;
+
         const int texSize = IRRADIANCE_TEXTURE_RESOLUTION;
 
         // Get lights data from scene
@@ -1434,6 +1513,22 @@ namespace mcrt {
         }
     }
 
+    void Renderer::prepareUVWorldPositionsPerObject(int texSize, std::vector<UVWorldData>& bufferVector, std::shared_ptr<GameObject> o)
+    {
+        for (int i = 0; i < texSize * texSize; i++)
+        {
+            const float u = float(i % texSize) / float(texSize);
+            // (i - i % texSize) / texSize gives us the row number, divided by texSize gives us the V coordinate 
+            const float v = (float((i - (i % texSize))) / float(texSize)) / float(texSize);
+            glm::vec2 uv = glm::vec2{ u,v };
+
+            bufferVector.push_back(UVto3DPerObject(uv, o));
+
+            // TODO: Implement alternative to assign PER OBJECT UV to radiance cell !!!
+        }
+    }
+
+
     // Note that this function must be called after "prepareUVWorldPositions", because the UVs have to be assigned to each cell first
     void Renderer::prepareUVsInsideBuffer()
     {
@@ -1513,7 +1608,7 @@ namespace mcrt {
 
                 float u,v,w;
              
-                float triangleSurfaceArea = triangleArea3D(v1, v2, v3);
+                float triangleSurfaceArea = GeometryUtils::triangleArea3D(v1, v2, v3);
                 int amountOfPointsToGenerate = 2 * std::ceil(triangleSurfaceArea / octreeLeafFaceArea);
 
                 for (int i = 0; i < amountOfPointsToGenerate; i++)
@@ -1592,20 +1687,6 @@ namespace mcrt {
     }
 
 
-    float Renderer::triangleArea2D(glm::vec2 a, glm::vec2 b, glm::vec2 c)
-    {
-        // cross product / 2
-        glm::vec2 v1 = a - c;
-        glm::vec2 v2 = b - c;
-        return (v1.x * v2.y - v1.y * v2.x) / 2.0f;
-    }
-
-    float Renderer::triangleArea3D(glm::vec3 a, glm::vec3 b, glm::vec3 c)
-    {
-        // length of cross product (area of parallellogram) divided by 2
-        return glm::length(glm::cross(b-a, c-a)) / 2.0f;
-    }
-
     void Renderer::barycentricCoordinates(glm::vec3 p, glm::vec3 a, glm::vec3 b, glm::vec3 c, float& u, float& v, float& w)
     {
         // ==============================================================================================================
@@ -1641,13 +1722,13 @@ namespace mcrt {
                 glm::vec2 f2 = uv2 - uv;
                 glm::vec2 f3 = uv3 - uv;
 
-                float a = triangleArea2D(uv1, uv2, uv3);
+                float a = GeometryUtils::triangleArea2D(uv1, uv2, uv3);
                 if (a == 0.0f) continue;
 
                 // Barycentric coordinates
-                float a1 = triangleArea2D(uv2, uv3, uv) / a; if (a1 < 0) continue;
-                float a2 = triangleArea2D(uv3, uv1, uv) / a; if (a2 < 0) continue;
-                float a3 = triangleArea2D(uv1, uv2, uv) / a; if (a3 < 0) continue;
+                float a1 = GeometryUtils::triangleArea2D(uv2, uv3, uv) / a; if (a1 < 0) continue;
+                float a2 = GeometryUtils::triangleArea2D(uv3, uv1, uv) / a; if (a2 < 0) continue;
+                float a3 = GeometryUtils::triangleArea2D(uv1, uv2, uv) / a; if (a3 < 0) continue;
 
                 //std::cout << "UV found!" << std::endl;
                 glm::vec3 uvPosition = a1 * g->model->mesh->vertices[triangle[0]] + a2 * g->model->mesh->vertices[triangle[1]] + a3 * g->model->mesh->vertices[triangle[2]];
@@ -1661,6 +1742,40 @@ namespace mcrt {
         return { glm::vec3{ -1000.0f, -1000.0f, -1000.0f }, glm::vec3{ -1000.0f, -1000.0f, -1000.0f }, glm::vec3{0.0f, 0.0f, 0.0f} };
     }
 
+    UVWorldData Renderer::UVto3DPerObject(glm::vec2 uv, std::shared_ptr<GameObject> o)
+    {
+        // Loop through all triangles
+        for (auto& triangle : o->model->mesh->indices)
+        {
+            // Get UV coordinates of triangle vertices
+            glm::vec2 uv1 = o->model->mesh->texCoords[triangle[0]];
+            glm::vec2 uv2 = o->model->mesh->texCoords[triangle[1]];
+            glm::vec2 uv3 = o->model->mesh->texCoords[triangle[2]];
+
+            // Barycentric interpolation to check whether our point is in the triangle
+            glm::vec2 f1 = uv1 - uv;
+            glm::vec2 f2 = uv2 - uv;
+            glm::vec2 f3 = uv3 - uv;
+
+            float a = GeometryUtils::triangleArea2D(uv1, uv2, uv3);
+            if (a == 0.0f) continue;
+
+            // Barycentric coordinates
+            float a1 = GeometryUtils::triangleArea2D(uv2, uv3, uv) / a; if (a1 < 0) continue;
+            float a2 = GeometryUtils::triangleArea2D(uv3, uv1, uv) / a; if (a2 < 0) continue;
+            float a3 = GeometryUtils::triangleArea2D(uv1, uv2, uv) / a; if (a3 < 0) continue;
+
+            //std::cout << "UV found!" << std::endl;
+            glm::vec3 uvPosition = a1 * o->model->mesh->vertices[triangle[0]] + a2 * o->model->mesh->vertices[triangle[1]] + a3 * o->model->mesh->vertices[triangle[2]];
+            glm::vec3 uvNormal = glm::normalize(a1 * o->model->mesh->normals[triangle[0]] + a2 * o->model->mesh->normals[triangle[1]] + a3 * o->model->mesh->normals[triangle[2]]);
+            glm::vec3 diffuseColor = o->model->mesh->diffuse;
+
+            uvPosition = o->worldTransform.object2World * glm::vec4{ uvPosition, 1.0f };
+            return { uvPosition, uvNormal, diffuseColor };
+        }
+
+        return{ glm::vec3{ -1000.0f, -1000.0f, -1000.0f }, glm::vec3{ -1000.0f, -1000.0f, -1000.0f }, glm::vec3{0.0f, 0.0f, 0.0f} };
+    }
 
 
     void Renderer::resize(const glm::ivec2& newSize)

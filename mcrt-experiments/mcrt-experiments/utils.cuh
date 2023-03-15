@@ -187,6 +187,25 @@ namespace mcrt {
 		//printf("AT END! \n");
 
 	}
+
+	static __forceinline__ __device__ glm::vec2 normalize_uv(glm::vec2 uv)
+	{
+		float decimal_x = fmod(uv.x, 1.0f);
+		float decimal_y = fmod(uv.y, 1.0f);
+
+		if (uv.x < 0)
+		{
+			decimal_x = 1.0f - decimal_x;
+		}
+		if (uv.y < 0)
+		{
+			decimal_y = 1.0f - decimal_y;
+		}
+
+		return glm::vec2{decimal_x, decimal_y};
+	}
+
+
 	static __forceinline__ __device__ glm::vec3 read_octree(glm::vec3 worldCoordinate, float* octree)
 	{
 		glm::vec3 pointerOrValue;

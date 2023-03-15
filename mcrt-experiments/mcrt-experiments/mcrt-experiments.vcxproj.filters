@@ -234,11 +234,20 @@
     <ClCompile Include="radiance_cell_scatter_unbiased_pipeline_octree.cpp">
       <Filter>Source Files\Pipelines\Octree-texture-based</Filter>
     </ClCompile>
-    <ClCompile Include="unbiasedScattering_embedded.c">
-      <Filter>Source Files\GPU\Unbiased\Texture-based</Filter>
-    </ClCompile>
     <ClCompile Include="unbiasedScattering_embedded_octree.c">
       <Filter>Source Files\GPU\Unbiased\Octree-texture-based</Filter>
+    </ClCompile>
+    <ClCompile Include="timer.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="geometry_utils.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="general_utils.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="unbiasedScattering_embedded.c">
+      <Filter>Source Files\GPU\Unbiased\Texture-based</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -346,6 +355,15 @@
     </ClInclude>
     <ClInclude Include="radiance_cell_scatter_unbiased_pipeline_octree.hpp">
       <Filter>Header Files\Pipelines\Octree-texture-based</Filter>
+    </ClInclude>
+    <ClInclude Include="timer.hpp">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="geometry_utils.hpp">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="general_utils.hpp">
+      <Filter>Header Files\Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
