@@ -54,7 +54,6 @@ namespace mcrt {
 
 		// Download rendered color buffer from device
 		void downloadPixels(uint32_t h_pixels[]);
-		void downloadDirectLighting(uint32_t h_pixels[]);
 		void downloadAndWriteLightSourceTexture();
 
 		// Update camera to render from
@@ -155,6 +154,7 @@ namespace mcrt {
 		CUDABuffer secondBounceTexture;	// Texture in which we store the second lighting bounce
 		CUDABuffer thirdBounceTexture; // Texture in which we store the third lighting bounce
 
+		// TODO: clean this up!
 		CUDABuffer directLightingTextures;	// A big block of memory that contains the textures of all objects
 		CUDABuffer samplePointsPerObjectBuffers; // A big block of memory that contains the sample world points of all objects
 		CUDABuffer textureOffsets;	// Offset buffer necessary to access the texture of a certain object in the 2 buffers above
@@ -164,10 +164,12 @@ namespace mcrt {
 
 		CUDABuffer cubeMaps; // In this buffer we'll store the light probe cubemaps
 
+		// TODO: clean up!
 		CUDABuffer nonEmptyCellDataBuffer;	// In this buffer we'll store our data for non empty radiance cells
 		CUDABuffer SHWeightsDataBuffer; // In this buffer we'll store the SH weights
 		CUDABuffer SHAccumulatorsBuffer; // In this buffer we'll store the SH accumulators
 		CUDABuffer numSamplesAccumulatorsBuffer; // In this buffer we'll store the numSamples accumulators per radiance cell SH
+
 		CUDABuffer samplePointWorldPositionDeviceBuffer; // In this buffer we'll store the world positions for each of our UV texels (starting from 0,0 --> 1,1), this means this array starts at the left bottom of the actual texture image
 		CUDABuffer UVsInsideBuffer;		// In this buffer we'll store the UV worldpositions for all texels inside each cell
 		CUDABuffer UVsInsideOffsets;	// In this buffer we'll store the offsets to index the UVsInsideBuffer
@@ -193,8 +195,19 @@ namespace mcrt {
 		std::vector<int> amountIndicesRadianceGrid;
 
 
+		std::vector<int>				 directTextureSizes;
 		std::vector<cudaArray_t>         textureArrays;
 		std::vector<cudaTextureObject_t> textureObjects;
-		std::vector<cudaSurfaceObject_t> surfaceObjects;
+
+		std::vector<cudaTextureObject_t> textureObjectsDirect;
+		std::vector<cudaSurfaceObject_t> surfaceObjectsDirect;
+		std::vector<cudaTextureObject_t> textureObjectsSecond;
+		std::vector<cudaSurfaceObject_t> surfaceObjectsSecond;
+		std::vector<cudaTextureObject_t> textureObjectsThird;
+		std::vector<cudaSurfaceObject_t> surfaceObjectsThird;
+
+		std::vector<cudaTextureObject_t> UVWorldPositionsTextures;
+		std::vector<cudaTextureObject_t> UVNormalsTextures;
+		std::vector<cudaTextureObject_t> UVDiffuseColorTextures;
 	};
 }

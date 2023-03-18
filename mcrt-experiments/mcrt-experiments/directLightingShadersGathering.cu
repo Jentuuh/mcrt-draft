@@ -133,9 +133,22 @@ namespace mcrt {
         const int uIndex = optixGetLaunchIndex().x;
         const int vIndex = optixGetLaunchIndex().y;
 
-        glm::vec3 UVWorldPos = optixLaunchParams.uvWorldPositions.UVDataBuffer[vIndex * optixLaunchParams.directLightingTexture.size + uIndex].worldPosition;
-        const glm::vec3 UVNormal = optixLaunchParams.uvWorldPositions.UVDataBuffer[vIndex * optixLaunchParams.directLightingTexture.size + uIndex].worldNormal;
-        const glm::vec3 diffuseColor = optixLaunchParams.uvWorldPositions.UVDataBuffer[vIndex * optixLaunchParams.directLightingTexture.size + uIndex].diffuseColor;
+        const float u = (float)uIndex / (float)optixLaunchParams.textureSize;
+        const float v = (float)vIndex / (float)optixLaunchParams.textureSize;
+
+
+        float4 uvWorldPos3f = tex2D<float4>(optixLaunchParams.uvPositions, u, v);
+        float4 uvWorldNormal3f = tex2D<float4>(optixLaunchParams.uvNormals, u, v);
+        float4 uvDiffuseColor3f = tex2D<float4>(optixLaunchParams.uvDiffuseColors, u, v);
+
+        glm::vec3 UVWorldPos = glm::vec3{ uvWorldPos3f.x, uvWorldPos3f.y, uvWorldPos3f.z };
+        const glm::vec3 UVNormal = glm::vec3{ uvWorldNormal3f.x, uvWorldNormal3f.y, uvWorldNormal3f.z };
+        const glm::vec3 diffuseColor = glm::vec3{ uvDiffuseColor3f.x, uvDiffuseColor3f.y, uvDiffuseColor3f.z };
+
+
+        //glm::vec3 UVWorldPos = optixLaunchParams.uvWorldPositions.UVDataBuffer[vIndex * optixLaunchParams.textureSize + uIndex].worldPosition;
+        //const glm::vec3 UVNormal = optixLaunchParams.uvWorldPositions.UVDataBuffer[vIndex * optixLaunchParams.textureSize + uIndex].worldNormal;
+        //const glm::vec3 diffuseColor = optixLaunchParams.uvWorldPositions.UVDataBuffer[vIndex * optixLaunchParams.textureSize + uIndex].diffuseColor;
 
         // We apply a small offset of 0.00001f in the direction of the normal to the UV world pos, to 'mitigate' floating point rounding errors causing false occlusions/illuminations
         UVWorldPos = glm::vec3{ UVWorldPos.x + UVNormal.x * 0.00001f, UVWorldPos.y + UVNormal.y * 0.00001f, UVWorldPos.z + UVNormal.z * 0.00001f };
@@ -143,7 +156,7 @@ namespace mcrt {
         // Iterate over all lights
         for (int i = 0; i < optixLaunchParams.amountLights; i++)
         {
-            unsigned int seed = tea<4>(vIndex * optixLaunchParams.directLightingTexture.size + uIndex, i);
+            unsigned int seed = tea<4>(vIndex * optixLaunchParams.textureSize + uIndex, i);
 
             // Look up the light properties for the light in question
             LightData lightProperties = optixLaunchParams.lights[i];
@@ -227,11 +240,13 @@ namespace mcrt {
             //const uint32_t rgba = 0xff000000
             //    | (r << 0) | (g << 8) | (b << 16);
 
-            int uvIndex = (vIndex * optixLaunchParams.directLightingTexture.size * 3) + (uIndex * 3);
+    /*        int uvIndex = (vIndex * optixLaunchParams.directLightingTexture.size * 3) + (uIndex * 3);
             optixLaunchParams.directLightingTexture.colorBuffer[uvIndex + 0] = totalLightContribution.x;
             optixLaunchParams.directLightingTexture.colorBuffer[uvIndex + 1] = totalLightContribution.y;
-            optixLaunchParams.directLightingTexture.colorBuffer[uvIndex + 2] = totalLightContribution.z;
-            //optixLaunchParams.directLightingTexture.colorBuffer[uvIndex] += rgba;
+            optixLaunchParams.directLightingTexture.colorBuffer[uvIndex + 2] = totalLightContribution.z;*/
+
+            float4 resultValue = float4{ totalLightContribution.x,totalLightContribution.y, totalLightContribution.z, 0.0f };
+            surf2Dwrite(resultValue, optixLaunchParams.directLightingTexture, uIndex * 16, vIndex);
         }
     }
 }

@@ -111,10 +111,6 @@ namespace mcrt {
 		float* cubeMaps; // A pointer to cubemap faces
 		int cubeMapResolution;
 
-		bool read;
-		cudaTextureObject_t textureRef;
-		cudaSurfaceObject_t surfaceRef;
-
 		OptixTraversableHandle sceneTraversable;
 	};
 
@@ -322,13 +318,18 @@ namespace mcrt {
 
 
 	struct LaunchParamsDirectLighting {
-		struct {
-			UVWorldData* UVDataBuffer;
-			int size;
-		} uvWorldPositions;
+		//struct {
+		//	UVWorldData* UVDataBuffer;
+		//	int size;
+		//} uvWorldPositions;
 
-		PixelBuffer directLightingTexture;
+		cudaTextureObject_t uvPositions;
+		cudaTextureObject_t uvNormals;
+		cudaTextureObject_t uvDiffuseColors;
 
+		cudaSurfaceObject_t directLightingTexture;
+
+		int textureSize;
 		LightData* lights;
 		int amountLights;
 		int stratifyResX;
@@ -420,12 +421,14 @@ namespace mcrt {
 			glm::vec3 vertical;
 		} camera;
 
-		int* textureOffsets;
-		int* textureSizes;
+		//int* textureOffsets;
+		//int* textureSizes;
 
-		PixelBuffer lightTexture;
-		PixelBuffer lightTextureSecondBounce;
-		PixelBuffer lightTextureThirdBounce;
+		cudaTextureObject_t directLightTexture;
+
+		//PixelBuffer lightTexture;
+		//PixelBuffer lightTextureSecondBounce;
+		//PixelBuffer lightTextureThirdBounce;
 
 		OptixTraversableHandle traversable;
 	};
