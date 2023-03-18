@@ -20,6 +20,7 @@
 #include "radiance_cell_scatter_unbiased_pipeline_octree.hpp"
 #include "geometry_utils.hpp"
 #include "general_utils.hpp"
+#include "hdr_image.hpp"
 
 #include <stb/stb_image.h>
 
@@ -84,6 +85,7 @@ namespace mcrt {
 
 		void lightProbeTest(int iteration, CUDABuffer& prevBounceTexture, CUDABuffer& dstTexture);
 		void octreeTextureTest();
+		void textureAndSurfaceObjectTest();
 
 		void loadLightTexture();
 		void writeWeightsToTxtFile(std::vector<float>& weights, std::vector<int>& numSamples, int amountCells);
@@ -193,5 +195,6 @@ namespace mcrt {
 
 		std::vector<cudaArray_t>         textureArrays;
 		std::vector<cudaTextureObject_t> textureObjects;
+		std::vector<cudaSurfaceObject_t> surfaceObjects;
 	};
 }

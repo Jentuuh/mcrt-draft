@@ -249,6 +249,9 @@
     <ClCompile Include="unbiasedScattering_embedded.c">
       <Filter>Source Files\GPU\Unbiased\Texture-based</Filter>
     </ClCompile>
+    <ClCompile Include="hdr_image.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="renderer.hpp">
@@ -365,6 +368,9 @@
     <ClInclude Include="general_utils.hpp">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
+    <ClInclude Include="hdr_image.hpp">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="radianceCellScattering_trilinear2.cu">
@@ -456,6 +462,9 @@
     </None>
     <None Include="unbiasedScatteringOctree.cu">
       <Filter>Source Files\GPU\Unbiased\Octree-texture-based</Filter>
+    </None>
+    <None Include="textureTesting.cu">
+      <Filter>Source Files\GPU\Testing</Filter>
     </None>
   </ItemGroup>
 </Project>

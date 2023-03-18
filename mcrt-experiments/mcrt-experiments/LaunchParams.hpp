@@ -111,7 +111,9 @@ namespace mcrt {
 		float* cubeMaps; // A pointer to cubemap faces
 		int cubeMapResolution;
 
-		float* octreeTexture;
+		bool read;
+		cudaTextureObject_t textureRef;
+		cudaSurfaceObject_t surfaceRef;
 
 		OptixTraversableHandle sceneTraversable;
 	};

@@ -104,7 +104,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.5.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\include;$(SolutionDir)\3rdparty\tinyobjloader;$(SolutionDir)\3rdparty\stb;$(SolutionDir)\3rdparty\glm;$(SolutionDir)\3rdparty\glfw-3.3.8\include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.6.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\include;$(SolutionDir)\3rdparty\tinyobjloader;$(SolutionDir)\3rdparty\stb;$(SolutionDir)\3rdparty\glm;$(SolutionDir)\3rdparty\glfw-3.3.8\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -122,7 +122,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.5.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\include;$(SolutionDir)\3rdparty\tinyobjloader;$(SolutionDir)\3rdparty\stb;$(SolutionDir)\3rdparty\glm;$(SolutionDir)\3rdparty\glfw-3.3.8\include;$(SolutionDir)\3rdparty\nvidia;$(SolutionDir)\3rdparty\my-linear-algebra-cuda</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.6.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\include;$(SolutionDir)\3rdparty\tinyobjloader;$(SolutionDir)\3rdparty\stb;$(SolutionDir)\3rdparty\glm;$(SolutionDir)\3rdparty\glfw-3.3.8\include;$(SolutionDir)\3rdparty\nvidia;$(SolutionDir)\3rdparty\my-linear-algebra-cuda</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -153,6 +153,7 @@
     <ClCompile Include="general_utils.cpp" />
     <ClCompile Include="geometry_utils.cpp" />
     <ClCompile Include="GLFWindow.cpp" />
+    <ClCompile Include="hdr_image.cpp" />
     <ClCompile Include="ias.cpp" />
     <ClCompile Include="image.cpp" />
     <ClCompile Include="intersection_tester.cpp" />
@@ -199,6 +200,7 @@
     <ClInclude Include="general_utils.hpp" />
     <ClInclude Include="geometry_utils.hpp" />
     <ClInclude Include="GLFWindow.hpp" />
+    <ClInclude Include="hdr_image.hpp" />
     <ClInclude Include="helpers.hpp" />
     <ClInclude Include="ias.hpp" />
     <ClInclude Include="image.hpp" />
@@ -252,6 +254,7 @@
     <None Include="radianceCellScattering_trilinear2.cu" />
     <None Include="spherical_harmonics.cuh" />
     <None Include="radianceCellGathering.cu" />
+    <None Include="textureTesting.cu" />
     <None Include="unbiasedScattering.cu" />
     <None Include="unbiasedScattering2.cu" />
     <None Include="unbiasedScatteringOctree.cu" />

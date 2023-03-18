@@ -102,11 +102,11 @@ namespace mcrt {
             }
 
             // Initialize 2D textures + UV world data
-            //initLightingTextures(1024);
-            //prepareUVWorldPositions();
-            //prepareUVsInsideBuffer();
+            initLightingTextures(1024);
+            prepareUVWorldPositions();
+            prepareUVsInsideBuffer();
 
-            initLightingTexturesPerObject();
+            //initLightingTexturesPerObject();
 
 
             if (bias == BIASED_PROBES && probeType == CUBE_MAP)
@@ -115,7 +115,7 @@ namespace mcrt {
             }
 
             calculateDirectLighting();
-            //calculateIndirectLighting(bias, probeType);
+            calculateIndirectLighting(bias, probeType);
         }
 
         std::cout << "Context, module, pipelines, etc, all set up." << std::endl;
@@ -308,18 +308,12 @@ namespace mcrt {
             if (cameraPipeline->launchParams.frame.size.x == 0) return;
 
             // Light bounce textures
-            //cameraPipeline->launchParams.lightTexture.colorBuffer = (float*)directLightingTexture.d_pointer();
-            //cameraPipeline->launchParams.lightTexture.size = directLightPipeline->launchParams.directLightingTexture.size;
-            //cameraPipeline->launchParams.lightTextureSecondBounce.colorBuffer = (float*)secondBounceTexture.d_pointer();
-            //cameraPipeline->launchParams.lightTextureSecondBounce.size = 1024;
-            //cameraPipeline->launchParams.lightTextureThirdBounce.colorBuffer = (float*)thirdBounceTexture.d_pointer();
-            //cameraPipeline->launchParams.lightTextureThirdBounce.size = 1024;
-
-            cameraPipeline->launchParams.lightTexture.colorBuffer = (float*)directLightingTextures.d_pointer();
+            cameraPipeline->launchParams.lightTexture.colorBuffer = (float*)directLightingTexture.d_pointer();
             cameraPipeline->launchParams.lightTexture.size = directLightPipeline->launchParams.directLightingTexture.size;
-
-            cameraPipeline->launchParams.textureOffsets = (int*)textureOffsets.d_pointer();
-            cameraPipeline->launchParams.textureSizes = (int*)textureSizes.d_pointer();
+            cameraPipeline->launchParams.lightTextureSecondBounce.colorBuffer = (float*)secondBounceTexture.d_pointer();
+            cameraPipeline->launchParams.lightTextureSecondBounce.size = 1024;
+            cameraPipeline->launchParams.lightTextureThirdBounce.colorBuffer = (float*)thirdBounceTexture.d_pointer();
+            cameraPipeline->launchParams.lightTextureThirdBounce.size = 1024;
 
             cameraPipeline->uploadLaunchParams();
 
@@ -396,8 +390,9 @@ namespace mcrt {
     // Will allocate a `size * size` buffer on the GPU
     void Renderer::initLightingTextures(int size)
     {
+        std::cout << "Initializing irradiance textures..." << std::endl;
         //std::vector<uint32_t> zeros(size * size, 0.0f);
-        std::vector<float> zeros(size * size * 3, 0.0f);
+        std::vector<float> zeros(size * size * 4, 0.0f);
 
         // Direct lighting
         directLightingTexture.alloc_and_upload(zeros);
@@ -409,6 +404,70 @@ namespace mcrt {
 
         // Third bounce
         thirdBounceTexture.alloc_and_upload(zeros);
+
+        // ==================================
+        // ============ NEW =================
+        // ==================================
+        int numTextures = 1;
+
+        textureArrays.resize(numTextures);
+        textureObjects.resize(numTextures);
+        surfaceObjects.resize(numTextures);
+
+        for (int textureID = 0; textureID < numTextures; textureID++) {
+
+            cudaChannelFormatDesc channelDesc;
+            channelDesc = cudaCreateChannelDesc<float4>();
+            int32_t width = size;
+            int32_t height = size;
+            int32_t numComponents = 4;
+            int32_t pitch = width * sizeof(float4);
+
+            // Initialize CUDA array
+            cudaArray* cuArray;
+            CUDA_CHECK(MallocArray(&cuArray,
+                &channelDesc,
+                width,
+                height,
+                cudaArraySurfaceLoadStore));
+
+            CUDA_CHECK(Memcpy2DToArray(cuArray,
+                /* offset */0, 0,
+                zeros.data(),
+                pitch, pitch, height,
+                cudaMemcpyHostToDevice));
+
+            // Resource description for the CUDA array
+            cudaResourceDesc resourceDesc = {};
+            resourceDesc.resType = cudaResourceTypeArray;
+            resourceDesc.res.array.array = cuArray;
+
+            // Surface object creation
+            cudaSurfaceObject_t cudaSurf = 0;
+            CUDA_CHECK(CreateSurfaceObject(&cudaSurf, &resourceDesc));
+            surfaceObjects[textureID] = cudaSurf;
+
+            // Texture object creation
+            cudaTextureDesc texDesc = {};
+            texDesc.addressMode[0] = cudaAddressModeWrap;
+            texDesc.addressMode[1] = cudaAddressModeWrap;
+            texDesc.filterMode = cudaFilterModeLinear;
+            texDesc.readMode = cudaReadModeElementType;
+            texDesc.normalizedCoords = 1;
+            texDesc.maxAnisotropy = 1;
+            texDesc.maxMipmapLevelClamp = 99;
+            texDesc.minMipmapLevelClamp = 0;
+            texDesc.mipmapFilterMode = cudaFilterModePoint;
+            texDesc.borderColor[0] = 1.0f;
+            texDesc.sRGB = 0;
+
+            // Create texture object
+            cudaTextureObject_t cudaTex = 0;
+            CUDA_CHECK(CreateTextureObject(&cudaTex, &resourceDesc, &texDesc, nullptr));
+            textureObjects[textureID] = cudaTex;
+        }
+
+        std::cout << "Done." << std::endl;
     }
 
     void Renderer::initLightingTexturesPerObject()
@@ -481,13 +540,11 @@ namespace mcrt {
         }
     }
 
-
     void Renderer::calculateDirectLighting()
     {
         std::cout << "=======================================================" << std::endl;
         std::cout << "        CALCULATE DIRECT LIGHTING (TEXTURE 2D)         " << std::endl;
         std::cout << "=======================================================" << std::endl;
-        
         // Get lights data from scene
         std::vector<LightData> lightData = scene.getLightsData();
 
@@ -501,21 +558,6 @@ namespace mcrt {
         directLightPipeline->launchParams.stratifyResY = STRATIFIED_Y_SIZE;
         directLightPipeline->uploadLaunchParams();
 
-        //// Launch direct lighting pipeline
-        //OPTIX_CHECK(optixLaunch(
-        //    directLightPipeline->pipeline, stream,
-        //    directLightPipeline->launchParamsBuffer.d_pointer(),
-        //    directLightPipeline->launchParamsBuffer.sizeInBytes,
-        //    &directLightPipeline->sbt,
-        //    directLightPipeline->launchParams.directLightingTexture.size,       // dimension X: x resolution of UV map
-        //    directLightPipeline->launchParams.directLightingTexture.size,       // dimension Y: y resolution of UV map
-        //    1                                                                   // dimension Z: 1
-        //    // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
-        //));
-
-        //CUDA_SYNC_CHECK();
-
-
         // Launch direct lighting pipeline
         OPTIX_CHECK(optixLaunch(
             directLightPipeline->pipeline, stream,
@@ -523,15 +565,21 @@ namespace mcrt {
             directLightPipeline->launchParamsBuffer.sizeInBytes,
             &directLightPipeline->sbt,
             directLightPipeline->launchParams.directLightingTexture.size,       // dimension X: x resolution of UV map
-            1,                                                                  // dimension Y: 1
+            directLightPipeline->launchParams.directLightingTexture.size,       // dimension Y: y resolution of UV map
             1                                                                   // dimension Z: 1
             // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
         ));
 
         CUDA_SYNC_CHECK();
 
-
         //// Download resulting texture from GPU
+        std::vector<float>direct_lighting_result(directLightPipeline->launchParams.directLightingTexture.size * directLightPipeline->launchParams.directLightingTexture.size * 3);
+        directLightingTexture.download(direct_lighting_result.data(),
+                directLightPipeline->launchParams.directLightingTexture.size * directLightPipeline->launchParams.directLightingTexture.size * 3);
+
+        HDRImage hdr{ directLightPipeline->launchParams.directLightingTexture.size ,directLightPipeline->launchParams.directLightingTexture.size, direct_lighting_result.data() };
+        hdr.saveImage("../debug_output/testHDR.hdr");
+        
         //std::vector<uint32_t> direct_lighting_result(directLightPipeline->launchParams.directLightingTexture.size * directLightPipeline->launchParams.directLightingTexture.size);
         //directLightingTexture.download(direct_lighting_result.data(),
         //    directLightPipeline->launchParams.directLightingTexture.size * directLightPipeline->launchParams.directLightingTexture.size);
@@ -539,7 +587,7 @@ namespace mcrt {
 
         //// Flip Y coordinates, otherwise UV map is upside down
         //std::vector<uint32_t> result_reversed;
-    
+
         //for (int y = directLightPipeline->launchParams.directLightingTexture.size - 1; y >= 0; y--)
         //{
         //    for (int x = 0; x < directLightPipeline->launchParams.directLightingTexture.size; x++)
@@ -547,12 +595,13 @@ namespace mcrt {
         //        result_reversed.push_back(direct_lighting_result[y * directLightPipeline->launchParams.directLightingTexture.size + x]);
         //    }
         //}
-        
+
 
         //std::reverse(direct_lighting_result.begin(), direct_lighting_result.end());
         // Write the result to an image (for debugging purposes)
         // writeToImage("direct_lighting_output.png", directLightPipeline->launchParams.directLightingTexture.size, directLightPipeline->launchParams.directLightingTexture.size, result_reversed.data());
     }
+
 
     void Renderer::calculateIndirectLighting(BIAS_MODE bias, PROBE_MODE mode)
     {
@@ -600,9 +649,10 @@ namespace mcrt {
                     case 0:
                         calculateRadianceCellGatherPassCubeMapAlt(directLightingTexture);
                         std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
-                        calculateRadianceCellScatterPassCubeMap(i, directLightingTexture, secondBounceTexture);
+                        //calculateRadianceCellScatterPassCubeMap(i, directLightingTexture, secondBounceTexture);
                         //lightProbeTest(i, directLightingTexture, secondBounceTexture);
                         //octreeTextureTest();
+                        textureAndSurfaceObjectTest();
 
                         break;
                     case 1:
@@ -1076,7 +1126,7 @@ namespace mcrt {
     {
         std::cout << "OCTREE TESTING... " << std::endl;
 
-        radianceCellScatterCubeMapPipeline->launchParams.octreeTexture = (float*)octreeTextures->getOctreeGPUMemory().d_pointer();
+        //radianceCellScatterCubeMapPipeline->launchParams.octreeTexture = (float*)octreeTextures->getOctreeGPUMemory().d_pointer();
 
         radianceCellScatterCubeMapPipeline->uploadLaunchParams();
 
@@ -1093,6 +1143,49 @@ namespace mcrt {
 
         CUDA_SYNC_CHECK();
     }
+
+    void Renderer::textureAndSurfaceObjectTest()
+    {
+        std::cout << "TESTING TEXTURE AND SURFACE OBJECTS... " << std::endl;
+
+
+        radianceCellScatterCubeMapPipeline->launchParams.textureRef = textureObjects[0];
+        radianceCellScatterCubeMapPipeline->launchParams.surfaceRef = surfaceObjects[0];
+        radianceCellScatterCubeMapPipeline->launchParams.read = false;
+        radianceCellScatterCubeMapPipeline->uploadLaunchParams();
+
+        // Surface write
+        OPTIX_CHECK(optixLaunch(
+            radianceCellScatterCubeMapPipeline->pipeline, stream,
+            radianceCellScatterCubeMapPipeline->launchParamsBuffer.d_pointer(),
+            radianceCellScatterCubeMapPipeline->launchParamsBuffer.sizeInBytes,
+            &radianceCellScatterCubeMapPipeline->sbt,
+            1,                     // dimension X: amount of UV texels in the cell
+            1,                     // dimension Y: 1
+            1                      // dimension Z: 1
+            // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
+        ));
+
+        CUDA_SYNC_CHECK();
+
+
+        // Texture read
+        radianceCellScatterCubeMapPipeline->launchParams.read = true;
+        radianceCellScatterCubeMapPipeline->uploadLaunchParams();
+        OPTIX_CHECK(optixLaunch(
+            radianceCellScatterCubeMapPipeline->pipeline, stream,
+            radianceCellScatterCubeMapPipeline->launchParamsBuffer.d_pointer(),
+            radianceCellScatterCubeMapPipeline->launchParamsBuffer.sizeInBytes,
+            &radianceCellScatterCubeMapPipeline->sbt,
+            1,                     // dimension X: amount of UV texels in the cell
+            1,                     // dimension Y: 1
+            1                      // dimension Z: 1
+            // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
+        ));
+
+        CUDA_SYNC_CHECK();
+    }
+
 
 
     void Renderer::calculateRadianceCellScatterUnbiased(int iteration, CUDABuffer& prevBounceTexture, CUDABuffer& dstTexture)
@@ -1490,7 +1583,8 @@ namespace mcrt {
         assert( (texSize > 0) && "Direct lighting texture needs to be initialized before preparing UV indices!");
         
         std::vector<UVWorldData> UVData(texSize * texSize, { glm::vec3{-1000.0f, -1000.0f, -1000.0f}, glm::vec3{-1000.0f, -1000.0f, -1000.0f} });    // Scene is scaled within (0;1) so this should not form a problem
-        //std::vector<uint32_t> testUVImage(texSize * texSize, 0);
+
+        float progress = 0.1f;
         for (int i = 0; i < UVData.size(); i++)
         {
             const float u = float(i % texSize) / float(texSize);
@@ -1501,6 +1595,11 @@ namespace mcrt {
            
             // Assign this UV to the cell that it belongs to, so in the scattering pass we can operate on local UVs
             scene.grid.assignUVToCells(uv, UVData[i].worldPosition);
+            if (float(i) / float(UVData.size()) > progress)
+            {
+                std::cout << "Progress: " << progress * 100 << "%." << std::endl;
+                progress += 0.1f;
+            }
         }
 
         // Upload world positions to the GPU and pass a pointer to this memory into the launch params

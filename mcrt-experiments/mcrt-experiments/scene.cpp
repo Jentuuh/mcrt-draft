@@ -61,6 +61,37 @@ namespace mcrt {
     }
 
 
+    void Scene::loadSponzaComponents()
+    {
+        loadModelFromOBJ("../models/sponza-components/arcs.obj");
+        loadModelFromOBJ("../models/sponza-components/arcs2.obj");
+        loadModelFromOBJ("../models/sponza-components/building_core.obj");
+        loadModelFromOBJ("../models/sponza-components/bushes.obj");
+        loadModelFromOBJ("../models/sponza-components/curtains.obj");
+        loadModelFromOBJ("../models/sponza-components/curtains2.obj");
+        loadModelFromOBJ("../models/sponza-components/curtains3.obj");
+        loadModelFromOBJ("../models/sponza-components/doors.obj");
+        loadModelFromOBJ("../models/sponza-components/drapes.obj");
+        loadModelFromOBJ("../models/sponza-components/drapes2.obj");
+        loadModelFromOBJ("../models/sponza-components/drapes3.obj");
+        loadModelFromOBJ("../models/sponza-components/fire_pit.obj");
+        loadModelFromOBJ("../models/sponza-components/lion.obj");
+        loadModelFromOBJ("../models/sponza-components/lion_background.obj");
+        loadModelFromOBJ("../models/sponza-components/pillars.obj");
+        loadModelFromOBJ("../models/sponza-components/pillars_up.obj");
+        loadModelFromOBJ("../models/sponza-components/pillars_up2.obj");
+        loadModelFromOBJ("../models/sponza-components/plants.obj");
+        loadModelFromOBJ("../models/sponza-components/platforms.obj");
+        loadModelFromOBJ("../models/sponza-components/pots.obj");
+        loadModelFromOBJ("../models/sponza-components/roof.obj");
+        loadModelFromOBJ("../models/sponza-components/spears.obj");
+        loadModelFromOBJ("../models/sponza-components/spikes.obj");
+        loadModelFromOBJ("../models/sponza-components/square_panel_back.obj");
+        loadModelFromOBJ("../models/sponza-components/water_dish.obj");
+    }
+
+
+
 	void Scene::addGameObject(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale, std::shared_ptr<Model> model)
 	{
 
@@ -277,6 +308,7 @@ namespace mcrt {
 
         std::cout << "Succesfully loaded in scene model. Resulted in " << gameObjects.size() << " game objects." << std::endl;
     }
+
 
     int Scene::loadTexture(std::map<std::string, int>&knownTextures, const std::string & inFileName, const std::string & modelPath)
     {

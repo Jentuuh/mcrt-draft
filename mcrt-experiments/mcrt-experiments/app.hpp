@@ -17,7 +17,7 @@ namespace mcrt {
             const Camera& camera,
             const float worldScale)
             : GLFCameraWindow(title, camera.position, camera.target, camera.up, worldScale),
-            sample(model, camera, UNBIASED, CUBE_MAP, TEXTURE_2D)
+            sample(model, camera, BIASED_PROBES, CUBE_MAP, TEXTURE_2D)
         {
             sample.updateCamera(camera);
         }
