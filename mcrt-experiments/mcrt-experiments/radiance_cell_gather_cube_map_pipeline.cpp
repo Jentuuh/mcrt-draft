@@ -239,6 +239,7 @@ namespace mcrt {
             rec_scene.data.index = (glm::ivec3*)proxyGeometry.indices[i].d_pointer();
             rec_scene.data.normal = (glm::vec3*)proxyGeometry.normals[i].d_pointer();
             rec_scene.data.texcoord = (glm::vec2*)proxyGeometry.texCoords[i].d_pointer();
+            rec_scene.data.objectNr = i;
 
             hitgroupRecords.push_back(rec_scene);
         }

@@ -67,7 +67,7 @@ namespace mcrt {
             // Initialize irradiance octree textures
             octreeTextures = std::make_unique<OctreeTexture>(10, scene);
             
-            // TODO: find world positions alternative!
+            // TODO: find world positions per cell alternative (for octree)!
             //prepareUVsInsideBuffer();
             prepareWorldSamplePoints(octreeTextures->getLeafFaceArea());
 
@@ -102,8 +102,12 @@ namespace mcrt {
             }
 
             // Initialize 2D textures + UV world data
-            initLightingTextures(1024);
-            prepareUVWorldPositions();
+            //initLightingTextures(1024);
+            //prepareUVWorldPositions();
+            //prepareUVsInsideBuffer();
+
+            initLightingTexturesPerObject();
+            prepareUVWorldPositionsPerObject();
             prepareUVsInsideBuffer();
 
             if (bias == BIASED_PROBES && probeType == CUBE_MAP)
@@ -304,8 +308,11 @@ namespace mcrt {
             if (cameraPipeline->launchParams.frame.size.x == 0) return;
 
             // Light bounce textures
-            cameraPipeline->launchParams.directLightTexture = textureObjectsDirect[0];
-            cameraPipeline->launchParams.secondBounceTexture = textureObjectsSecond[0];
+            cameraPipeline->launchParams.directLightTextures = (cudaTextureObject_t*)directTextureObjectPointersBuffer.d_pointer();
+            cameraPipeline->launchParams.secondBounceTextures = (cudaTextureObject_t*)secondBounceTextureObjectPointersBuffer.d_pointer();
+
+            //cameraPipeline->launchParams.directLightTexture = textureObjectsDirect[0];
+            //cameraPipeline->launchParams.secondBounceTexture = textureObjectsSecond[0];
             //cameraPipeline->launchParams.thirdBounceTexture = textureObjectsThird[0];
 
             cameraPipeline->uploadLaunchParams();
@@ -386,9 +393,6 @@ namespace mcrt {
         std::cout << "Initializing irradiance textures..." << std::endl;
         std::vector<float> zeros(size * size * 4, 0.0f);
 
-        // ==================================
-        // ============ NEW =================
-        // ==================================
         int numTextures = 1;
 
         textureObjectsDirect.resize(numTextures);
@@ -567,48 +571,210 @@ namespace mcrt {
 
     void Renderer::initLightingTexturesPerObject()
     {   
-        // A separate texture for each game object
-        samplePointsPerObjectBuffers.resize(scene.getGameObjects().size());
+        int numTextures = scene.getGameObjects().size();
 
-        std::vector<int> textureSizesVector;
-        std::vector<int> textureOffsetsVector;
-        std::vector<UVWorldData> UVDataAllObjects;
+        textureObjectsDirect.resize(numTextures);
+        textureObjectsSecond.resize(numTextures);
+        textureObjectsThird.resize(numTextures);
 
-        int totalTextureSize = 0;
-        for (auto o : scene.getGameObjects())
-        {   
-            float objectArea = o->surfaceArea();
-            int texRes = objectArea * 512;
-            texRes = GeneralUtils::pow2roundup(texRes);
+        surfaceObjectsDirect.resize(numTextures);
+        surfaceObjectsSecond.resize(numTextures);
+        surfaceObjectsThird.resize(numTextures);
+
+        // Direct lighting
+        for (int textureID = 0; textureID < numTextures; textureID++) {
+
+            // Decide texture resolution based on the object's surface area
+            float objectArea = scene.getGameObjects()[textureID]->surfaceArea();
+            int size = objectArea * 512;
+            size = GeneralUtils::pow2roundup(size);
+
+            std::cout << "Texture size: " << size << std::endl;
 
             // We cannot have textures of 0x0
-            if(texRes == 0)
-                texRes = 1;
+            if (size == 0)
+                size = 1;
 
-            textureSizesVector.push_back(texRes);
-            textureOffsetsVector.push_back(totalTextureSize);
-            totalTextureSize += texRes * texRes * 3;
+            std::vector<float> zeros(size * size * 4, 0.0f);
 
-            prepareUVWorldPositionsPerObject(texRes, UVDataAllObjects, o);
+            cudaChannelFormatDesc channelDesc;
+            channelDesc = cudaCreateChannelDesc<float4>();
+            int32_t width = size;
+            int32_t height = size;
+            int32_t pitch = width * sizeof(float4);
+
+            // Initialize CUDA array
+            cudaArray* cuArray;
+            CUDA_CHECK(MallocArray(&cuArray,
+                &channelDesc,
+                width,
+                height,
+                cudaArraySurfaceLoadStore));
+
+            CUDA_CHECK(Memcpy2DToArray(cuArray,
+                /* offset */0, 0,
+                zeros.data(),
+                pitch, pitch, height,
+                cudaMemcpyHostToDevice));
+
+            // Resource description for the CUDA array
+            cudaResourceDesc resourceDesc = {};
+            resourceDesc.resType = cudaResourceTypeArray;
+            resourceDesc.res.array.array = cuArray;
+
+            // Surface object creation
+            cudaSurfaceObject_t cudaSurf = 0;
+            CUDA_CHECK(CreateSurfaceObject(&cudaSurf, &resourceDesc));
+            surfaceObjectsDirect[textureID] = cudaSurf;
+
+            // Texture object creation
+            cudaTextureDesc texDesc = {};
+            texDesc.addressMode[0] = cudaAddressModeWrap;
+            texDesc.addressMode[1] = cudaAddressModeWrap;
+            texDesc.filterMode = cudaFilterModeLinear;
+            texDesc.readMode = cudaReadModeElementType;
+            texDesc.normalizedCoords = 1;
+            texDesc.maxAnisotropy = 1;
+            texDesc.maxMipmapLevelClamp = 99;
+            texDesc.minMipmapLevelClamp = 0;
+            texDesc.mipmapFilterMode = cudaFilterModePoint;
+            texDesc.borderColor[0] = 1.0f;
+            texDesc.sRGB = 0;
+
+            // Create texture object
+            cudaTextureObject_t cudaTex = 0;
+            CUDA_CHECK(CreateTextureObject(&cudaTex, &resourceDesc, &texDesc, nullptr));
+            textureObjectsDirect[textureID] = cudaTex;
+
+            // TEXTURE SIZES ONLY NEED TO BE PUSHED THE FIRST LOOP
+            directTextureSizes.push_back(size);
         }
 
+        // Second bounce
+        for (int textureID = 0; textureID < numTextures; textureID++) {
 
-        std::vector<float> zeros(totalTextureSize, 0.0f);
-        directLightingTextures.alloc_and_upload(zeros);
-        samplePointsPerObjectBuffers.alloc_and_upload(UVDataAllObjects);
+            int size = directTextureSizes[textureID];
 
-        //directLightPipeline->launchParams.directLightingTexture.colorBuffer = (float*)directLightingTextures.d_pointer();
-        //directLightPipeline->launchParams.directLightingTexture.size = int(totalTextureSize / 3); // Each pixel has 3 components
+            std::vector<float> zeros(size * size * 4, 0.0f);
 
-        //directLightPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)samplePointsPerObjectBuffers.d_pointer();
-        //directLightPipeline->launchParams.uvWorldPositions.size = UVDataAllObjects.size();
+            cudaChannelFormatDesc channelDesc;
+            channelDesc = cudaCreateChannelDesc<float4>();
+            int32_t width = size;
+            int32_t height = size;
+            int32_t pitch = width * sizeof(float4);
 
-        textureSizes.alloc_and_upload(textureSizesVector);
-        textureOffsets.alloc_and_upload(textureOffsetsVector);
+            // Initialize CUDA array
+            cudaArray* cuArray;
+            CUDA_CHECK(MallocArray(&cuArray,
+                &channelDesc,
+                width,
+                height,
+                cudaArraySurfaceLoadStore));
 
-        std::cout << "Texture sizes: " << textureSizesVector.size() << std::endl;
-        std::cout << "Texture offsets: " << textureOffsetsVector.size() << std::endl;
-        // TODO indirect lighting textures
+            CUDA_CHECK(Memcpy2DToArray(cuArray,
+                /* offset */0, 0,
+                zeros.data(),
+                pitch, pitch, height,
+                cudaMemcpyHostToDevice));
+
+            // Resource description for the CUDA array
+            cudaResourceDesc resourceDesc = {};
+            resourceDesc.resType = cudaResourceTypeArray;
+            resourceDesc.res.array.array = cuArray;
+
+            // Surface object creation
+            cudaSurfaceObject_t cudaSurf = 0;
+            CUDA_CHECK(CreateSurfaceObject(&cudaSurf, &resourceDesc));
+            surfaceObjectsSecond[textureID] = cudaSurf;
+
+            // Texture object creation
+            cudaTextureDesc texDesc = {};
+            texDesc.addressMode[0] = cudaAddressModeWrap;
+            texDesc.addressMode[1] = cudaAddressModeWrap;
+            texDesc.filterMode = cudaFilterModeLinear;
+            texDesc.readMode = cudaReadModeElementType;
+            texDesc.normalizedCoords = 1;
+            texDesc.maxAnisotropy = 1;
+            texDesc.maxMipmapLevelClamp = 99;
+            texDesc.minMipmapLevelClamp = 0;
+            texDesc.mipmapFilterMode = cudaFilterModePoint;
+            texDesc.borderColor[0] = 1.0f;
+            texDesc.sRGB = 0;
+
+            // Create texture object
+            cudaTextureObject_t cudaTex = 0;
+            CUDA_CHECK(CreateTextureObject(&cudaTex, &resourceDesc, &texDesc, nullptr));
+            textureObjectsSecond[textureID] = cudaTex;
+        }
+
+        // Third bounce
+        for (int textureID = 0; textureID < numTextures; textureID++) {
+
+            int size = directTextureSizes[textureID];
+
+            std::vector<float> zeros(size * size * 4, 0.0f);
+
+            cudaChannelFormatDesc channelDesc;
+            channelDesc = cudaCreateChannelDesc<float4>();
+            int32_t width = size;
+            int32_t height = size;
+            int32_t pitch = width * sizeof(float4);
+
+            // Initialize CUDA array
+            cudaArray* cuArray;
+            CUDA_CHECK(MallocArray(&cuArray,
+                &channelDesc,
+                width,
+                height,
+                cudaArraySurfaceLoadStore));
+
+            CUDA_CHECK(Memcpy2DToArray(cuArray,
+                /* offset */0, 0,
+                zeros.data(),
+                pitch, pitch, height,
+                cudaMemcpyHostToDevice));
+
+            // Resource description for the CUDA array
+            cudaResourceDesc resourceDesc = {};
+            resourceDesc.resType = cudaResourceTypeArray;
+            resourceDesc.res.array.array = cuArray;
+
+            // Surface object creation
+            cudaSurfaceObject_t cudaSurf = 0;
+            CUDA_CHECK(CreateSurfaceObject(&cudaSurf, &resourceDesc));
+            surfaceObjectsThird[textureID] = cudaSurf;
+
+            // Texture object creation
+            cudaTextureDesc texDesc = {};
+            texDesc.addressMode[0] = cudaAddressModeWrap;
+            texDesc.addressMode[1] = cudaAddressModeWrap;
+            texDesc.filterMode = cudaFilterModeLinear;
+            texDesc.readMode = cudaReadModeElementType;
+            texDesc.normalizedCoords = 1;
+            texDesc.maxAnisotropy = 1;
+            texDesc.maxMipmapLevelClamp = 99;
+            texDesc.minMipmapLevelClamp = 0;
+            texDesc.mipmapFilterMode = cudaFilterModePoint;
+            texDesc.borderColor[0] = 1.0f;
+            texDesc.sRGB = 0;
+
+            // Create texture object
+            cudaTextureObject_t cudaTex = 0;
+            CUDA_CHECK(CreateTextureObject(&cudaTex, &resourceDesc, &texDesc, nullptr));
+            textureObjectsThird[textureID] = cudaTex;
+        }
+
+        // Buffers for pointers to all texture objects per lighting bounce
+        directTextureObjectPointersBuffer.alloc_and_upload(textureObjectsDirect);
+        secondBounceTextureObjectPointersBuffer.alloc_and_upload(textureObjectsSecond);
+        thirdBounceTextureObjectPointersBuffer.alloc_and_upload(textureObjectsThird);
+
+        directSurfaceObjectPointersBuffer.alloc_and_upload(surfaceObjectsDirect);
+        secondSurfaceObjectPointersBuffer.alloc_and_upload(surfaceObjectsSecond);
+        thirdSurfaceObjectPointersBuffer.alloc_and_upload(surfaceObjectsThird);
+
+        // Buffer that stores the texture size of each game object (for now we assume we use the same resolution for each lighting bounce
+        textureSizesBuffer.alloc_and_upload(directTextureSizes);
     }
 
 
@@ -641,6 +807,7 @@ namespace mcrt {
         std::cout << "=======================================================" << std::endl;
         std::cout << "        CALCULATE DIRECT LIGHTING (TEXTURE 2D)         " << std::endl;
         std::cout << "=======================================================" << std::endl;
+
         // Get lights data from scene
         std::vector<LightData> lightData = scene.getLightsData();
 
@@ -652,22 +819,33 @@ namespace mcrt {
         directLightPipeline->launchParams.lights = (LightData*)lightDataBuffer.d_pointer();
         directLightPipeline->launchParams.stratifyResX = STRATIFIED_X_SIZE;
         directLightPipeline->launchParams.stratifyResY = STRATIFIED_Y_SIZE;
-        directLightPipeline->launchParams.textureSize = directTextureSizes[0];
-        directLightPipeline->uploadLaunchParams();
 
-        // Launch direct lighting pipeline
-        OPTIX_CHECK(optixLaunch(
-            directLightPipeline->pipeline, stream,
-            directLightPipeline->launchParamsBuffer.d_pointer(),
-            directLightPipeline->launchParamsBuffer.sizeInBytes,
-            &directLightPipeline->sbt,
-            directLightPipeline->launchParams.textureSize,                      // dimension X: x resolution of UV map
-            directLightPipeline->launchParams.textureSize,                      // dimension Y: y resolution of UV map
-            1                                                                   // dimension Z: 1
-            // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
-        ));
+        for (int o = 0; o < scene.getGameObjects().size(); o++)
+        {
+            // UV world data
+            directLightPipeline->launchParams.uvPositions = UVWorldPositionsTextures[o];
+            directLightPipeline->launchParams.uvNormals = UVNormalsTextures[o];
+            directLightPipeline->launchParams.uvDiffuseColors = UVDiffuseColorTextures[o];
 
-        CUDA_SYNC_CHECK();
+            // Irradiance texture data
+            directLightPipeline->launchParams.directLightingTexture = surfaceObjectsDirect[o];
+            directLightPipeline->launchParams.textureSize = directTextureSizes[o];
+            directLightPipeline->uploadLaunchParams();
+
+            // Launch direct lighting pipeline
+            OPTIX_CHECK(optixLaunch(
+                directLightPipeline->pipeline, stream,
+                directLightPipeline->launchParamsBuffer.d_pointer(),
+                directLightPipeline->launchParamsBuffer.sizeInBytes,
+                &directLightPipeline->sbt,
+                directTextureSizes[o],                                              // dimension X: x resolution of UV map
+                directTextureSizes[o],                                              // dimension Y: y resolution of UV map
+                1                                                                   // dimension Z: 1
+                // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
+            ));
+
+            CUDA_SYNC_CHECK();
+        }
 
         //// Download resulting texture from GPU
         //std::vector<float>direct_lighting_result(directLightPipeline->launchParams.directLightingTexture.size * directLightPipeline->launchParams.directLightingTexture.size * 3);
@@ -744,18 +922,18 @@ namespace mcrt {
                     switch (i)
                     {
                     case 0:
-                        calculateRadianceCellGatherPassCubeMapAlt(textureObjectsDirect[0]);
+                        calculateRadianceCellGatherPassCubeMapAlt((cudaTextureObject_t*)directTextureObjectPointersBuffer.d_pointer());
                         std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
-                        calculateRadianceCellScatterPassCubeMap(i, textureObjectsDirect[0], surfaceObjectsSecond[0]);
+                        calculateRadianceCellScatterPassCubeMap(i, (cudaTextureObject_t*)directTextureObjectPointersBuffer.d_pointer(), (cudaSurfaceObject_t*)secondSurfaceObjectPointersBuffer.d_pointer());
                         //lightProbeTest(i, directLightingTexture, secondBounceTexture);
                         //octreeTextureTest();
                         //textureAndSurfaceObjectTest();
 
                         break;
                     case 1:
-                        calculateRadianceCellGatherPassCubeMapAlt(textureObjectsSecond[0]);
+                        calculateRadianceCellGatherPassCubeMapAlt((cudaTextureObject_t*)secondBounceTextureObjectPointersBuffer.d_pointer());
                         std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
-                        calculateRadianceCellScatterPassCubeMap(i, textureObjectsSecond[0], surfaceObjectsThird[0]);
+                        calculateRadianceCellScatterPassCubeMap(i, (cudaTextureObject_t*)secondBounceTextureObjectPointersBuffer.d_pointer(), (cudaSurfaceObject_t*)thirdSurfaceObjectPointersBuffer.d_pointer());
                         break;
                     default:
                         break;
@@ -915,18 +1093,15 @@ namespace mcrt {
     }   
 
     // Cubemap alternative approach avoids 'holes' in cubemap texture by iterating over the cubemap pixels instead of the surrounding indirect light source texels.
-    void Renderer::calculateRadianceCellGatherPassCubeMapAlt(cudaTextureObject_t& previousPassLightSourceTexture)
+    void Renderer::calculateRadianceCellGatherPassCubeMapAlt(cudaTextureObject_t* previousPassLightSourceTextures)
     {
-        // TODO: For now we're using the same texture size as for the direct lighting pass, we can downsample in the future to gain performance
-        const int texSize = directTextureSizes[0];
         const float cellSize = scene.grid.getCellSize();
-
-        // Initialize Light Source Texture data on GPU
-        radianceCellGatherCubeMapPipeline->launchParams.lightSourceTexture = previousPassLightSourceTexture;
 
         // Initialize cell size in launch params
         radianceCellGatherCubeMapPipeline->launchParams.cellSize = cellSize;
 
+        // Initialize Light Source Textures data on GPU
+        radianceCellGatherCubeMapPipeline->launchParams.lightSourceTextures = previousPassLightSourceTextures;
 
         for (int z = 0; z < scene.grid.resolution.z; z++)
         {
@@ -937,6 +1112,7 @@ namespace mcrt {
                     int currentProbeOffset = ((z * scene.grid.resolution.x * scene.grid.resolution.y) + (y * scene.grid.resolution.x) + (x)) * 6 * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution;
                     radianceCellGatherCubeMapPipeline->launchParams.probeOffset = currentProbeOffset;
                     radianceCellGatherCubeMapPipeline->launchParams.probePosition = glm::vec3{ x * cellSize + (0.5f * cellSize), y * cellSize + (0.5f * cellSize), z * cellSize + (0.5f * cellSize) }; // Probes are centered in each radiance cell
+
                     radianceCellGatherCubeMapPipeline->uploadLaunchParams();
 
                     OPTIX_CHECK(optixLaunch(
@@ -949,6 +1125,9 @@ namespace mcrt {
                         6                                                                           // dimension Z: amount of cubemap faces
                         // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
                     ));
+
+                    CUDA_SYNC_CHECK();
+                                 
                 }
             }
         }
@@ -1040,7 +1219,7 @@ namespace mcrt {
         writeToImage("current_bounce_output" + std::to_string(iteration) + ".png", radianceCellScatterPipeline->launchParams.currentBounceTexture.size, radianceCellScatterPipeline->launchParams.currentBounceTexture.size, current_bounce_result.data());
     }
 
-    void Renderer::calculateRadianceCellScatterPassCubeMap(int iteration, cudaTextureObject_t& prevBounceTexture, cudaSurfaceObject_t& dstTexture)
+    void Renderer::calculateRadianceCellScatterPassCubeMap(int iteration, cudaTextureObject_t* prevBounceTexture, cudaSurfaceObject_t* dstTexture)
     {
 
         // TODO: For now we're using the same texture size as for the direct lighting pass, we can downsample in the future to gain performance
@@ -1055,10 +1234,10 @@ namespace mcrt {
             radianceCellScatterCubeMapPipeline->launchParams.probeHeightRes = scene.grid.resolution.y;
 
             // Texture that we write to
-            radianceCellScatterCubeMapPipeline->launchParams.currentBounceTexture = dstTexture;
+            radianceCellScatterCubeMapPipeline->launchParams.currentBounceTextures = dstTexture;
 
             // Indirect light source texture that we read from (in case of local ray tracing)
-            radianceCellScatterCubeMapPipeline->launchParams.prevBounceTexture = prevBounceTexture;
+            radianceCellScatterCubeMapPipeline->launchParams.prevBounceTextures = prevBounceTexture;
 
             // Load uvs per cell 
             std::vector<glm::vec2> cellUVs = nonEmpties.nonEmptyCells[i]->getUVsInside();
@@ -1069,11 +1248,11 @@ namespace mcrt {
             radianceCellScatterCubeMapPipeline->launchParams.cellSize = scene.grid.getCellSize();
 
             // UV world position data
-            radianceCellScatterCubeMapPipeline->launchParams.uvPositions = UVWorldPositionsTextures[0];
-            radianceCellScatterCubeMapPipeline->launchParams.uvNormals = UVNormalsTextures[0];
-            radianceCellScatterCubeMapPipeline->launchParams.uvDiffuseColors = UVDiffuseColorTextures[0];
+            radianceCellScatterCubeMapPipeline->launchParams.uvPositions = (cudaTextureObject_t*) uvWorldPositionTextureObjectPointersBuffer.d_pointer();
+            radianceCellScatterCubeMapPipeline->launchParams.uvNormals = (cudaTextureObject_t*) uvNormalTextureObjectPointersBuffer.d_pointer();
+            radianceCellScatterCubeMapPipeline->launchParams.uvDiffuseColors = (cudaTextureObject_t*) uvDiffuseColorTextureObjectPointersBuffer.d_pointer();
 
-            radianceCellScatterCubeMapPipeline->launchParams.currentBounceResolution = directTextureSizes[0];
+            radianceCellScatterCubeMapPipeline->launchParams.objectTextureResolutions = (int*) textureSizesBuffer.d_pointer();
 
             radianceCellScatterCubeMapPipeline->uploadLaunchParams();
 
@@ -1634,7 +1813,7 @@ namespace mcrt {
             diffuseColors[i * 4 + 3] = 0.0f;
 
             // Assign this UV to the cell that it belongs to, so in the scattering pass we can operate on local UVs
-            scene.grid.assignUVToCells(uv, uvWorldData.worldPosition);
+            scene.grid.assignUVToCells(uv, uvWorldData.worldPosition, 0);
 
             if (float(i) / float(texSize * texSize) > progress)
             {
@@ -1733,34 +1912,160 @@ namespace mcrt {
         CUDA_CHECK(CreateTextureObject(&cudaTexDiffuseColors, &resourceDescColors, &texDesc, nullptr));
         UVDiffuseColorTextures[0] = cudaTexDiffuseColors;
 
-
-        // Upload world positions to the GPU and pass a pointer to this memory into the launch params
-        //samplePointWorldPositionDeviceBuffer.alloc_and_upload(UVData);
         
         if (irradStorageType == TEXTURE_2D)
         {
             directLightPipeline->launchParams.uvPositions = UVWorldPositionsTextures[0];
             directLightPipeline->launchParams.uvNormals = UVNormalsTextures[0];
             directLightPipeline->launchParams.uvDiffuseColors = UVDiffuseColorTextures[0];
-
-            //directLightPipeline->launchParams.uvWorldPositions.size = texSize * texSize;
-            //directLightPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)samplePointWorldPositionDeviceBuffer.d_pointer();
         }
     }
 
-    void Renderer::prepareUVWorldPositionsPerObject(int texSize, std::vector<UVWorldData>& bufferVector, std::shared_ptr<GameObject> o)
+    void Renderer::prepareUVWorldPositionsPerObject()
     {
-        for (int i = 0; i < texSize * texSize; i++)
+        int numObjects = scene.getGameObjects().size();
+
+        UVWorldPositionsTextures.resize(numObjects);
+        UVNormalsTextures.resize(numObjects);
+        UVDiffuseColorTextures.resize(numObjects);
+
+        for (int o = 0; o < numObjects; o++)
         {
-            const float u = float(i % texSize) / float(texSize);
-            // (i - i % texSize) / texSize gives us the row number, divided by texSize gives us the V coordinate 
-            const float v = (float((i - (i % texSize))) / float(texSize)) / float(texSize);
-            glm::vec2 uv = glm::vec2{ u,v };
+            int texSize = directTextureSizes[o];
 
-            bufferVector.push_back(UVto3DPerObject(uv, o));
+            std::vector<float> worldPositions(texSize * texSize * 4, -1000.0f);
+            std::vector<float> worldNormals(texSize * texSize * 4, 0.0f);
+            std::vector<float> diffuseColors(texSize * texSize * 4, 0.0f);
 
-            // TODO: Implement alternative to assign PER OBJECT UV to radiance cell !!!
+            float progress = 0.1f;
+            for (int i = 0; i < texSize * texSize; i++)
+            {
+                const float u = float(i % texSize) / float(texSize);
+                // (i - i % texSize) / texSize gives us the row number, divided by texSize gives us the V coordinate 
+                const float v = (float((i - (i % texSize))) / float(texSize)) / float(texSize);
+                glm::vec2 uv = glm::vec2{ u,v };
+                UVWorldData uvWorldData = UVto3DPerObject(uv, scene.getGameObjects()[o]);
+
+                worldPositions[i * 4 + 0] = uvWorldData.worldPosition.x;
+                worldPositions[i * 4 + 1] = uvWorldData.worldPosition.y;
+                worldPositions[i * 4 + 2] = uvWorldData.worldPosition.z;
+                worldPositions[i * 4 + 3] = 0.0f;
+
+                worldNormals[i * 4 + 0] = uvWorldData.worldNormal.x;
+                worldNormals[i * 4 + 1] = uvWorldData.worldNormal.y;
+                worldNormals[i * 4 + 2] = uvWorldData.worldNormal.z;
+                worldNormals[i * 4 + 3] = 0.0f;
+
+                diffuseColors[i * 4 + 0] = uvWorldData.diffuseColor.x;
+                diffuseColors[i * 4 + 1] = uvWorldData.diffuseColor.y;
+                diffuseColors[i * 4 + 2] = uvWorldData.diffuseColor.z;
+                diffuseColors[i * 4 + 3] = 0.0f;
+
+                // Assign this UV to the cell that it belongs to, so in the scattering pass we can operate on local UVs
+                scene.grid.assignUVToCells(uv, uvWorldData.worldPosition, o);
+
+                if (float(i) / float(texSize * texSize) > progress)
+                {
+                    std::cout << "Progress: " << progress * 100 << "%." << std::endl;
+                    progress += 0.1f;
+                }
+            }
+
+            cudaChannelFormatDesc channelDesc;
+            channelDesc = cudaCreateChannelDesc<float4>();
+            int32_t width = texSize;
+            int32_t height = texSize;
+            int32_t pitch = width * sizeof(float4);
+
+            // Initialize and allocate CUDA arrays
+            cudaArray* worldPosArray;
+            cudaArray* worldNormalArray;
+            cudaArray* diffuseColorArray;
+
+            CUDA_CHECK(MallocArray(&worldPosArray,
+                &channelDesc,
+                width,
+                height,
+                cudaArraySurfaceLoadStore));
+
+            CUDA_CHECK(MallocArray(&worldNormalArray,
+                &channelDesc,
+                width,
+                height,
+                cudaArraySurfaceLoadStore));
+
+            CUDA_CHECK(MallocArray(&diffuseColorArray,
+                &channelDesc,
+                width,
+                height,
+                cudaArraySurfaceLoadStore));
+
+            CUDA_CHECK(Memcpy2DToArray(worldPosArray,
+                /* offset */0, 0,
+                worldPositions.data(),
+                pitch, pitch, height,
+                cudaMemcpyHostToDevice));
+
+
+            CUDA_CHECK(Memcpy2DToArray(worldNormalArray,
+                /* offset */0, 0,
+                worldNormals.data(),
+                pitch, pitch, height,
+                cudaMemcpyHostToDevice));
+
+
+            CUDA_CHECK(Memcpy2DToArray(diffuseColorArray,
+                /* offset */0, 0,
+                diffuseColors.data(),
+                pitch, pitch, height,
+                cudaMemcpyHostToDevice));
+
+
+            // Resource description for the CUDA arrays
+            cudaResourceDesc resourceDescPositions = {};
+            resourceDescPositions.resType = cudaResourceTypeArray;
+            resourceDescPositions.res.array.array = worldPosArray;
+
+            cudaResourceDesc resourceDescNormals = {};
+            resourceDescNormals.resType = cudaResourceTypeArray;
+            resourceDescNormals.res.array.array = worldNormalArray;
+
+            cudaResourceDesc resourceDescColors = {};
+            resourceDescColors.resType = cudaResourceTypeArray;
+            resourceDescColors.res.array.array = diffuseColorArray;
+
+            // Texture object creation
+            cudaTextureDesc texDesc = {};
+            texDesc.addressMode[0] = cudaAddressModeWrap;
+            texDesc.addressMode[1] = cudaAddressModeWrap;
+            texDesc.filterMode = cudaFilterModeLinear;
+            texDesc.readMode = cudaReadModeElementType;
+            texDesc.normalizedCoords = 1;
+            texDesc.maxAnisotropy = 1;
+            texDesc.maxMipmapLevelClamp = 99;
+            texDesc.minMipmapLevelClamp = 0;
+            texDesc.mipmapFilterMode = cudaFilterModePoint;
+            texDesc.borderColor[0] = 1.0f;
+            texDesc.sRGB = 0;
+
+            // Create texture objects
+            cudaTextureObject_t cudaTexPositions = 0;
+            CUDA_CHECK(CreateTextureObject(&cudaTexPositions, &resourceDescPositions, &texDesc, nullptr));
+            UVWorldPositionsTextures[o] = cudaTexPositions;
+
+            cudaTextureObject_t cudaTexNormals = 0;
+            CUDA_CHECK(CreateTextureObject(&cudaTexNormals, &resourceDescNormals, &texDesc, nullptr));
+            UVNormalsTextures[o] = cudaTexNormals;
+
+            cudaTextureObject_t cudaTexDiffuseColors = 0;
+            CUDA_CHECK(CreateTextureObject(&cudaTexDiffuseColors, &resourceDescColors, &texDesc, nullptr));
+            UVDiffuseColorTextures[o] = cudaTexDiffuseColors;
         }
+
+        // Buffers to store pointers to texture objects
+        uvWorldPositionTextureObjectPointersBuffer.alloc_and_upload(UVWorldPositionsTextures);
+        uvNormalTextureObjectPointersBuffer.alloc_and_upload(UVNormalsTextures);
+        uvDiffuseColorTextureObjectPointersBuffer.alloc_and_upload(UVDiffuseColorTextures);
     }
 
 
@@ -1771,6 +2076,7 @@ namespace mcrt {
 
         std::vector<int> offsets;
         std::vector<glm::vec2> cellUVs;
+        std::vector<int> uvGameObjectNrs;
 
         
         for (int i = 0; i < nonEmpties.nonEmptyCells.size(); i++)
@@ -1778,14 +2084,15 @@ namespace mcrt {
             // Load uvs per cell 
             offsets.push_back(cellUVs.size());
             cellUVs.insert(cellUVs.end(), nonEmpties.nonEmptyCells[i]->getUVsInside().begin(), nonEmpties.nonEmptyCells[i]->getUVsInside().end());
+            uvGameObjectNrs.insert(uvGameObjectNrs.end(), nonEmpties.nonEmptyCells[i]->getUVsGameObjectNrs().begin(), nonEmpties.nonEmptyCells[i]->getUVsGameObjectNrs().end());
         }
 
         // For debugging purposes and visualization only (should be commented out in release)
-        writeUVsPerCellToImage(offsets, cellUVs, 1024);
+        // writeUVsPerCellToImage(offsets, cellUVs, 1024);
 
         UVsInsideBuffer.alloc_and_upload(cellUVs);
         UVsInsideOffsets.alloc_and_upload(offsets);
-
+        UVsGameObjectNrsBuffer.alloc_and_upload(uvGameObjectNrs);
 
         if (irradStorageType == OCTREE_TEXTURE)
         {
@@ -1813,12 +2120,14 @@ namespace mcrt {
             {
                 radianceCellScatterCubeMapPipeline->launchParams.uvsInside = (glm::vec2*)UVsInsideBuffer.d_pointer();
                 radianceCellScatterCubeMapPipeline->launchParams.uvsInsideOffsets = (int*)UVsInsideOffsets.d_pointer();
+                radianceCellScatterCubeMapPipeline->launchParams.uvGameObjectNrs = (int*)UVsGameObjectNrsBuffer.d_pointer();
             }
 
             if (radianceCellScatterUnbiasedPipeline != nullptr)
             {
                 radianceCellScatterUnbiasedPipeline->launchParams.uvsInside = (glm::vec2*)UVsInsideBuffer.d_pointer();
                 radianceCellScatterUnbiasedPipeline->launchParams.uvsInsideOffsets = (int*)UVsInsideOffsets.d_pointer();
+                radianceCellScatterUnbiasedPipeline->launchParams.uvGameObjectNrs = (int*)UVsGameObjectNrsBuffer.d_pointer();
             }
         }
     }

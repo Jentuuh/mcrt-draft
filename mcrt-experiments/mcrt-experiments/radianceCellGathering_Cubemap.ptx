@@ -23,8 +23,8 @@
 .visible .entry __closesthit__radiance__cell__gathering__scene()
 {
 	.reg .f32 	%f<24>;
-	.reg .b32 	%r<17>;
-	.reg .b64 	%rd<13>;
+	.reg .b32 	%r<18>;
+	.reg .b64 	%rd<17>;
 	.loc	1 38 0
 
 
@@ -92,10 +92,15 @@
 	fma.rn.ftz.f32 	%f19, %f4, %f17, %f15;
 	.loc	1 54 33
 	ld.const.u64 	%rd12, [optixLaunchParams+24];
+	cvta.to.global.u64 	%rd13, %rd12;
+	ld.u32 	%r17, [%rd1+32];
+	mul.wide.s32 	%rd14, %r17, 8;
+	add.s64 	%rd15, %rd13, %rd14;
+	ld.global.u64 	%rd16, [%rd15];
 	.loc	1 54 35
 	.loc	4 158 3, function_name $L__info_string5, inlined_at 1 54 35
 	.loc	4 149 4, function_name $L__info_string6, inlined_at 4 158 3
-	tex.2d.v4.f32.f32 	{%f20, %f21, %f22, %f23}, [%rd12, {%f18, %f19}];
+	tex.2d.v4.f32.f32 	{%f20, %f21, %f22, %f23}, [%rd16, {%f18, %f19}];
 	.loc	1 65 40
 	.loc	1 23 45, function_name $L__info_string7, inlined_at 1 65 40
 	.loc	2 314 5, function_name $L__info_string8, inlined_at 1 23 45

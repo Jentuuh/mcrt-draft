@@ -13,7 +13,7 @@ namespace mcrt {
 		void addObject(std::shared_ptr<GameObject> obj);
 		void removeObject(std::shared_ptr<GameObject> obj);
 
-		bool addUVIfInside(glm::vec2 uv, glm::vec3 uvWorldCoord);
+		bool addUVIfInside(glm::vec2 uv, glm::vec3 uvWorldCoord, int uvGameObjectNr);
 		int amountObjects() { return objectsInside.size(); };
 
 		bool intersects(Voxel v);
@@ -25,6 +25,7 @@ namespace mcrt {
 		glm::vec3 getCenter() { return min + 0.5f * (max - min); };
 		std::vector<glm::vec3> getNormals();
 		std::vector<glm::vec2>& getUVsInside() { return uvsInside; };
+		std::vector<int>& getUVsGameObjectNrs() { return gameObjectNrPerUVInside; };
 		int getAmountUVsInside() { return uvsInside.size(); };
 
 		glm::vec3 min;
@@ -33,6 +34,7 @@ namespace mcrt {
 		glm::ivec3 coord;
 		std::vector<std::shared_ptr<GameObject>> objectsInside;
 		std::vector<glm::vec2> uvsInside;
+		std::vector<int> gameObjectNrPerUVInside;
 
 		std::vector<glm::vec3> vertices;
 		std::vector<glm::ivec3> indices;

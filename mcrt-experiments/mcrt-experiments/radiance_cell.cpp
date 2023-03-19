@@ -53,11 +53,12 @@ namespace mcrt {
 		remove(objectsInside.begin(), objectsInside.end(), obj);
 	}
 
-    bool RadianceCell::addUVIfInside(glm::vec2 uv, glm::vec3 uvWorldCoord)
+    bool RadianceCell::addUVIfInside(glm::vec2 uv, glm::vec3 uvWorldCoord, int uvGameObjectNr)
     {
         if (contains(uvWorldCoord))
         {
             uvsInside.push_back(uv);
+            gameObjectNrPerUVInside.push_back(uvGameObjectNr);
             return true;
         }
         return false;

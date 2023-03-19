@@ -65,12 +65,12 @@ namespace mcrt {
 		}
 	}
 
-	void RadianceGrid::assignUVToCells(glm::vec2 uv, glm::vec3 UVWorldCoord)
+	void RadianceGrid::assignUVToCells(glm::vec2 uv, glm::vec3 UVWorldCoord, int uvGameObjectNr)
 	{
 		for (auto& c : grid)
 		{
 			// We can return once the UV has been added to a cell, because it cannot be part of multiple cells
-			if(c.addUVIfInside(uv, UVWorldCoord))
+			if(c.addUVIfInside(uv, UVWorldCoord, uvGameObjectNr))
 				return;
 		}
 	}

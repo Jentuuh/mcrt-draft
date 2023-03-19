@@ -62,6 +62,7 @@ namespace mcrt {
 		glm::vec2* texcoord;
 		glm::ivec3* index;
 
+		int objectNr;
 		int cellIndex;
 	};
 
@@ -90,16 +91,18 @@ namespace mcrt {
 
 	struct LaunchParamsRadianceCellScatterCubeMap
 	{
-		cudaTextureObject_t uvPositions;
-		cudaTextureObject_t uvNormals;
-		cudaTextureObject_t uvDiffuseColors;
+		cudaTextureObject_t* uvPositions;
+		cudaTextureObject_t* uvNormals;
+		cudaTextureObject_t* uvDiffuseColors;
 
-		cudaTextureObject_t prevBounceTexture;
-		cudaSurfaceObject_t currentBounceTexture;
-		int currentBounceResolution;
+		cudaTextureObject_t* prevBounceTextures;
+		cudaSurfaceObject_t* currentBounceTextures;
+		int* objectTextureResolutions;
 
 		glm::vec2* uvsInside;
 		int* uvsInsideOffsets;
+		int* uvGameObjectNrs;
+
 		glm::vec3 cellCenter;
 		float cellSize;
 
@@ -164,6 +167,9 @@ namespace mcrt {
 
 		glm::vec2* uvsInside;
 		int* uvsInsideOffsets;
+		int* uvGameObjectNrs;
+
+
 		glm::vec3 cellCenter;
 		float cellSize;
 		int nonEmptyCellIndex;
@@ -215,27 +221,19 @@ namespace mcrt {
 		glm::vec3* normal;
 		glm::ivec3* index;
 		glm::vec2* texcoord;
-
+		int objectNr;
 		int cellIndex;
 	};
 
 	struct LaunchParamsRadianceCellGatherCubeMap {
-		//struct {
-		//	UVWorldData* UVDataBuffer;
-		//	int size;
-		//} uvWorldPositions;
-		//cudaTextureObject_t uvPositions;
-		//cudaTextureObject_t uvNormals;
-		//cudaTextureObject_t uvDiffuseColors;
-
 		float cellSize;
-		//int divisionResolution;		// The amount of cells the light source texture is divided in both dimensions
 
 		glm::vec3 probePosition;
 		int probeOffset;
 
-		cudaTextureObject_t lightSourceTexture;
-		//PixelBuffer lightSourceTexture;
+		cudaTextureObject_t* lightSourceTextures;
+
+		//cudaTextureObject_t lightSourceTexture;
 
 		float* cubeMaps; // A pointer to cubemap faces
 		int cubeMapResolution;
@@ -416,8 +414,8 @@ namespace mcrt {
 			glm::vec3 vertical;
 		} camera;
 
-		cudaTextureObject_t directLightTexture;
-		cudaTextureObject_t secondBounceTexture;
+		cudaTextureObject_t* directLightTextures;
+		cudaTextureObject_t* secondBounceTextures;
 		//cudaTextureObject_t thirdBounceTexture;
 
 		OptixTraversableHandle traversable;

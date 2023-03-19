@@ -70,9 +70,9 @@ namespace mcrt {
 		void initSHWeightsBuffer(int amountNonEmptyCells);
 		void initSHAccumulators(int divisionResolution, int amountNonEmptyCells);
 		void calculateRadianceCellGatherPass(CUDABuffer& previousPassLightSourceTexture);
-		void calculateRadianceCellGatherPassCubeMapAlt(cudaTextureObject_t& previousPassLightSourceTexture);
+		void calculateRadianceCellGatherPassCubeMapAlt(cudaTextureObject_t* previousPassLightSourceTextures);
 		void calculateRadianceCellScatterPass(int iteration, CUDABuffer& dstTexture);
-		void calculateRadianceCellScatterPassCubeMap(int iteration, cudaTextureObject_t& prevBounceTexture, cudaSurfaceObject_t& dstTexture);
+		void calculateRadianceCellScatterPassCubeMap(int iteration, cudaTextureObject_t* prevBounceTexture, cudaSurfaceObject_t* dstTexture);
 		void calculateRadianceCellScatterUnbiased(int iteration, cudaTextureObject_t& prevBounceTexture, cudaSurfaceObject_t& dstTexture);
 
 		void calculateDirectLightingOctree();
@@ -89,7 +89,7 @@ namespace mcrt {
 		void writeWeightsToTxtFile(std::vector<float>& weights, std::vector<int>& numSamples, int amountCells);
 
 		void prepareUVWorldPositions();
-		void prepareUVWorldPositionsPerObject(int texSize, std::vector<UVWorldData>& bufferVector, std::shared_ptr<GameObject> o);
+		void prepareUVWorldPositionsPerObject();
 		void prepareUVsInsideBuffer();
 		void prepareWorldSamplePoints(float octreeLeafFaceArea);
 
@@ -171,6 +171,7 @@ namespace mcrt {
 		CUDABuffer samplePointWorldPositionDeviceBuffer; // In this buffer we'll store the world positions for each of our UV texels (starting from 0,0 --> 1,1), this means this array starts at the left bottom of the actual texture image
 		CUDABuffer UVsInsideBuffer;		// In this buffer we'll store the UV worldpositions for all texels inside each cell
 		CUDABuffer UVsInsideOffsets;	// In this buffer we'll store the offsets to index the UVsInsideBuffer
+		CUDABuffer UVsGameObjectNrsBuffer; // In this buffer we'll store the game object identifiers that show for each UV to which game object it belongs (so we know from which texture we should read)
 
 		std::unique_ptr<OctreeTexture> octreeTextures;
 
@@ -204,8 +205,20 @@ namespace mcrt {
 		std::vector<cudaTextureObject_t> textureObjectsThird;
 		std::vector<cudaSurfaceObject_t> surfaceObjectsThird;
 
+		CUDABuffer directTextureObjectPointersBuffer;
+		CUDABuffer secondBounceTextureObjectPointersBuffer;
+		CUDABuffer thirdBounceTextureObjectPointersBuffer;
+
+		CUDABuffer directSurfaceObjectPointersBuffer;
+		CUDABuffer secondSurfaceObjectPointersBuffer;
+		CUDABuffer thirdSurfaceObjectPointersBuffer;
+		CUDABuffer textureSizesBuffer;
+
 		std::vector<cudaTextureObject_t> UVWorldPositionsTextures;
 		std::vector<cudaTextureObject_t> UVNormalsTextures;
 		std::vector<cudaTextureObject_t> UVDiffuseColorTextures;
+		CUDABuffer uvWorldPositionTextureObjectPointersBuffer;
+		CUDABuffer uvNormalTextureObjectPointersBuffer;
+		CUDABuffer uvDiffuseColorTextureObjectPointersBuffer;
 	};
 }

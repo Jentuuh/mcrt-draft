@@ -11,7 +11,7 @@
 .address_size 64
 
 	// .globl	__closesthit__radiance__cell__scattering__scene__unbiased
-.const .align 8 .b8 optixLaunchParams[96];
+.const .align 8 .b8 optixLaunchParams[104];
 
 .visible .entry __closesthit__radiance__cell__scattering__scene__unbiased()
 {
@@ -207,7 +207,7 @@
 	call (%r12), _optix_get_launch_index_x, ();
 	// end inline asm
 	.loc	1 83 37
-	ld.const.u32 	%r17, [optixLaunchParams+80];
+	ld.const.u32 	%r17, [optixLaunchParams+88];
 	.loc	1 86 29
 	.loc	5 41 9, function_name $L__info_string16, inlined_at 1 86 29
 	shl.b32 	%r18, %r17, 4;
@@ -305,7 +305,7 @@
 	fma.rn.ftz.f32 	%f4, %f3, 0f3727C5AC, %f19;
 	fma.rn.ftz.f32 	%f6, %f5, 0f3727C5AC, %f20;
 	fma.rn.ftz.f32 	%f8, %f7, 0f3727C5AC, %f21;
-	ld.const.u64 	%rd1, [optixLaunchParams+88];
+	ld.const.u64 	%rd1, [optixLaunchParams+96];
 	mul.ftz.f32 	%f24, %f5, %f5;
 	fma.rn.ftz.f32 	%f25, %f3, %f3, %f24;
 	fma.rn.ftz.f32 	%f9, %f7, %f7, %f25;

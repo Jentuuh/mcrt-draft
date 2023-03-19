@@ -51,7 +51,7 @@ namespace mcrt {
             + u * sbtData.texcoord[index.y]
             + v * sbtData.texcoord[index.z];
 
-        float4 incomingRadiance = tex2D<float4>(optixLaunchParams.lightSourceTexture, tc.x, tc.y);
+        float4 incomingRadiance = tex2D<float4>(optixLaunchParams.lightSourceTextures[sbtData.objectNr], tc.x, tc.y);
 
         //const int uTexelCoord = tc.x * optixLaunchParams.lightSourceTexture.size;
         //const int vTexelCoord = tc.y * optixLaunchParams.lightSourceTexture.size;

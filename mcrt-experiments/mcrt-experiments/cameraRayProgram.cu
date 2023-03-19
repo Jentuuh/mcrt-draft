@@ -65,28 +65,15 @@ namespace mcrt {
             + u * sbtData.texcoord[index.y]
             + v * sbtData.texcoord[index.z];
 
-
-        float4 directRadiance = tex2D<float4>(optixLaunchParams.directLightTexture, tc.x, tc.y);
-        float4 secondBounceRadiance = tex2D<float4>(optixLaunchParams.secondBounceTexture, tc.x, tc.y);
-
-        //const float r_direct = optixLaunchParams.lightTexture.colorBuffer[(int(tc.y * optixLaunchParams.lightTexture.size) * optixLaunchParams.lightTexture.size * 3) + int(tc.x * optixLaunchParams.lightTexture.size) * 3];
-        //const float g_direct = optixLaunchParams.lightTexture.colorBuffer[(int(tc.y * optixLaunchParams.lightTexture.size) * optixLaunchParams.lightTexture.size * 3) + int(tc.x * optixLaunchParams.lightTexture.size) * 3 + 1];
-        //const float b_direct = optixLaunchParams.lightTexture.colorBuffer[(int(tc.y * optixLaunchParams.lightTexture.size) * optixLaunchParams.lightTexture.size * 3) + int(tc.x * optixLaunchParams.lightTexture.size) * 3 + 2];
-
-        //const float r_second = optixLaunchParams.lightTextureSecondBounce.colorBuffer[(int(tc.y * optixLaunchParams.lightTextureSecondBounce.size) * optixLaunchParams.lightTextureSecondBounce.size * 3) + int(tc.x * optixLaunchParams.lightTextureSecondBounce.size) * 3];
-        //const float g_second = optixLaunchParams.lightTextureSecondBounce.colorBuffer[(int(tc.y * optixLaunchParams.lightTextureSecondBounce.size) * optixLaunchParams.lightTextureSecondBounce.size * 3) + int(tc.x * optixLaunchParams.lightTextureSecondBounce.size) * 3 + 1];
-        //const float b_second = optixLaunchParams.lightTextureSecondBounce.colorBuffer[(int(tc.y * optixLaunchParams.lightTextureSecondBounce.size) * optixLaunchParams.lightTextureSecondBounce.size * 3) + int(tc.x * optixLaunchParams.lightTextureSecondBounce.size) * 3 + 2];
-
-        //const float r_third = optixLaunchParams.lightTextureThirdBounce.colorBuffer[(int(tc.y * optixLaunchParams.lightTextureThirdBounce.size) * optixLaunchParams.lightTextureThirdBounce.size * 3) + int(tc.x * optixLaunchParams.lightTextureThirdBounce.size) * 3];
-        //const float g_third = optixLaunchParams.lightTextureThirdBounce.colorBuffer[(int(tc.y * optixLaunchParams.lightTextureThirdBounce.size) * optixLaunchParams.lightTextureThirdBounce.size * 3) + int(tc.x * optixLaunchParams.lightTextureThirdBounce.size) * 3 + 1];
-        //const float b_third = optixLaunchParams.lightTextureThirdBounce.colorBuffer[(int(tc.y * optixLaunchParams.lightTextureThirdBounce.size) * optixLaunchParams.lightTextureThirdBounce.size * 3) + int(tc.x * optixLaunchParams.lightTextureThirdBounce.size) * 3 + 2];
+        float4 directRadiance = tex2D<float4>(optixLaunchParams.directLightTextures[sbtData.objectNr], tc.x, tc.y);
+        float4 secondBounceRadiance = tex2D<float4>(optixLaunchParams.secondBounceTextures[sbtData.objectNr], tc.x, tc.y);
 
 
         const glm::vec3 diffuseColor_direct = { directRadiance.x, directRadiance.y, directRadiance.z };
         const glm::vec3 diffuseColor_second = { secondBounceRadiance.x, secondBounceRadiance.y, secondBounceRadiance.z };
         //const glm::vec3 diffuseColor_third = { r_third, g_third, b_third };
 
-        const glm::vec3 diffuseTotal = diffuseColor_direct + diffuseColor_second;// +diffuseColor_third;
+        const glm::vec3 diffuseTotal = diffuseColor_direct+ diffuseColor_second;// +diffuseColor_third;
 
         //// ==========================
         //// HDR Reinhard Tone Mapping
