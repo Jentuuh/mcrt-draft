@@ -67,6 +67,7 @@ namespace mcrt {
 
 
         float4 directRadiance = tex2D<float4>(optixLaunchParams.directLightTexture, tc.x, tc.y);
+        float4 secondBounceRadiance = tex2D<float4>(optixLaunchParams.secondBounceTexture, tc.x, tc.y);
 
         //const float r_direct = optixLaunchParams.lightTexture.colorBuffer[(int(tc.y * optixLaunchParams.lightTexture.size) * optixLaunchParams.lightTexture.size * 3) + int(tc.x * optixLaunchParams.lightTexture.size) * 3];
         //const float g_direct = optixLaunchParams.lightTexture.colorBuffer[(int(tc.y * optixLaunchParams.lightTexture.size) * optixLaunchParams.lightTexture.size * 3) + int(tc.x * optixLaunchParams.lightTexture.size) * 3 + 1];
@@ -82,10 +83,10 @@ namespace mcrt {
 
 
         const glm::vec3 diffuseColor_direct = { directRadiance.x, directRadiance.y, directRadiance.z };
-        //const glm::vec3 diffuseColor_second = { r_second, g_second, b_second };
+        const glm::vec3 diffuseColor_second = { secondBounceRadiance.x, secondBounceRadiance.y, secondBounceRadiance.z };
         //const glm::vec3 diffuseColor_third = { r_third, g_third, b_third };
 
-        const glm::vec3 diffuseTotal = diffuseColor_direct; // +diffuseColor_second + diffuseColor_third;
+        const glm::vec3 diffuseTotal = diffuseColor_direct + diffuseColor_second;// +diffuseColor_third;
 
         //// ==========================
         //// HDR Reinhard Tone Mapping

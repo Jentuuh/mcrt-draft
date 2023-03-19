@@ -106,14 +106,12 @@ namespace mcrt {
             prepareUVWorldPositions();
             prepareUVsInsideBuffer();
 
-
             if (bias == BIASED_PROBES && probeType == CUBE_MAP)
             {
                 initLightProbeCubeMaps(64, scene.grid.resolution.x);
             }
-
             calculateDirectLighting();
-            //calculateIndirectLighting(bias, probeType);
+            calculateIndirectLighting(bias, probeType);
         }
 
         std::cout << "Context, module, pipelines, etc, all set up." << std::endl;
@@ -307,13 +305,8 @@ namespace mcrt {
 
             // Light bounce textures
             cameraPipeline->launchParams.directLightTexture = textureObjectsDirect[0];
-
-            //cameraPipeline->launchParams.lightTexture.colorBuffer = (float*)directLightingTexture.d_pointer();
-            //cameraPipeline->launchParams.lightTexture.size = directLightPipeline->launchParams.directLightingTexture.size;
-            //cameraPipeline->launchParams.lightTextureSecondBounce.colorBuffer = (float*)secondBounceTexture.d_pointer();
-            //cameraPipeline->launchParams.lightTextureSecondBounce.size = 1024;
-            //cameraPipeline->launchParams.lightTextureThirdBounce.colorBuffer = (float*)thirdBounceTexture.d_pointer();
-            //cameraPipeline->launchParams.lightTextureThirdBounce.size = 1024;
+            cameraPipeline->launchParams.secondBounceTexture = textureObjectsSecond[0];
+            //cameraPipeline->launchParams.thirdBounceTexture = textureObjectsThird[0];
 
             cameraPipeline->uploadLaunchParams();
 
@@ -393,25 +386,20 @@ namespace mcrt {
         std::cout << "Initializing irradiance textures..." << std::endl;
         std::vector<float> zeros(size * size * 4, 0.0f);
 
-        //// Direct lighting
-        //directLightingTexture.alloc_and_upload(zeros);
-        //directLightPipeline->launchParams.directLightingTexture.size = size;
-        //directLightPipeline->launchParams.directLightingTexture.colorBuffer = (float*)directLightingTexture.d_pointer();
-
-        //// Second bounce
-        //secondBounceTexture.alloc_and_upload(zeros);
-
-        //// Third bounce
-        //thirdBounceTexture.alloc_and_upload(zeros);
-
         // ==================================
         // ============ NEW =================
         // ==================================
         int numTextures = 1;
 
         textureObjectsDirect.resize(numTextures);
-        surfaceObjectsDirect.resize(numTextures);
+        textureObjectsSecond.resize(numTextures);
+        textureObjectsThird.resize(numTextures);
 
+        surfaceObjectsDirect.resize(numTextures);
+        surfaceObjectsSecond.resize(numTextures);
+        surfaceObjectsThird.resize(numTextures);
+
+        // Direct lighting
         for (int textureID = 0; textureID < numTextures; textureID++) {
 
             cudaChannelFormatDesc channelDesc;
@@ -467,9 +455,113 @@ namespace mcrt {
             directTextureSizes.push_back(size);
         }
 
+        // Second bounce
+        for (int textureID = 0; textureID < numTextures; textureID++) {
+
+            cudaChannelFormatDesc channelDesc;
+            channelDesc = cudaCreateChannelDesc<float4>();
+            int32_t width = size;
+            int32_t height = size;
+            int32_t pitch = width * sizeof(float4);
+
+            // Initialize CUDA array
+            cudaArray* cuArray;
+            CUDA_CHECK(MallocArray(&cuArray,
+                &channelDesc,
+                width,
+                height,
+                cudaArraySurfaceLoadStore));
+
+            CUDA_CHECK(Memcpy2DToArray(cuArray,
+                /* offset */0, 0,
+                zeros.data(),
+                pitch, pitch, height,
+                cudaMemcpyHostToDevice));
+
+            // Resource description for the CUDA array
+            cudaResourceDesc resourceDesc = {};
+            resourceDesc.resType = cudaResourceTypeArray;
+            resourceDesc.res.array.array = cuArray;
+
+            // Surface object creation
+            cudaSurfaceObject_t cudaSurf = 0;
+            CUDA_CHECK(CreateSurfaceObject(&cudaSurf, &resourceDesc));
+            surfaceObjectsSecond[textureID] = cudaSurf;
+
+            // Texture object creation
+            cudaTextureDesc texDesc = {};
+            texDesc.addressMode[0] = cudaAddressModeWrap;
+            texDesc.addressMode[1] = cudaAddressModeWrap;
+            texDesc.filterMode = cudaFilterModeLinear;
+            texDesc.readMode = cudaReadModeElementType;
+            texDesc.normalizedCoords = 1;
+            texDesc.maxAnisotropy = 1;
+            texDesc.maxMipmapLevelClamp = 99;
+            texDesc.minMipmapLevelClamp = 0;
+            texDesc.mipmapFilterMode = cudaFilterModePoint;
+            texDesc.borderColor[0] = 1.0f;
+            texDesc.sRGB = 0;
+
+            // Create texture object
+            cudaTextureObject_t cudaTex = 0;
+            CUDA_CHECK(CreateTextureObject(&cudaTex, &resourceDesc, &texDesc, nullptr));
+            textureObjectsSecond[textureID] = cudaTex;
+        }
+
+        // Third bounce
+        for (int textureID = 0; textureID < numTextures; textureID++) {
+
+            cudaChannelFormatDesc channelDesc;
+            channelDesc = cudaCreateChannelDesc<float4>();
+            int32_t width = size;
+            int32_t height = size;
+            int32_t pitch = width * sizeof(float4);
+
+            // Initialize CUDA array
+            cudaArray* cuArray;
+            CUDA_CHECK(MallocArray(&cuArray,
+                &channelDesc,
+                width,
+                height,
+                cudaArraySurfaceLoadStore));
+
+            CUDA_CHECK(Memcpy2DToArray(cuArray,
+                /* offset */0, 0,
+                zeros.data(),
+                pitch, pitch, height,
+                cudaMemcpyHostToDevice));
+
+            // Resource description for the CUDA array
+            cudaResourceDesc resourceDesc = {};
+            resourceDesc.resType = cudaResourceTypeArray;
+            resourceDesc.res.array.array = cuArray;
+
+            // Surface object creation
+            cudaSurfaceObject_t cudaSurf = 0;
+            CUDA_CHECK(CreateSurfaceObject(&cudaSurf, &resourceDesc));
+            surfaceObjectsThird[textureID] = cudaSurf;
+
+            // Texture object creation
+            cudaTextureDesc texDesc = {};
+            texDesc.addressMode[0] = cudaAddressModeWrap;
+            texDesc.addressMode[1] = cudaAddressModeWrap;
+            texDesc.filterMode = cudaFilterModeLinear;
+            texDesc.readMode = cudaReadModeElementType;
+            texDesc.normalizedCoords = 1;
+            texDesc.maxAnisotropy = 1;
+            texDesc.maxMipmapLevelClamp = 99;
+            texDesc.minMipmapLevelClamp = 0;
+            texDesc.mipmapFilterMode = cudaFilterModePoint;
+            texDesc.borderColor[0] = 1.0f;
+            texDesc.sRGB = 0;
+
+            // Create texture object
+            cudaTextureObject_t cudaTex = 0;
+            CUDA_CHECK(CreateTextureObject(&cudaTex, &resourceDesc, &texDesc, nullptr));
+            textureObjectsThird[textureID] = cudaTex;
+        }
+
         directLightPipeline->launchParams.directLightingTexture = surfaceObjectsDirect[0];
-
-
         std::cout << "Done." << std::endl;
     }
 
@@ -652,18 +744,18 @@ namespace mcrt {
                     switch (i)
                     {
                     case 0:
-                        calculateRadianceCellGatherPassCubeMapAlt(directLightingTexture);
+                        calculateRadianceCellGatherPassCubeMapAlt(textureObjectsDirect[0]);
                         std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
-                        //calculateRadianceCellScatterPassCubeMap(i, directLightingTexture, secondBounceTexture);
+                        calculateRadianceCellScatterPassCubeMap(i, textureObjectsDirect[0], surfaceObjectsSecond[0]);
                         //lightProbeTest(i, directLightingTexture, secondBounceTexture);
                         //octreeTextureTest();
-                        textureAndSurfaceObjectTest();
+                        //textureAndSurfaceObjectTest();
 
                         break;
                     case 1:
-                        calculateRadianceCellGatherPassCubeMapAlt(secondBounceTexture);
+                        calculateRadianceCellGatherPassCubeMapAlt(textureObjectsSecond[0]);
                         std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
-                        calculateRadianceCellScatterPassCubeMap(i, secondBounceTexture, thirdBounceTexture);
+                        calculateRadianceCellScatterPassCubeMap(i, textureObjectsSecond[0], surfaceObjectsThird[0]);
                         break;
                     default:
                         break;
@@ -683,10 +775,10 @@ namespace mcrt {
                 switch (i)
                 {
                 case 0:
-                    calculateRadianceCellScatterUnbiased(i, directLightingTexture, secondBounceTexture);
+                    calculateRadianceCellScatterUnbiased(i, textureObjectsDirect[0], surfaceObjectsSecond[0]);
                     break;
                 case 1:
-                    calculateRadianceCellScatterUnbiased(i, secondBounceTexture, thirdBounceTexture);
+                    calculateRadianceCellScatterUnbiased(i, textureObjectsSecond[0], surfaceObjectsThird[0]);
                     break;
                 default:
                     break;
@@ -694,7 +786,6 @@ namespace mcrt {
             }
         }
     }
-
 
     void Renderer::initSHWeightsBuffer(int amountNonEmptyCells)
     {        
@@ -823,100 +914,18 @@ namespace mcrt {
         SHWeightsDataBuffer.upload(shCoefficients.data(), shCoefficients.size());
     }   
 
-    void Renderer::calculateRadianceCellGatherPassCubeMap(CUDABuffer& previousPassLightSourceTexture)
-    {
-        // TODO: For now we're using the same texture size as for the direct lighting pass, we can downsample in the future to gain performance
-        const int texSize = directTextureSizes[0];
-        const float cellSize = scene.grid.getCellSize();
-
-        // Initialize Light Source Texture data on GPU
-        radianceCellGatherCubeMapPipeline->launchParams.lightSourceTexture.colorBuffer = (float*)previousPassLightSourceTexture.d_pointer();
-        radianceCellGatherCubeMapPipeline->launchParams.lightSourceTexture.size = texSize;
-
-        // Initialize UV World positions data on GPU
-        radianceCellGatherCubeMapPipeline->launchParams.uvWorldPositions.size = texSize * texSize;
-        radianceCellGatherCubeMapPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)samplePointWorldPositionDeviceBuffer.d_pointer();
-
-        // Initialize cell size in launch params
-        radianceCellGatherCubeMapPipeline->launchParams.cellSize = cellSize;
-
-        radianceCellGatherCubeMapPipeline->launchParams.divisionResolution = TEXTURE_DIVISION_RES;
-
-        // Iterate over scene's light probes to gather radiance in each probe
-        // (in each dimension d we have res.d light probes)
-        for (int z = 0; z < scene.grid.resolution.z; z++)
-        {
-            for (int y = 0; y < scene.grid.resolution.y; y++)
-            {
-                for (int x = 0; x < scene.grid.resolution.x; x++)
-                {
-                    int currentProbeOffset = ((z * scene.grid.resolution.x * scene.grid.resolution.y) + (y * scene.grid.resolution.x) + (x)) * 6 * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution;
-                    radianceCellGatherCubeMapPipeline->launchParams.probeOffset = currentProbeOffset;
-                    radianceCellGatherCubeMapPipeline->launchParams.probePosition = glm::vec3{x * cellSize + (0.5f * cellSize), y * cellSize + (0.5f * cellSize), z * cellSize + (0.5f * cellSize) }; // Probes are centered in each radiance cell
-                    radianceCellGatherCubeMapPipeline->uploadLaunchParams();
-
-                    OPTIX_CHECK(optixLaunch(
-                        radianceCellGatherCubeMapPipeline->pipeline, stream,
-                        radianceCellGatherCubeMapPipeline->launchParamsBuffer.d_pointer(),
-                        radianceCellGatherCubeMapPipeline->launchParamsBuffer.sizeInBytes,
-                        &radianceCellGatherCubeMapPipeline->sbt,
-                        TEXTURE_DIVISION_RES,                                               // dimension X: divisionResX: amount of tiles in the X direction of the light src texture
-                        TEXTURE_DIVISION_RES,                                               // dimension Y: divisionResY: amount of tiles in the Y direction of the light src texture
-                        1
-                        // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
-                    ));
-                }
-            }
-        }
-
-        // Visualize cubemap from a probe as a test
-        glm::ivec3 testProbeCoord = scene.grid.getCell(12).getCellCoords();
-        int testProbeOffset = ((testProbeCoord.z * scene.grid.resolution.x * scene.grid.resolution.y) + (testProbeCoord.y * scene.grid.resolution.x) + (testProbeCoord.x)) * 6 * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution;
-
-        for (int f = 0; f < 6; f++)
-        {
-            int faceOffset = f * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution;
-            int totalOffset = testProbeOffset + faceOffset;
-
-            std::vector<uint32_t> cubeMapFace(radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution);
-            cubeMaps.download_with_offset(cubeMapFace.data(), radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution, totalOffset);
-            writeToImage("cubemap_face_" + std::to_string(f) + ".png", radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution, radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution, cubeMapFace.data());
-        }
-
-        // Visualize cubemap 2 from a probe as a test
-        glm::ivec3 testProbeCoord2 = scene.grid.getCell(12).getCellCoords() + glm::ivec3{ 2, 0, 0 };
-        int testProbeOffset2 = ((testProbeCoord2.z * scene.grid.resolution.x * scene.grid.resolution.y) + (testProbeCoord2.y * scene.grid.resolution.x) + (testProbeCoord2.x)) * 6 * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution;
-
-        for (int f = 0; f < 6; f++)
-        {
-            int faceOffset = f * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution;
-            int totalOffset = testProbeOffset2 + faceOffset;
-
-            std::vector<uint32_t> cubeMapFace(radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution);
-            cubeMaps.download_with_offset(cubeMapFace.data(), radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution * radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution, totalOffset);
-            writeToImage("cubemap2_face_" + std::to_string(f) + ".png", radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution, radianceCellGatherCubeMapPipeline->launchParams.cubeMapResolution, cubeMapFace.data());
-        }
-    }
-
     // Cubemap alternative approach avoids 'holes' in cubemap texture by iterating over the cubemap pixels instead of the surrounding indirect light source texels.
-    void Renderer::calculateRadianceCellGatherPassCubeMapAlt(CUDABuffer& previousPassLightSourceTexture)
+    void Renderer::calculateRadianceCellGatherPassCubeMapAlt(cudaTextureObject_t& previousPassLightSourceTexture)
     {
         // TODO: For now we're using the same texture size as for the direct lighting pass, we can downsample in the future to gain performance
         const int texSize = directTextureSizes[0];
         const float cellSize = scene.grid.getCellSize();
 
         // Initialize Light Source Texture data on GPU
-        radianceCellGatherCubeMapPipeline->launchParams.lightSourceTexture.colorBuffer = (float*)previousPassLightSourceTexture.d_pointer();
-        radianceCellGatherCubeMapPipeline->launchParams.lightSourceTexture.size = texSize;
-
-        // Initialize UV World positions data on GPU
-        radianceCellGatherCubeMapPipeline->launchParams.uvWorldPositions.size = texSize * texSize;
-        radianceCellGatherCubeMapPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)samplePointWorldPositionDeviceBuffer.d_pointer();
+        radianceCellGatherCubeMapPipeline->launchParams.lightSourceTexture = previousPassLightSourceTexture;
 
         // Initialize cell size in launch params
         radianceCellGatherCubeMapPipeline->launchParams.cellSize = cellSize;
-
-        radianceCellGatherCubeMapPipeline->launchParams.divisionResolution = TEXTURE_DIVISION_RES;
 
 
         for (int z = 0; z < scene.grid.resolution.z; z++)
@@ -1031,7 +1040,7 @@ namespace mcrt {
         writeToImage("current_bounce_output" + std::to_string(iteration) + ".png", radianceCellScatterPipeline->launchParams.currentBounceTexture.size, radianceCellScatterPipeline->launchParams.currentBounceTexture.size, current_bounce_result.data());
     }
 
-    void Renderer::calculateRadianceCellScatterPassCubeMap(int iteration, CUDABuffer& prevBounceTexture, CUDABuffer& dstTexture)
+    void Renderer::calculateRadianceCellScatterPassCubeMap(int iteration, cudaTextureObject_t& prevBounceTexture, cudaSurfaceObject_t& dstTexture)
     {
 
         // TODO: For now we're using the same texture size as for the direct lighting pass, we can downsample in the future to gain performance
@@ -1046,12 +1055,10 @@ namespace mcrt {
             radianceCellScatterCubeMapPipeline->launchParams.probeHeightRes = scene.grid.resolution.y;
 
             // Texture that we write to
-            radianceCellScatterCubeMapPipeline->launchParams.currentBounceTexture.size = texSize;
-            radianceCellScatterCubeMapPipeline->launchParams.currentBounceTexture.colorBuffer = (float*)dstTexture.d_pointer();
+            radianceCellScatterCubeMapPipeline->launchParams.currentBounceTexture = dstTexture;
 
             // Indirect light source texture that we read from (in case of local ray tracing)
-            radianceCellScatterCubeMapPipeline->launchParams.prevBounceTexture.size = texSize;
-            radianceCellScatterCubeMapPipeline->launchParams.prevBounceTexture.colorBuffer = (float*)prevBounceTexture.d_pointer();
+            radianceCellScatterCubeMapPipeline->launchParams.prevBounceTexture = prevBounceTexture;
 
             // Load uvs per cell 
             std::vector<glm::vec2> cellUVs = nonEmpties.nonEmptyCells[i]->getUVsInside();
@@ -1062,8 +1069,11 @@ namespace mcrt {
             radianceCellScatterCubeMapPipeline->launchParams.cellSize = scene.grid.getCellSize();
 
             // UV world position data
-            radianceCellScatterCubeMapPipeline->launchParams.uvWorldPositions.size = texSize;
-            radianceCellScatterCubeMapPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)samplePointWorldPositionDeviceBuffer.d_pointer();
+            radianceCellScatterCubeMapPipeline->launchParams.uvPositions = UVWorldPositionsTextures[0];
+            radianceCellScatterCubeMapPipeline->launchParams.uvNormals = UVNormalsTextures[0];
+            radianceCellScatterCubeMapPipeline->launchParams.uvDiffuseColors = UVDiffuseColorTextures[0];
+
+            radianceCellScatterCubeMapPipeline->launchParams.currentBounceResolution = directTextureSizes[0];
 
             radianceCellScatterCubeMapPipeline->uploadLaunchParams();
 
@@ -1108,8 +1118,8 @@ namespace mcrt {
         radianceCellScatterCubeMapPipeline->launchParams.cellSize = scene.grid.getCellSize();
 
         // UV world position data
-        radianceCellScatterCubeMapPipeline->launchParams.uvWorldPositions.size = texSize;
-        radianceCellScatterCubeMapPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)samplePointWorldPositionDeviceBuffer.d_pointer();
+        //radianceCellScatterCubeMapPipeline->launchParams.uvWorldPositions.size = texSize;
+        //radianceCellScatterCubeMapPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)samplePointWorldPositionDeviceBuffer.d_pointer();
 
         radianceCellScatterCubeMapPipeline->uploadLaunchParams();
 
@@ -1193,7 +1203,7 @@ namespace mcrt {
 
 
 
-    void Renderer::calculateRadianceCellScatterUnbiased(int iteration, CUDABuffer& prevBounceTexture, CUDABuffer& dstTexture)
+    void Renderer::calculateRadianceCellScatterUnbiased(int iteration, cudaTextureObject_t& prevBounceTexture, cudaSurfaceObject_t& dstTexture)
     {
         // TODO: For now we're using the same texture size as for the direct lighting pass, we can downsample in the future to gain performance
         const int texSize = directTextureSizes[0];
@@ -1204,12 +1214,10 @@ namespace mcrt {
             radianceCellScatterUnbiasedPipeline->launchParams.nonEmptyCellIndex = i;
 
             // Light source texture data
-            radianceCellScatterUnbiasedPipeline->launchParams.prevBounceTexture.size = texSize;
-            radianceCellScatterUnbiasedPipeline->launchParams.prevBounceTexture.colorBuffer = (float*)prevBounceTexture.d_pointer();
+            radianceCellScatterUnbiasedPipeline->launchParams.prevBounceTexture = prevBounceTexture;
 
             // Destination texture data
-            radianceCellScatterUnbiasedPipeline->launchParams.currentBounceTexture.size = texSize;
-            radianceCellScatterUnbiasedPipeline->launchParams.currentBounceTexture.colorBuffer = (float*)dstTexture.d_pointer();
+            radianceCellScatterUnbiasedPipeline->launchParams.currentBounceTexture = dstTexture;
 
             // Load uvs per cell 
             std::vector<glm::vec2> cellUVs = nonEmpties.nonEmptyCells[i]->getUVsInside();
@@ -1220,8 +1228,11 @@ namespace mcrt {
             radianceCellScatterUnbiasedPipeline->launchParams.cellSize = scene.grid.getCellSize();
 
             // UV world position data
-            radianceCellScatterUnbiasedPipeline->launchParams.uvWorldPositions.size = texSize;
-            radianceCellScatterUnbiasedPipeline->launchParams.uvWorldPositions.UVDataBuffer = (UVWorldData*)samplePointWorldPositionDeviceBuffer.d_pointer();
+            radianceCellScatterUnbiasedPipeline->launchParams.uvPositions = UVWorldPositionsTextures[0];
+            radianceCellScatterUnbiasedPipeline->launchParams.uvNormals = UVNormalsTextures[0];
+            radianceCellScatterUnbiasedPipeline->launchParams.uvDiffuseColors = UVDiffuseColorTextures[0];
+
+            radianceCellScatterUnbiasedPipeline->launchParams.currentBounceResolution = directTextureSizes[0];
 
             radianceCellScatterUnbiasedPipeline->uploadLaunchParams();
 

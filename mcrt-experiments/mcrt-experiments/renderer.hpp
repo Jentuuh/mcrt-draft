@@ -70,11 +70,10 @@ namespace mcrt {
 		void initSHWeightsBuffer(int amountNonEmptyCells);
 		void initSHAccumulators(int divisionResolution, int amountNonEmptyCells);
 		void calculateRadianceCellGatherPass(CUDABuffer& previousPassLightSourceTexture);
-		void calculateRadianceCellGatherPassCubeMap(CUDABuffer& previousPassLightSourceTexture);
-		void calculateRadianceCellGatherPassCubeMapAlt(CUDABuffer& previousPassLightSourceTexture);
+		void calculateRadianceCellGatherPassCubeMapAlt(cudaTextureObject_t& previousPassLightSourceTexture);
 		void calculateRadianceCellScatterPass(int iteration, CUDABuffer& dstTexture);
-		void calculateRadianceCellScatterPassCubeMap(int iteration, CUDABuffer& prevBounceTexture, CUDABuffer& dstTexture);
-		void calculateRadianceCellScatterUnbiased(int iteration, CUDABuffer& prevBounceTexture, CUDABuffer& dstTexture);
+		void calculateRadianceCellScatterPassCubeMap(int iteration, cudaTextureObject_t& prevBounceTexture, cudaSurfaceObject_t& dstTexture);
+		void calculateRadianceCellScatterUnbiased(int iteration, cudaTextureObject_t& prevBounceTexture, cudaSurfaceObject_t& dstTexture);
 
 		void calculateDirectLightingOctree();
 		void calculateIndirectLightingOctree(BIAS_MODE bias, PROBE_MODE mode);
@@ -100,7 +99,6 @@ namespace mcrt {
 		UVWorldData UVto3DPerObject(glm::vec2 uv, std::shared_ptr<GameObject> o);
 
 		void writeUVsPerCellToImage(std::vector<int>& offsets, std::vector<glm::vec2>& uvs, int texRes);
-
 
 	protected:
 		// ------------------

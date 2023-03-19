@@ -57,18 +57,12 @@ namespace mcrt {
             + u * sbtData.texcoord[index.y]
             + v * sbtData.texcoord[index.z];
 
-        const int uTexelCoord = tc.x * optixLaunchParams.prevBounceTexture.size;
-        const int vTexelCoord = tc.y * optixLaunchParams.prevBounceTexture.size;
-
         // Read color (outgoing radiance) at intersection (NOTE THAT WE ASSUME LAMBERTIAN SURFACE HERE)
         // --> Otherwise BRDF needs to be evaluated for the incoming direction at this point
-        float r = optixLaunchParams.prevBounceTexture.colorBuffer[(vTexelCoord * optixLaunchParams.prevBounceTexture.size * 3) + (uTexelCoord * 3) + 0];
-        float g = optixLaunchParams.prevBounceTexture.colorBuffer[(vTexelCoord * optixLaunchParams.prevBounceTexture.size * 3) + (uTexelCoord * 3) + 1];
-        float b = optixLaunchParams.prevBounceTexture.colorBuffer[(vTexelCoord * optixLaunchParams.prevBounceTexture.size * 3) + (uTexelCoord * 3) + 2];
+        float4 incomingRadiance = tex2D<float4>(optixLaunchParams.prevBounceTexture, tc.x, tc.y);
 
         RadianceCellScatterUnbiasedPRD prd = loadRadianceCellScatterUnbiasedPRD();
-        prd.resultColor = glm::vec3{r,g,b};
-
+        prd.resultColor = glm::vec3{ incomingRadiance.x, incomingRadiance.y, incomingRadiance.z };
         storeRadianceCellScatterUnbiasedPRD(prd);
     }
 
@@ -94,13 +88,14 @@ namespace mcrt {
         // Get UV world position for this shader pass
         const int uvInsideOffset = optixLaunchParams.uvsInsideOffsets[nonEmptyCellIndex];
         glm::vec2 uv = optixLaunchParams.uvsInside[uvInsideOffset + uvIndex];
-        const int u = int(uv.x * optixLaunchParams.uvWorldPositions.size);
-        const int v = int(uv.y * optixLaunchParams.uvWorldPositions.size);
 
+        float4 uvWorldPos3f = tex2D<float4>(optixLaunchParams.uvPositions, uv.x, uv.y);
+        float4 uvWorldNormal3f = tex2D<float4>(optixLaunchParams.uvNormals, uv.x, uv.y);
+        float4 uvDiffuseColor3f = tex2D<float4>(optixLaunchParams.uvDiffuseColors, uv.x, uv.y);
 
-        glm::vec3 UVWorldPos = optixLaunchParams.uvWorldPositions.UVDataBuffer[v * optixLaunchParams.uvWorldPositions.size + u].worldPosition;
-        const glm::vec3 UVNormal = optixLaunchParams.uvWorldPositions.UVDataBuffer[v * optixLaunchParams.uvWorldPositions.size + u].worldNormal;
-        const glm::vec3 diffuseColor = optixLaunchParams.uvWorldPositions.UVDataBuffer[v * optixLaunchParams.uvWorldPositions.size + u].diffuseColor;
+        glm::vec3 UVWorldPos = glm::vec3{ uvWorldPos3f.x, uvWorldPos3f.y, uvWorldPos3f.z };
+        const glm::vec3 UVNormal = glm::vec3{ uvWorldNormal3f.x, uvWorldNormal3f.y, uvWorldNormal3f.z };
+        const glm::vec3 diffuseColor = glm::vec3{ uvDiffuseColor3f.x, uvDiffuseColor3f.y, uvDiffuseColor3f.z };
 
         // Small offset to world position to 'mitigate' floating point errors
         UVWorldPos = glm::vec3{ UVWorldPos.x + UVNormal.x * 0.00001f, UVWorldPos.y + UVNormal.y * 0.00001f, UVWorldPos.z + UVNormal.z * 0.00001f };
@@ -175,8 +170,7 @@ namespace mcrt {
         const float g_result = totalRadiance.y / (float(numSamples) * PI);
         const float b_result = totalRadiance.z / (float(numSamples) * PI);
         
-        optixLaunchParams.currentBounceTexture.colorBuffer[(v * optixLaunchParams.currentBounceTexture.size * 3) + (u * 3) + 0] = r_result;
-        optixLaunchParams.currentBounceTexture.colorBuffer[(v * optixLaunchParams.currentBounceTexture.size * 3) + (u * 3) + 1] = g_result;
-        optixLaunchParams.currentBounceTexture.colorBuffer[(v * optixLaunchParams.currentBounceTexture.size * 3) + (u * 3) + 2] = b_result;
+        float4 resultValue = float4{ r_result, g_result, b_result, 0.0f };
+        surf2Dwrite(resultValue, optixLaunchParams.currentBounceTexture, int(uv.x * optixLaunchParams.currentBounceResolution) * 16, int(uv.y * optixLaunchParams.currentBounceResolution));
     }
 }

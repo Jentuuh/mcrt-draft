@@ -90,13 +90,13 @@ namespace mcrt {
 
 	struct LaunchParamsRadianceCellScatterCubeMap
 	{
-		struct {
-			UVWorldData* UVDataBuffer;
-			int size;
-		} uvWorldPositions;
+		cudaTextureObject_t uvPositions;
+		cudaTextureObject_t uvNormals;
+		cudaTextureObject_t uvDiffuseColors;
 
-		PixelBuffer prevBounceTexture;
-		PixelBuffer currentBounceTexture;
+		cudaTextureObject_t prevBounceTexture;
+		cudaSurfaceObject_t currentBounceTexture;
+		int currentBounceResolution;
 
 		glm::vec2* uvsInside;
 		int* uvsInsideOffsets;
@@ -110,6 +110,7 @@ namespace mcrt {
 
 		float* cubeMaps; // A pointer to cubemap faces
 		int cubeMapResolution;
+		
 
 		OptixTraversableHandle sceneTraversable;
 	};
@@ -153,21 +154,20 @@ namespace mcrt {
 
 	struct LaunchParamsRadianceCellScatterUnbiased
 	{
-		struct {
-			UVWorldData* UVDataBuffer;
-			int size;
-		} uvWorldPositions;
+		cudaTextureObject_t uvPositions;
+		cudaTextureObject_t uvNormals;
+		cudaTextureObject_t uvDiffuseColors;
 
-		PixelBuffer prevBounceTexture;
-		PixelBuffer currentBounceTexture;
+		cudaTextureObject_t prevBounceTexture;
+		cudaSurfaceObject_t currentBounceTexture;
+		int currentBounceResolution;
 
 		glm::vec2* uvsInside;
 		int* uvsInsideOffsets;
 		glm::vec3 cellCenter;
 		float cellSize;
 		int nonEmptyCellIndex;
-		int lightSrcU;
-		int lightSrcV;
+
 
 		OptixTraversableHandle sceneTraversable;
 	};
@@ -220,23 +220,22 @@ namespace mcrt {
 	};
 
 	struct LaunchParamsRadianceCellGatherCubeMap {
-		struct {
-			UVWorldData* UVDataBuffer;
-			int size;
-		} uvWorldPositions;
-
 		//struct {
-		//	glm::vec3* centers;
+		//	UVWorldData* UVDataBuffer;
 		//	int size;
-		//} nonEmptyCells;
+		//} uvWorldPositions;
+		//cudaTextureObject_t uvPositions;
+		//cudaTextureObject_t uvNormals;
+		//cudaTextureObject_t uvDiffuseColors;
 
 		float cellSize;
-		int divisionResolution;		// The amount of cells the light source texture is divided in both dimensions
+		//int divisionResolution;		// The amount of cells the light source texture is divided in both dimensions
 
 		glm::vec3 probePosition;
 		int probeOffset;
 
-		PixelBuffer lightSourceTexture;
+		cudaTextureObject_t lightSourceTexture;
+		//PixelBuffer lightSourceTexture;
 
 		float* cubeMaps; // A pointer to cubemap faces
 		int cubeMapResolution;
@@ -318,10 +317,6 @@ namespace mcrt {
 
 
 	struct LaunchParamsDirectLighting {
-		//struct {
-		//	UVWorldData* UVDataBuffer;
-		//	int size;
-		//} uvWorldPositions;
 
 		cudaTextureObject_t uvPositions;
 		cudaTextureObject_t uvNormals;
@@ -421,14 +416,9 @@ namespace mcrt {
 			glm::vec3 vertical;
 		} camera;
 
-		//int* textureOffsets;
-		//int* textureSizes;
-
 		cudaTextureObject_t directLightTexture;
-
-		//PixelBuffer lightTexture;
-		//PixelBuffer lightTextureSecondBounce;
-		//PixelBuffer lightTextureThirdBounce;
+		cudaTextureObject_t secondBounceTexture;
+		//cudaTextureObject_t thirdBounceTexture;
 
 		OptixTraversableHandle traversable;
 	};

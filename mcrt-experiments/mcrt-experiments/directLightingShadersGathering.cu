@@ -145,11 +145,6 @@ namespace mcrt {
         const glm::vec3 UVNormal = glm::vec3{ uvWorldNormal3f.x, uvWorldNormal3f.y, uvWorldNormal3f.z };
         const glm::vec3 diffuseColor = glm::vec3{ uvDiffuseColor3f.x, uvDiffuseColor3f.y, uvDiffuseColor3f.z };
 
-
-        //glm::vec3 UVWorldPos = optixLaunchParams.uvWorldPositions.UVDataBuffer[vIndex * optixLaunchParams.textureSize + uIndex].worldPosition;
-        //const glm::vec3 UVNormal = optixLaunchParams.uvWorldPositions.UVDataBuffer[vIndex * optixLaunchParams.textureSize + uIndex].worldNormal;
-        //const glm::vec3 diffuseColor = optixLaunchParams.uvWorldPositions.UVDataBuffer[vIndex * optixLaunchParams.textureSize + uIndex].diffuseColor;
-
         // We apply a small offset of 0.00001f in the direction of the normal to the UV world pos, to 'mitigate' floating point rounding errors causing false occlusions/illuminations
         UVWorldPos = glm::vec3{ UVWorldPos.x + UVNormal.x * 0.00001f, UVWorldPos.y + UVNormal.y * 0.00001f, UVWorldPos.z + UVNormal.z * 0.00001f };
 
@@ -230,20 +225,6 @@ namespace mcrt {
             // Average out the samples contributions
             totalLightContribution /= NUM_SAMPLES_PER_STRATIFY_CELL * optixLaunchParams.stratifyResX * optixLaunchParams.stratifyResY;
             // totalLightContribution /= PI;
-
-            //const int r = int(totalLightContribution.x);
-            //const int g = int(totalLightContribution.y);
-            //const int b = int(totalLightContribution.z);
-
-            // convert to 32-bit rgba value (we explicitly set alpha to 0xff
-            // to make stb_image_write happy ...
-            //const uint32_t rgba = 0xff000000
-            //    | (r << 0) | (g << 8) | (b << 16);
-
-    /*        int uvIndex = (vIndex * optixLaunchParams.directLightingTexture.size * 3) + (uIndex * 3);
-            optixLaunchParams.directLightingTexture.colorBuffer[uvIndex + 0] = totalLightContribution.x;
-            optixLaunchParams.directLightingTexture.colorBuffer[uvIndex + 1] = totalLightContribution.y;
-            optixLaunchParams.directLightingTexture.colorBuffer[uvIndex + 2] = totalLightContribution.z;*/
 
             float4 resultValue = float4{ totalLightContribution.x,totalLightContribution.y, totalLightContribution.z, 0.0f };
             surf2Dwrite(resultValue, optixLaunchParams.directLightingTexture, uIndex * 16, vIndex);
