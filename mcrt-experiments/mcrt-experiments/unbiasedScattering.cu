@@ -59,7 +59,7 @@ namespace mcrt {
 
         // Read color (outgoing radiance) at intersection (NOTE THAT WE ASSUME LAMBERTIAN SURFACE HERE)
         // --> Otherwise BRDF needs to be evaluated for the incoming direction at this point
-        float4 incomingRadiance = tex2D<float4>(optixLaunchParams.prevBounceTexture, tc.x, tc.y);
+        float4 incomingRadiance = tex2D<float4>(optixLaunchParams.prevBounceTextures[sbtData.objectNr], tc.x, tc.y);
 
         RadianceCellScatterUnbiasedPRD prd = loadRadianceCellScatterUnbiasedPRD();
         prd.resultColor = glm::vec3{ incomingRadiance.x, incomingRadiance.y, incomingRadiance.z };
@@ -88,10 +88,11 @@ namespace mcrt {
         // Get UV world position for this shader pass
         const int uvInsideOffset = optixLaunchParams.uvsInsideOffsets[nonEmptyCellIndex];
         glm::vec2 uv = optixLaunchParams.uvsInside[uvInsideOffset + uvIndex];
+        const int gameObjectNr = optixLaunchParams.uvGameObjectNrs[uvInsideOffset + uvIndex];
 
-        float4 uvWorldPos3f = tex2D<float4>(optixLaunchParams.uvPositions, uv.x, uv.y);
-        float4 uvWorldNormal3f = tex2D<float4>(optixLaunchParams.uvNormals, uv.x, uv.y);
-        float4 uvDiffuseColor3f = tex2D<float4>(optixLaunchParams.uvDiffuseColors, uv.x, uv.y);
+        float4 uvWorldPos3f = tex2D<float4>(optixLaunchParams.uvPositions[gameObjectNr], uv.x, uv.y);
+        float4 uvWorldNormal3f = tex2D<float4>(optixLaunchParams.uvNormals[gameObjectNr], uv.x, uv.y);
+        float4 uvDiffuseColor3f = tex2D<float4>(optixLaunchParams.uvDiffuseColors[gameObjectNr], uv.x, uv.y);
 
         glm::vec3 UVWorldPos = glm::vec3{ uvWorldPos3f.x, uvWorldPos3f.y, uvWorldPos3f.z };
         const glm::vec3 UVNormal = glm::vec3{ uvWorldNormal3f.x, uvWorldNormal3f.y, uvWorldNormal3f.z };
@@ -171,6 +172,6 @@ namespace mcrt {
         const float b_result = totalRadiance.z / (float(numSamples) * PI);
         
         float4 resultValue = float4{ r_result, g_result, b_result, 0.0f };
-        surf2Dwrite(resultValue, optixLaunchParams.currentBounceTexture, int(uv.x * optixLaunchParams.currentBounceResolution) * 16, int(uv.y * optixLaunchParams.currentBounceResolution));
+        surf2Dwrite(resultValue, optixLaunchParams.currentBounceTextures[gameObjectNr], int(uv.x * optixLaunchParams.objectTextureResolutions[gameObjectNr]) * 16, int(uv.y * optixLaunchParams.objectTextureResolutions[gameObjectNr]));
     }
 }

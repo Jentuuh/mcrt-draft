@@ -157,13 +157,13 @@ namespace mcrt {
 
 	struct LaunchParamsRadianceCellScatterUnbiased
 	{
-		cudaTextureObject_t uvPositions;
-		cudaTextureObject_t uvNormals;
-		cudaTextureObject_t uvDiffuseColors;
+		cudaTextureObject_t* uvPositions;
+		cudaTextureObject_t* uvNormals;
+		cudaTextureObject_t* uvDiffuseColors;
 
-		cudaTextureObject_t prevBounceTexture;
-		cudaSurfaceObject_t currentBounceTexture;
-		int currentBounceResolution;
+		cudaTextureObject_t* prevBounceTextures;
+		cudaSurfaceObject_t* currentBounceTextures;
+		int* objectTextureResolutions;
 
 		glm::vec2* uvsInside;
 		int* uvsInsideOffsets;

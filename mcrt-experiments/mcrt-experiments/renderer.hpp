@@ -73,7 +73,7 @@ namespace mcrt {
 		void calculateRadianceCellGatherPassCubeMapAlt(cudaTextureObject_t* previousPassLightSourceTextures);
 		void calculateRadianceCellScatterPass(int iteration, CUDABuffer& dstTexture);
 		void calculateRadianceCellScatterPassCubeMap(int iteration, cudaTextureObject_t* prevBounceTexture, cudaSurfaceObject_t* dstTexture);
-		void calculateRadianceCellScatterUnbiased(int iteration, cudaTextureObject_t& prevBounceTexture, cudaSurfaceObject_t& dstTexture);
+		void calculateRadianceCellScatterUnbiased(int iteration, cudaTextureObject_t* prevBounceTexture, cudaSurfaceObject_t* dstTexture);
 
 		void calculateDirectLightingOctree();
 		void calculateIndirectLightingOctree(BIAS_MODE bias, PROBE_MODE mode);

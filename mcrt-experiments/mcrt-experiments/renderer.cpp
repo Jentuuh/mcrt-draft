@@ -586,7 +586,8 @@ namespace mcrt {
 
             // Decide texture resolution based on the object's surface area
             float objectArea = scene.getGameObjects()[textureID]->surfaceArea();
-            int size = objectArea * 512;
+            //int size = objectArea * 512;
+            int size = 1024;
             size = GeneralUtils::pow2roundup(size);
 
             std::cout << "Texture size: " << size << std::endl;
@@ -953,10 +954,10 @@ namespace mcrt {
                 switch (i)
                 {
                 case 0:
-                    calculateRadianceCellScatterUnbiased(i, textureObjectsDirect[0], surfaceObjectsSecond[0]);
+                    calculateRadianceCellScatterUnbiased(i, (cudaTextureObject_t*)directTextureObjectPointersBuffer.d_pointer(), (cudaSurfaceObject_t*)secondSurfaceObjectPointersBuffer.d_pointer());
                     break;
                 case 1:
-                    calculateRadianceCellScatterUnbiased(i, textureObjectsSecond[0], surfaceObjectsThird[0]);
+                    calculateRadianceCellScatterUnbiased(i, (cudaTextureObject_t*)secondBounceTextureObjectPointersBuffer.d_pointer(), (cudaSurfaceObject_t*)thirdSurfaceObjectPointersBuffer.d_pointer());
                     break;
                 default:
                     break;
@@ -1382,7 +1383,7 @@ namespace mcrt {
 
 
 
-    void Renderer::calculateRadianceCellScatterUnbiased(int iteration, cudaTextureObject_t& prevBounceTexture, cudaSurfaceObject_t& dstTexture)
+    void Renderer::calculateRadianceCellScatterUnbiased(int iteration, cudaTextureObject_t* prevBounceTexture, cudaSurfaceObject_t* dstTexture)
     {
         // TODO: For now we're using the same texture size as for the direct lighting pass, we can downsample in the future to gain performance
         const int texSize = directTextureSizes[0];
@@ -1393,10 +1394,10 @@ namespace mcrt {
             radianceCellScatterUnbiasedPipeline->launchParams.nonEmptyCellIndex = i;
 
             // Light source texture data
-            radianceCellScatterUnbiasedPipeline->launchParams.prevBounceTexture = prevBounceTexture;
+            radianceCellScatterUnbiasedPipeline->launchParams.prevBounceTextures = prevBounceTexture;
 
             // Destination texture data
-            radianceCellScatterUnbiasedPipeline->launchParams.currentBounceTexture = dstTexture;
+            radianceCellScatterUnbiasedPipeline->launchParams.currentBounceTextures = dstTexture;
 
             // Load uvs per cell 
             std::vector<glm::vec2> cellUVs = nonEmpties.nonEmptyCells[i]->getUVsInside();
@@ -1407,11 +1408,11 @@ namespace mcrt {
             radianceCellScatterUnbiasedPipeline->launchParams.cellSize = scene.grid.getCellSize();
 
             // UV world position data
-            radianceCellScatterUnbiasedPipeline->launchParams.uvPositions = UVWorldPositionsTextures[0];
-            radianceCellScatterUnbiasedPipeline->launchParams.uvNormals = UVNormalsTextures[0];
-            radianceCellScatterUnbiasedPipeline->launchParams.uvDiffuseColors = UVDiffuseColorTextures[0];
+            radianceCellScatterUnbiasedPipeline->launchParams.uvPositions = (cudaTextureObject_t*)uvWorldPositionTextureObjectPointersBuffer.d_pointer();
+            radianceCellScatterUnbiasedPipeline->launchParams.uvNormals = (cudaTextureObject_t*)uvNormalTextureObjectPointersBuffer.d_pointer();
+            radianceCellScatterUnbiasedPipeline->launchParams.uvDiffuseColors = (cudaTextureObject_t*)uvDiffuseColorTextureObjectPointersBuffer.d_pointer();
 
-            radianceCellScatterUnbiasedPipeline->launchParams.currentBounceResolution = directTextureSizes[0];
+            radianceCellScatterUnbiasedPipeline->launchParams.objectTextureResolutions = (int*)textureSizesBuffer.d_pointer();
 
             radianceCellScatterUnbiasedPipeline->uploadLaunchParams();
 
@@ -2159,9 +2160,9 @@ namespace mcrt {
                 {
                     const int range_from = 0.0f;
                     const int range_to = 1.0f;
-                    std::random_device                  rand_dev;
-                    std::mt19937                        generator(rand_dev());
-                    std::uniform_real_distribution<float>  distr(range_from, range_to);
+                    std::random_device                      rand_dev;
+                    std::mt19937                            generator(rand_dev());
+                    std::uniform_real_distribution<float>   distr(range_from, range_to);
 
                     float u0 = distr(generator);
                     float u1 = distr(generator);
