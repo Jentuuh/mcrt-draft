@@ -39,6 +39,7 @@ namespace mcrt {
 		glm::vec3 worldPosition;
 		glm::vec3 worldNormal;
 		glm::vec3 diffuseColor;
+		glm::vec2 diffuseTextureUV;
 	};
 
 	/**
@@ -307,6 +308,7 @@ namespace mcrt {
 		glm::vec3* vertex;
 		glm::vec3* normal;
 		glm::vec2* texcoord;
+		glm::vec2* diffuseUV;
 		glm::ivec3* index;
 
 		bool hasTexture;
@@ -319,6 +321,10 @@ namespace mcrt {
 		cudaTextureObject_t uvPositions;
 		cudaTextureObject_t uvNormals;
 		cudaTextureObject_t uvDiffuseColors;
+		cudaTextureObject_t diffuseTextureUVs;
+
+		bool hasTexture;
+		cudaTextureObject_t diffuseTexture;
 
 		cudaSurfaceObject_t directLightingTexture;
 

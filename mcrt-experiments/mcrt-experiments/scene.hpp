@@ -37,6 +37,7 @@ namespace mcrt {
 		void loadSponzaComponents();
 		void addGameObject(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale, std::shared_ptr<Model> model);
 		void loadModelFromOBJ(const std::string& fileName);
+		void loadModelFromOBJWithMultipleUVs(const std::string& fileNameLightMappedUVs, const std::string& fileNameTextureUVs);
 		int loadTexture(std::map<std::string, int>& knownTextures, const std::string& inFileName, const std::string& modelPath);
 
 		void voxelizeObjects();

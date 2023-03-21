@@ -185,6 +185,8 @@ namespace mcrt {
 		std::vector<CUDABuffer> indexBuffers;
 		std::vector<CUDABuffer> normalBuffers;
 		std::vector<CUDABuffer> texcoordBuffers;
+		std::vector<CUDABuffer> diffuseTextureUVBuffers;
+
 		std::vector<int> amountVertices;
 		std::vector<int> amountIndices;
 
@@ -217,8 +219,10 @@ namespace mcrt {
 		std::vector<cudaTextureObject_t> UVWorldPositionsTextures;
 		std::vector<cudaTextureObject_t> UVNormalsTextures;
 		std::vector<cudaTextureObject_t> UVDiffuseColorTextures;
+		std::vector<cudaTextureObject_t> diffuseTextureUVsTextures;
 		CUDABuffer uvWorldPositionTextureObjectPointersBuffer;
 		CUDABuffer uvNormalTextureObjectPointersBuffer;
 		CUDABuffer uvDiffuseColorTextureObjectPointersBuffer;
+		CUDABuffer diffuseTextureUVsTextureObjectPointersBuffer;
 	};
 }

@@ -218,6 +218,8 @@ namespace mcrt {
             rec.data.index = (glm::ivec3*)geometryBuffers.indices[i].d_pointer();
             rec.data.normal = (glm::vec3*)geometryBuffers.normals[i].d_pointer();
             rec.data.texcoord = (glm::vec2*)geometryBuffers.texCoords[i].d_pointer();
+            rec.data.diffuseUV = (glm::vec2*)geometryBuffers.diffuseUVs[i].d_pointer();
+
             hitgroupRecords.push_back(rec);  
         }
 

@@ -674,7 +674,7 @@ $L__BB0_41:
 	ld.const.u64 	%rd12, [optixLaunchParams];
 	cvta.to.global.u64 	%rd13, %rd12;
 	mad.lo.s32 	%r211, %r210, %r208, %r209;
-	mul.wide.s32 	%rd14, %r211, 36;
+	mul.wide.s32 	%rd14, %r211, 44;
 	add.s64 	%rd15, %rd13, %rd14;
 	.loc	1 94 34
 	ld.global.f32 	%f1, [%rd15+12];

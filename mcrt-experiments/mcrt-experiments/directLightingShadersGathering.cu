@@ -141,9 +141,21 @@ namespace mcrt {
         float4 uvWorldNormal3f = tex2D<float4>(optixLaunchParams.uvNormals, u, v);
         float4 uvDiffuseColor3f = tex2D<float4>(optixLaunchParams.uvDiffuseColors, u, v);
 
+
         glm::vec3 UVWorldPos = glm::vec3{ uvWorldPos3f.x, uvWorldPos3f.y, uvWorldPos3f.z };
         const glm::vec3 UVNormal = glm::vec3{ uvWorldNormal3f.x, uvWorldNormal3f.y, uvWorldNormal3f.z };
-        const glm::vec3 diffuseColor = glm::vec3{ uvDiffuseColor3f.x, uvDiffuseColor3f.y, uvDiffuseColor3f.z };
+        glm::vec3 diffuseColor = glm::vec3{ uvDiffuseColor3f.x, uvDiffuseColor3f.y, uvDiffuseColor3f.z };
+
+        if (optixLaunchParams.hasTexture)
+        {
+            // Get diffuse texture coordinates
+            float4 diffuseTextureUV = tex2D<float4>(optixLaunchParams.diffuseTextureUVs, u, v);
+
+            // Read color from diffuse texture
+            float4 diffuseTexColor = tex2D<float4>(optixLaunchParams.diffuseTexture, diffuseTextureUV.x, diffuseTextureUV.y);
+            diffuseColor = glm::vec3{ diffuseTexColor.x, diffuseTexColor.y, diffuseTexColor.z };
+        }
+
 
         // We apply a small offset of 0.00001f in the direction of the normal to the UV world pos, to 'mitigate' floating point rounding errors causing false occlusions/illuminations
         UVWorldPos = glm::vec3{ UVWorldPos.x + UVNormal.x * 0.00001f, UVWorldPos.y + UVNormal.y * 0.00001f, UVWorldPos.z + UVNormal.z * 0.00001f };

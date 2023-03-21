@@ -15,6 +15,7 @@ namespace mcrt {
 		std::vector<glm::vec3> vertices;
 		std::vector<glm::ivec3> indices;
 		std::vector<glm::vec2> texCoords;
+		std::vector<glm::vec2> diffuseTextureCoords;
 		std::vector<glm::vec3> normals;
 
 		// Mesh AABB

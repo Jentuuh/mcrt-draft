@@ -33,7 +33,7 @@
 	call (%r1), _optix_read_primitive_idx, ();
 	// end inline asm
 	.loc	1 91 32
-	ld.u64 	%rd2, [%rd1+40];
+	ld.u64 	%rd2, [%rd1+48];
 	mul.wide.s32 	%rd3, %r1, 12;
 	add.s64 	%rd4, %rd2, %rd3;
 	ld.u32 	%r38, [%rd4];

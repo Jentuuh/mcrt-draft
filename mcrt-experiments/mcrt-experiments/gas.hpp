@@ -9,6 +9,7 @@ namespace mcrt {
 		std::vector<CUDABuffer>& indices;
 		std::vector<CUDABuffer>& normals;
 		std::vector<CUDABuffer>& texCoords;
+		std::vector<CUDABuffer>& diffuseUVs;
 		std::vector<cudaTextureObject_t>& textureObjects;
 		std::vector<int> amountVertices;
 		std::vector<int> amountIndices;

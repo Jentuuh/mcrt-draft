@@ -38,7 +38,7 @@ namespace mcrt {
         createTextures();
 
         std::cout << "Setting up pipelines..." << std::endl;
-        GeometryBufferHandle geometryData = GeometryBufferHandle{ vertexBuffers, indexBuffers, normalBuffers, texcoordBuffers, textureObjects, amountVertices, amountIndices };
+        GeometryBufferHandle geometryData = GeometryBufferHandle{ vertexBuffers, indexBuffers, normalBuffers, texcoordBuffers, diffuseTextureUVBuffers, textureObjects, amountVertices, amountIndices };
 
         if (irradianceStorage == OCTREE_TEXTURE)
         {
@@ -115,7 +115,7 @@ namespace mcrt {
                 initLightProbeCubeMaps(64, scene.grid.resolution.x);
             }
             calculateDirectLighting();
-            calculateIndirectLighting(bias, probeType);
+            // calculateIndirectLighting(bias, probeType);
         }
 
         std::cout << "Context, module, pipelines, etc, all set up." << std::endl;
@@ -135,6 +135,8 @@ namespace mcrt {
         indexBuffers.resize(bufferSize);
         normalBuffers.resize(bufferSize);
         texcoordBuffers.resize(bufferSize);
+        diffuseTextureUVBuffers.resize(bufferSize);
+
 
         for (int meshID = 0; meshID < scene.numObjects(); meshID++) {
             // upload the model to the device: the builder
@@ -148,6 +150,8 @@ namespace mcrt {
                 normalBuffers[meshID].alloc_and_upload(mesh->normals);
             if (!mesh->texCoords.empty())
                 texcoordBuffers[meshID].alloc_and_upload(mesh->texCoords);
+            if (!mesh->diffuseTextureCoords.empty())
+                diffuseTextureUVBuffers[meshID].alloc_and_upload(mesh->diffuseTextureCoords);
         }
 
         // ============================
@@ -590,11 +594,11 @@ namespace mcrt {
             int size = 1024;
             size = GeneralUtils::pow2roundup(size);
 
-            std::cout << "Texture size: " << size << std::endl;
-
             // We cannot have textures of 0x0
             if (size == 0)
                 size = 1;
+
+            std::cout << "Texture size: " << size << std::endl;
 
             std::vector<float> zeros(size * size * 4, 0.0f);
 
@@ -827,6 +831,13 @@ namespace mcrt {
             directLightPipeline->launchParams.uvPositions = UVWorldPositionsTextures[o];
             directLightPipeline->launchParams.uvNormals = UVNormalsTextures[o];
             directLightPipeline->launchParams.uvDiffuseColors = UVDiffuseColorTextures[o];
+            directLightPipeline->launchParams.diffuseTextureUVs = diffuseTextureUVsTextures[o];
+            
+            // Diffuse color texture (per object)
+            directLightPipeline->launchParams.hasTexture = scene.getGameObjects()[o]->model->mesh->diffuseTextureID > -1;
+            if (directLightPipeline->launchParams.hasTexture) {
+                directLightPipeline->launchParams.diffuseTexture = textureObjects[o];
+            }
 
             // Irradiance texture data
             directLightPipeline->launchParams.directLightingTexture = surfaceObjectsDirect[o];
@@ -845,7 +856,7 @@ namespace mcrt {
                 // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
             ));
 
-            CUDA_SYNC_CHECK();
+            CUDA_SYNC_CHECK();            
         }
 
         //// Download resulting texture from GPU
@@ -1929,14 +1940,18 @@ namespace mcrt {
         UVWorldPositionsTextures.resize(numObjects);
         UVNormalsTextures.resize(numObjects);
         UVDiffuseColorTextures.resize(numObjects);
+        diffuseTextureUVsTextures.resize(numObjects);
 
         for (int o = 0; o < numObjects; o++)
         {
+            std::cout << "SANITY CHECK: amount of vertices " << scene.getGameObjects()[o]->model->mesh->vertices.size() << ", amount of diffuse UVs: " << scene.getGameObjects()[o]->model->mesh->diffuseTextureCoords.size() << std::endl;
+
             int texSize = directTextureSizes[o];
 
             std::vector<float> worldPositions(texSize * texSize * 4, -1000.0f);
             std::vector<float> worldNormals(texSize * texSize * 4, 0.0f);
             std::vector<float> diffuseColors(texSize * texSize * 4, 0.0f);
+            std::vector<float> diffuseTextureUVs(texSize * texSize * 4, 0.0f);
 
             float progress = 0.1f;
             for (int i = 0; i < texSize * texSize; i++)
@@ -1962,6 +1977,11 @@ namespace mcrt {
                 diffuseColors[i * 4 + 2] = uvWorldData.diffuseColor.z;
                 diffuseColors[i * 4 + 3] = 0.0f;
 
+                diffuseTextureUVs[i * 4 + 0] = uvWorldData.diffuseTextureUV.x;
+                diffuseTextureUVs[i * 4 + 1] = uvWorldData.diffuseTextureUV.y;
+                diffuseTextureUVs[i * 4 + 2] = 0.0f;
+                diffuseTextureUVs[i * 4 + 3] = 0.0f;
+
                 // Assign this UV to the cell that it belongs to, so in the scattering pass we can operate on local UVs
                 scene.grid.assignUVToCells(uv, uvWorldData.worldPosition, o);
 
@@ -1982,6 +2002,8 @@ namespace mcrt {
             cudaArray* worldPosArray;
             cudaArray* worldNormalArray;
             cudaArray* diffuseColorArray;
+            cudaArray* diffuseTextureUVArray;
+
 
             CUDA_CHECK(MallocArray(&worldPosArray,
                 &channelDesc,
@@ -1996,6 +2018,12 @@ namespace mcrt {
                 cudaArraySurfaceLoadStore));
 
             CUDA_CHECK(MallocArray(&diffuseColorArray,
+                &channelDesc,
+                width,
+                height,
+                cudaArraySurfaceLoadStore));
+
+            CUDA_CHECK(MallocArray(&diffuseTextureUVArray,
                 &channelDesc,
                 width,
                 height,
@@ -2021,6 +2049,11 @@ namespace mcrt {
                 pitch, pitch, height,
                 cudaMemcpyHostToDevice));
 
+            CUDA_CHECK(Memcpy2DToArray(diffuseTextureUVArray,
+                /* offset */0, 0,
+                diffuseTextureUVs.data(),
+                pitch, pitch, height,
+                cudaMemcpyHostToDevice));
 
             // Resource description for the CUDA arrays
             cudaResourceDesc resourceDescPositions = {};
@@ -2034,6 +2067,10 @@ namespace mcrt {
             cudaResourceDesc resourceDescColors = {};
             resourceDescColors.resType = cudaResourceTypeArray;
             resourceDescColors.res.array.array = diffuseColorArray;
+
+            cudaResourceDesc resourceDescDiffuseUVs = {};
+            resourceDescDiffuseUVs.resType = cudaResourceTypeArray;
+            resourceDescDiffuseUVs.res.array.array = diffuseTextureUVArray;
 
             // Texture object creation
             cudaTextureDesc texDesc = {};
@@ -2061,12 +2098,17 @@ namespace mcrt {
             cudaTextureObject_t cudaTexDiffuseColors = 0;
             CUDA_CHECK(CreateTextureObject(&cudaTexDiffuseColors, &resourceDescColors, &texDesc, nullptr));
             UVDiffuseColorTextures[o] = cudaTexDiffuseColors;
+
+            cudaTextureObject_t cudaTexDiffuseTextureUVs = 0;
+            CUDA_CHECK(CreateTextureObject(&cudaTexDiffuseTextureUVs, &resourceDescDiffuseUVs, &texDesc, nullptr));
+            diffuseTextureUVsTextures[o] = cudaTexDiffuseTextureUVs;
         }
 
         // Buffers to store pointers to texture objects
         uvWorldPositionTextureObjectPointersBuffer.alloc_and_upload(UVWorldPositionsTextures);
         uvNormalTextureObjectPointersBuffer.alloc_and_upload(UVNormalsTextures);
         uvDiffuseColorTextureObjectPointersBuffer.alloc_and_upload(UVDiffuseColorTextures);
+        diffuseTextureUVsTextureObjectPointersBuffer.alloc_and_upload(diffuseTextureUVsTextures);
     }
 
 
@@ -2315,11 +2357,17 @@ namespace mcrt {
             glm::vec3 uvNormal = glm::normalize(a1 * o->model->mesh->normals[triangle[0]] + a2 * o->model->mesh->normals[triangle[1]] + a3 * o->model->mesh->normals[triangle[2]]);
             glm::vec3 diffuseColor = o->model->mesh->diffuse;
 
+            glm::vec2 diffuseTextureUV;
+            if (!o->model->mesh->diffuseTextureCoords.empty())
+            {
+                diffuseTextureUV = a1 * o->model->mesh->diffuseTextureCoords[triangle[0]] + a2 * o->model->mesh->diffuseTextureCoords[triangle[1]] + a3 * o->model->mesh->diffuseTextureCoords[triangle[2]];
+            }
+
             uvPosition = o->worldTransform.object2World * glm::vec4{ uvPosition, 1.0f };
-            return { uvPosition, uvNormal, diffuseColor };
+            return { uvPosition, uvNormal, diffuseColor, diffuseTextureUV };
         }
 
-        return{ glm::vec3{ -1000.0f, -1000.0f, -1000.0f }, glm::vec3{ -1000.0f, -1000.0f, -1000.0f }, glm::vec3{0.0f, 0.0f, 0.0f} };
+        return{ glm::vec3{ -1000.0f, -1000.0f, -1000.0f }, glm::vec3{ -1000.0f, -1000.0f, -1000.0f }, glm::vec3{0.0f, 0.0f, 0.0f}, glm::vec2{0.0f, 0.0f} };
     }
 
 
