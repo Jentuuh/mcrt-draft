@@ -19,27 +19,14 @@ namespace mcrt {
 	void App::run()
 	{
 		window->run();
-
-		/* Renderer sample{model};
-		sample.setCamera(camera);
-
-		const glm::ivec2 fbSize(glm::ivec2(1200, 1024));
-		sample.resize(fbSize);
-		sample.render();
-		std::vector<uint32_t> pixels(fbSize.x * fbSize.y);
-		sample.downloadPixels(pixels.data());
-
-		const std::string fileName = "mcrt_test.png";
-		stbi_write_png(fileName.c_str(), fbSize.x, fbSize.y, 4,
-		pixels.data(), fbSize.x * sizeof(uint32_t));*/
 	}
 
 
 	void App::loadScene()
 	{
 		//scene.loadModelFromOBJ("../models/crytek-sponza/sponza4.obj");
-		//scene.loadModelFromOBJ("../models/cornell/cornell.obj");
-		scene.loadSponzaComponents();
+		scene.loadModelFromOBJ("../models/cornell/cornell.obj");
+		//scene.loadSponzaComponents();
 
 		std::cout << "Loaded scene: " << scene.amountVertices() << " vertices. Scene Max: " << glm::to_string(scene.maxCoord()) << " Scene Min: " << glm::to_string(scene.minCoord()) << std::endl;
 		

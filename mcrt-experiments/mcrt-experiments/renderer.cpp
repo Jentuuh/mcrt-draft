@@ -101,11 +101,6 @@ namespace mcrt {
                 radianceCellScatterUnbiasedPipeline = std::make_unique<RadianceCellScatterUnbiasedPipeline>(optixContext, geometryData, scene);
             }
 
-            // Initialize 2D textures + UV world data
-            //initLightingTextures(1024);
-            //prepareUVWorldPositions();
-            //prepareUVsInsideBuffer();
-
             initLightingTexturesPerObject();
             prepareUVWorldPositionsPerObject();
             prepareUVsInsideBuffer();
@@ -383,197 +378,12 @@ namespace mcrt {
         }
     }
 
-    void Renderer::writeToImage(std::string fileName, int resX, int resY, void* data)
-    {
-        stbi_write_png(fileName.c_str(), resX, resY, 4, data, resX * sizeof(uint32_t));
-    }
 
     void writeToImageUnsignedChar(std::string fileName, int resX, int resY, void* data)
     {
         stbi_write_png(fileName.c_str(), resX, resY, 4, data, resX * 4 * sizeof(stbi_uc));
     }
 
-    // Will allocate a `size * size` buffer on the GPU
-    void Renderer::initLightingTextures(int size)
-    {
-        std::cout << "Initializing irradiance textures..." << std::endl;
-        std::vector<float> zeros(size * size * 4, 0.0f);
-
-        int numTextures = 1;
-
-        textureObjectsDirect.resize(numTextures);
-        textureObjectsSecond.resize(numTextures);
-        textureObjectsThird.resize(numTextures);
-
-        surfaceObjectsDirect.resize(numTextures);
-        surfaceObjectsSecond.resize(numTextures);
-        surfaceObjectsThird.resize(numTextures);
-
-        // Direct lighting
-        for (int textureID = 0; textureID < numTextures; textureID++) {
-
-            cudaChannelFormatDesc channelDesc;
-            channelDesc = cudaCreateChannelDesc<float4>();
-            int32_t width = size;
-            int32_t height = size;
-            int32_t pitch = width * sizeof(float4);
-
-            // Initialize CUDA array
-            cudaArray* cuArray;
-            CUDA_CHECK(MallocArray(&cuArray,
-                &channelDesc,
-                width,
-                height,
-                cudaArraySurfaceLoadStore));
-
-            CUDA_CHECK(Memcpy2DToArray(cuArray,
-                /* offset */0, 0,
-                zeros.data(),
-                pitch, pitch, height,
-                cudaMemcpyHostToDevice));
-
-            // Resource description for the CUDA array
-            cudaResourceDesc resourceDesc = {};
-            resourceDesc.resType = cudaResourceTypeArray;
-            resourceDesc.res.array.array = cuArray;
-
-            // Surface object creation
-            cudaSurfaceObject_t cudaSurf = 0;
-            CUDA_CHECK(CreateSurfaceObject(&cudaSurf, &resourceDesc));
-            surfaceObjectsDirect[textureID] = cudaSurf;
-
-            // Texture object creation
-            cudaTextureDesc texDesc = {};
-            texDesc.addressMode[0] = cudaAddressModeWrap;
-            texDesc.addressMode[1] = cudaAddressModeWrap;
-            texDesc.filterMode = cudaFilterModeLinear;
-            texDesc.readMode = cudaReadModeElementType;
-            texDesc.normalizedCoords = 1;
-            texDesc.maxAnisotropy = 1;
-            texDesc.maxMipmapLevelClamp = 99;
-            texDesc.minMipmapLevelClamp = 0;
-            texDesc.mipmapFilterMode = cudaFilterModePoint;
-            texDesc.borderColor[0] = 1.0f;
-            texDesc.sRGB = 0;
-
-            // Create texture object
-            cudaTextureObject_t cudaTex = 0;
-            CUDA_CHECK(CreateTextureObject(&cudaTex, &resourceDesc, &texDesc, nullptr));
-            textureObjectsDirect[textureID] = cudaTex;
-
-            // ONLY NEEDS TO HAPPEN IN THE FIRST LOOP
-            directTextureSizes.push_back(size);
-        }
-
-        // Second bounce
-        for (int textureID = 0; textureID < numTextures; textureID++) {
-
-            cudaChannelFormatDesc channelDesc;
-            channelDesc = cudaCreateChannelDesc<float4>();
-            int32_t width = size;
-            int32_t height = size;
-            int32_t pitch = width * sizeof(float4);
-
-            // Initialize CUDA array
-            cudaArray* cuArray;
-            CUDA_CHECK(MallocArray(&cuArray,
-                &channelDesc,
-                width,
-                height,
-                cudaArraySurfaceLoadStore));
-
-            CUDA_CHECK(Memcpy2DToArray(cuArray,
-                /* offset */0, 0,
-                zeros.data(),
-                pitch, pitch, height,
-                cudaMemcpyHostToDevice));
-
-            // Resource description for the CUDA array
-            cudaResourceDesc resourceDesc = {};
-            resourceDesc.resType = cudaResourceTypeArray;
-            resourceDesc.res.array.array = cuArray;
-
-            // Surface object creation
-            cudaSurfaceObject_t cudaSurf = 0;
-            CUDA_CHECK(CreateSurfaceObject(&cudaSurf, &resourceDesc));
-            surfaceObjectsSecond[textureID] = cudaSurf;
-
-            // Texture object creation
-            cudaTextureDesc texDesc = {};
-            texDesc.addressMode[0] = cudaAddressModeWrap;
-            texDesc.addressMode[1] = cudaAddressModeWrap;
-            texDesc.filterMode = cudaFilterModeLinear;
-            texDesc.readMode = cudaReadModeElementType;
-            texDesc.normalizedCoords = 1;
-            texDesc.maxAnisotropy = 1;
-            texDesc.maxMipmapLevelClamp = 99;
-            texDesc.minMipmapLevelClamp = 0;
-            texDesc.mipmapFilterMode = cudaFilterModePoint;
-            texDesc.borderColor[0] = 1.0f;
-            texDesc.sRGB = 0;
-
-            // Create texture object
-            cudaTextureObject_t cudaTex = 0;
-            CUDA_CHECK(CreateTextureObject(&cudaTex, &resourceDesc, &texDesc, nullptr));
-            textureObjectsSecond[textureID] = cudaTex;
-        }
-
-        // Third bounce
-        for (int textureID = 0; textureID < numTextures; textureID++) {
-
-            cudaChannelFormatDesc channelDesc;
-            channelDesc = cudaCreateChannelDesc<float4>();
-            int32_t width = size;
-            int32_t height = size;
-            int32_t pitch = width * sizeof(float4);
-
-            // Initialize CUDA array
-            cudaArray* cuArray;
-            CUDA_CHECK(MallocArray(&cuArray,
-                &channelDesc,
-                width,
-                height,
-                cudaArraySurfaceLoadStore));
-
-            CUDA_CHECK(Memcpy2DToArray(cuArray,
-                /* offset */0, 0,
-                zeros.data(),
-                pitch, pitch, height,
-                cudaMemcpyHostToDevice));
-
-            // Resource description for the CUDA array
-            cudaResourceDesc resourceDesc = {};
-            resourceDesc.resType = cudaResourceTypeArray;
-            resourceDesc.res.array.array = cuArray;
-
-            // Surface object creation
-            cudaSurfaceObject_t cudaSurf = 0;
-            CUDA_CHECK(CreateSurfaceObject(&cudaSurf, &resourceDesc));
-            surfaceObjectsThird[textureID] = cudaSurf;
-
-            // Texture object creation
-            cudaTextureDesc texDesc = {};
-            texDesc.addressMode[0] = cudaAddressModeWrap;
-            texDesc.addressMode[1] = cudaAddressModeWrap;
-            texDesc.filterMode = cudaFilterModeLinear;
-            texDesc.readMode = cudaReadModeElementType;
-            texDesc.normalizedCoords = 1;
-            texDesc.maxAnisotropy = 1;
-            texDesc.maxMipmapLevelClamp = 99;
-            texDesc.minMipmapLevelClamp = 0;
-            texDesc.mipmapFilterMode = cudaFilterModePoint;
-            texDesc.borderColor[0] = 1.0f;
-            texDesc.sRGB = 0;
-
-            // Create texture object
-            cudaTextureObject_t cudaTex = 0;
-            CUDA_CHECK(CreateTextureObject(&cudaTex, &resourceDesc, &texDesc, nullptr));
-            textureObjectsThird[textureID] = cudaTex;
-        }
-
-        directLightPipeline->launchParams.directLightingTexture = surfaceObjectsDirect[0];
-        std::cout << "Done." << std::endl;
-    }
 
     void Renderer::initLightingTexturesPerObject()
     {   
@@ -595,10 +405,10 @@ namespace mcrt {
 
             // Decide texture resolution based on the object's surface area
             float objectArea = scene.getGameObjects()[textureID]->surfaceArea();
-            //int size = objectArea * 512;
-            int size = 800;
+            int size = objectArea * 512;
+            //int size = 1200;
             //int size = textureSizes[textureID];
-            //size = GeneralUtils::pow2roundup(size);
+            size = GeneralUtils::pow2roundup(size);
 
             // We cannot have textures of 0x0
             if (size == 0)
@@ -913,14 +723,14 @@ namespace mcrt {
                     switch (i)
                     {
                     case 0:
-                        calculateRadianceCellGatherPass(directLightingTexture);
+                        //calculateRadianceCellGatherPass(directLightingTexture);
                         std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
-                        calculateRadianceCellScatterPass(i, secondBounceTexture);
+                        //calculateRadianceCellScatterPass(i, secondBounceTexture);
                         break;
                     case 1:
-                        calculateRadianceCellGatherPass(secondBounceTexture);
+                        //calculateRadianceCellGatherPass(secondBounceTexture);
                         std::cout << "Calculating radiance cell scatter pass " << i << "..." << std::endl;
-                        calculateRadianceCellScatterPass(i, thirdBounceTexture);
+                        //calculateRadianceCellScatterPass(i, thirdBounceTexture);
                         break;
                     default:
                         break;
@@ -1234,7 +1044,7 @@ namespace mcrt {
             radianceCellScatterPipeline->launchParams.currentBounceTexture.size * radianceCellScatterPipeline->launchParams.currentBounceTexture.size);
 
         // Write the result to an image (for debugging purposes)
-        writeToImage("current_bounce_output" + std::to_string(iteration) + ".png", radianceCellScatterPipeline->launchParams.currentBounceTexture.size, radianceCellScatterPipeline->launchParams.currentBounceTexture.size, current_bounce_result.data());
+        //writeToImage("current_bounce_output" + std::to_string(iteration) + ".png", radianceCellScatterPipeline->launchParams.currentBounceTexture.size, radianceCellScatterPipeline->launchParams.currentBounceTexture.size, current_bounce_result.data());
     }
 
     void Renderer::calculateRadianceCellScatterPassCubeMap(int iteration, cudaTextureObject_t* prevBounceTexture, cudaSurfaceObject_t* dstTexture)
@@ -1790,164 +1600,6 @@ namespace mcrt {
         }
     }
 
-    void Renderer::prepareUVWorldPositions()
-    {
-
-        UVWorldPositionsTextures.resize(1);
-        UVNormalsTextures.resize(1);
-        UVDiffuseColorTextures.resize(1);
-
-        int texSize;
-        if (irradStorageType == OCTREE_TEXTURE)
-        {
-            texSize = IRRADIANCE_TEXTURE_RESOLUTION;
-        }
-        else if (irradStorageType == TEXTURE_2D)
-        {
-            texSize = directTextureSizes[0];
-        }
-
-        assert( (texSize > 0) && "Direct lighting texture needs to be initialized before preparing UV indices!");
-        
-        //std::vector<UVWorldData> UVData(texSize * texSize, { glm::vec3{-1000.0f, -1000.0f, -1000.0f}, glm::vec3{-1000.0f, -1000.0f, -1000.0f} });    // Scene is scaled within (0;1) so this should not form a problem
-       
-        std::vector<float> worldPositions(texSize * texSize * 4, -1000.0f);
-        std::vector<float> worldNormals(texSize * texSize * 4, 0.0f);
-        std::vector<float> diffuseColors(texSize * texSize * 4, 0.0f);
-
-        float progress = 0.1f;
-        for (int i = 0; i < texSize * texSize; i++)
-        {
-            const float u = float(i % texSize) / float(texSize);
-            // (i - i % texSize) / texSize gives us the row number, divided by texSize gives us the V coordinate 
-            const float v = (float((i - (i % texSize))) / float(texSize)) / float(texSize);
-            glm::vec2 uv = glm::vec2{ u,v };
-            UVWorldData uvWorldData = UVto3D(uv);
-
-            worldPositions[i * 4 + 0] = uvWorldData.worldPosition.x;
-            worldPositions[i * 4 + 1] = uvWorldData.worldPosition.y;
-            worldPositions[i * 4 + 2] = uvWorldData.worldPosition.z;
-            worldPositions[i * 4 + 3] = 0.0f;
-
-            worldNormals[i * 4 + 0] = uvWorldData.worldNormal.x;
-            worldNormals[i * 4 + 1] = uvWorldData.worldNormal.y;
-            worldNormals[i * 4 + 2] = uvWorldData.worldNormal.z;
-            worldNormals[i * 4 + 3] = 0.0f;
-
-            diffuseColors[i * 4 + 0] = uvWorldData.diffuseColor.x;
-            diffuseColors[i * 4 + 1] = uvWorldData.diffuseColor.y;
-            diffuseColors[i * 4 + 2] = uvWorldData.diffuseColor.z;
-            diffuseColors[i * 4 + 3] = 0.0f;
-
-            // Assign this UV to the cell that it belongs to, so in the scattering pass we can operate on local UVs
-            scene.grid.assignUVToCells(uv, uvWorldData.worldPosition, 0);
-
-            if (float(i) / float(texSize * texSize) > progress)
-            {
-                std::cout << "Progress: " << progress * 100 << "%." << std::endl;
-                progress += 0.1f;
-            }
-        }
-
-        cudaChannelFormatDesc channelDesc;
-        channelDesc = cudaCreateChannelDesc<float4>();
-        int32_t width = texSize;
-        int32_t height = texSize;
-        int32_t pitch = width * sizeof(float4);
-
-        // Initialize and allocate CUDA arrays
-        cudaArray* worldPosArray;
-        cudaArray* worldNormalArray;
-        cudaArray* diffuseColorArray;
-
-        CUDA_CHECK(MallocArray(&worldPosArray,
-            &channelDesc,
-            width,
-            height,
-            cudaArraySurfaceLoadStore));
-
-        CUDA_CHECK(MallocArray(&worldNormalArray,
-            &channelDesc,
-            width,
-            height,
-            cudaArraySurfaceLoadStore));
-
-        CUDA_CHECK(MallocArray(&diffuseColorArray,
-            &channelDesc,
-            width,
-            height,
-            cudaArraySurfaceLoadStore));
-
-        CUDA_CHECK(Memcpy2DToArray(worldPosArray,
-            /* offset */0, 0,
-            worldPositions.data(),
-            pitch, pitch, height,
-            cudaMemcpyHostToDevice));
-
-
-        CUDA_CHECK(Memcpy2DToArray(worldNormalArray,
-            /* offset */0, 0,
-            worldNormals.data(),
-            pitch, pitch, height,
-            cudaMemcpyHostToDevice));
-
-
-        CUDA_CHECK(Memcpy2DToArray(diffuseColorArray,
-            /* offset */0, 0,
-            diffuseColors.data(),
-            pitch, pitch, height,
-            cudaMemcpyHostToDevice));
-
-
-        // Resource description for the CUDA arrays
-        cudaResourceDesc resourceDescPositions = {};
-        resourceDescPositions.resType = cudaResourceTypeArray;
-        resourceDescPositions.res.array.array = worldPosArray;
-
-        cudaResourceDesc resourceDescNormals = {};
-        resourceDescNormals.resType = cudaResourceTypeArray;
-        resourceDescNormals.res.array.array = worldNormalArray;
-
-        cudaResourceDesc resourceDescColors = {};
-        resourceDescColors.resType = cudaResourceTypeArray;
-        resourceDescColors.res.array.array = diffuseColorArray;
-
-        // Texture object creation
-        cudaTextureDesc texDesc = {};
-        texDesc.addressMode[0] = cudaAddressModeWrap;
-        texDesc.addressMode[1] = cudaAddressModeWrap;
-        texDesc.filterMode = cudaFilterModeLinear;
-        texDesc.readMode = cudaReadModeElementType;
-        texDesc.normalizedCoords = 1;
-        texDesc.maxAnisotropy = 1;
-        texDesc.maxMipmapLevelClamp = 99;
-        texDesc.minMipmapLevelClamp = 0;
-        texDesc.mipmapFilterMode = cudaFilterModePoint;
-        texDesc.borderColor[0] = 1.0f;
-        texDesc.sRGB = 0;
-
-        // Create texture objects
-        cudaTextureObject_t cudaTexPositions = 0;
-        CUDA_CHECK(CreateTextureObject(&cudaTexPositions, &resourceDescPositions, &texDesc, nullptr));
-        UVWorldPositionsTextures[0] = cudaTexPositions;
-
-        cudaTextureObject_t cudaTexNormals = 0;
-        CUDA_CHECK(CreateTextureObject(&cudaTexNormals, &resourceDescNormals, &texDesc, nullptr));
-        UVNormalsTextures[0] = cudaTexNormals;
-
-        cudaTextureObject_t cudaTexDiffuseColors = 0;
-        CUDA_CHECK(CreateTextureObject(&cudaTexDiffuseColors, &resourceDescColors, &texDesc, nullptr));
-        UVDiffuseColorTextures[0] = cudaTexDiffuseColors;
-
-        
-        if (irradStorageType == TEXTURE_2D)
-        {
-            directLightPipeline->launchParams.uvPositions = UVWorldPositionsTextures[0];
-            directLightPipeline->launchParams.uvNormals = UVNormalsTextures[0];
-            directLightPipeline->launchParams.uvDiffuseColors = UVDiffuseColorTextures[0];
-        }
-    }
-
     void Renderer::prepareUVWorldPositionsPerObject()
     {
         int numObjects = scene.getGameObjects().size();
@@ -2428,12 +2080,4 @@ namespace mcrt {
                 cameraPipeline->launchParams.frame.size.x * cameraPipeline->launchParams.frame.size.y);
         }
     }
-
-
-    void Renderer::downloadAndWriteLightSourceTexture() {
-        std::vector<stbi_uc> result(1024 * 1024 * 4);
-        lightSourceTexture.download(result.data(), 1024 * 1024 * 4);
-        writeToImageUnsignedChar("lightSourceTextureTest.png", 1024, 1024, result.data());
-    }
-
 }

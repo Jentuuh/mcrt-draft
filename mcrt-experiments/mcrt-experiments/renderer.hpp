@@ -54,17 +54,15 @@ namespace mcrt {
 
 		// Download rendered color buffer from device
 		void downloadPixels(uint32_t h_pixels[]);
-		void downloadAndWriteLightSourceTexture();
 
 		// Update camera to render from
 		void updateCamera(const Camera& camera);
 
 	private:
-		void writeToImage(std::string fileName, int resX, int resY, void* data);
-		void initLightingTextures(int size);
 		void initLightingTexturesPerObject();
 		void initLightProbeCubeMaps(int resolution, int gridRes);
 
+		// 2D texture based - Cubemap and SH
 		void calculateDirectLighting();
 		void calculateIndirectLighting(BIAS_MODE bias, PROBE_MODE mode);
 		void initSHWeightsBuffer(int amountNonEmptyCells);
@@ -75,30 +73,32 @@ namespace mcrt {
 		void calculateRadianceCellScatterPassCubeMap(int iteration, cudaTextureObject_t* prevBounceTexture, cudaSurfaceObject_t* dstTexture);
 		void calculateRadianceCellScatterUnbiased(int iteration, cudaTextureObject_t* prevBounceTexture, cudaSurfaceObject_t* dstTexture);
 
+		// Octree
 		void calculateDirectLightingOctree();
 		void calculateIndirectLightingOctree(BIAS_MODE bias, PROBE_MODE mode);
 		void calculateRadianceCellGatherPassCubeMapAltOctree(CUDABuffer& previousPassLightSourceOctreeTexture);
 		void calculateRadianceCellScatterPassCubeMapOctree(int iteration, CUDABuffer& prevBounceOctreeTexture, CUDABuffer& dstOctreeTexture);
 		void calculateRadianceCellScatterUnbiasedOctree(int iteration, CUDABuffer& prevBounceOctreeTexture, CUDABuffer& dstOctreeTexture);
 
-		void lightProbeTest(int iteration, CUDABuffer& prevBounceTexture, CUDABuffer& dstTexture);
-		void octreeTextureTest();
-		void textureAndSurfaceObjectTest();
-
-		void loadLightTexture();
-		void writeWeightsToTxtFile(std::vector<float>& weights, std::vector<int>& numSamples, int amountCells);
-
-		void prepareUVWorldPositions();
+		// Generate world sample data
 		void prepareUVWorldPositionsPerObject();
 		void prepareUVsInsideBuffer();
 		void prepareWorldSamplePoints(float octreeLeafFaceArea);
+
+		// Tests
+		void lightProbeTest(int iteration, CUDABuffer& prevBounceTexture, CUDABuffer& dstTexture);
+		void octreeTextureTest();
+		void textureAndSurfaceObjectTest();
 
 		// Helpers
 		void barycentricCoordinates(glm::vec3 p, glm::vec3 a, glm::vec3 b, glm::vec3 c, float& u, float& v, float& w);
 		UVWorldData UVto3D(glm::vec2 uv);
 		UVWorldData UVto3DPerObject(glm::vec2 uv, std::shared_ptr<GameObject> o);
 
+		// Debug
 		void writeUVsPerCellToImage(std::vector<int>& offsets, std::vector<glm::vec2>& uvs, int texRes);
+		void loadLightTexture();
+		void writeWeightsToTxtFile(std::vector<float>& weights, std::vector<int>& numSamples, int amountCells);
 
 	protected:
 		// ------------------
@@ -148,18 +148,9 @@ namespace mcrt {
 
 		CUDABuffer lightSourceTexture; // UV map with direct light source (to test the SH projection)
 		CUDABuffer colorBuffer;	// Framebuffer we will write to
-		CUDABuffer directLightingTexture; // Texture in which we store the direct lighting
-		CUDABuffer secondBounceTexture;	// Texture in which we store the second lighting bounce
-		CUDABuffer thirdBounceTexture; // Texture in which we store the third lighting bounce
 
-		// TODO: clean this up!
-		CUDABuffer directLightingTextures;	// A big block of memory that contains the textures of all objects
-		CUDABuffer samplePointsPerObjectBuffers; // A big block of memory that contains the sample world points of all objects
-		CUDABuffer textureOffsets;	// Offset buffer necessary to access the texture of a certain object in the 2 buffers above
-		CUDABuffer textureSizes; // Contains texture size of each object
 
 		CUDABuffer lightDataBuffer;	// In this buffer we'll store our light source data
-
 		CUDABuffer cubeMaps; // In this buffer we'll store the light probe cubemaps
 
 		// TODO: clean up!
@@ -194,7 +185,6 @@ namespace mcrt {
 		std::vector<CUDABuffer> radianceGridIndexBuffers;
 		std::vector<int> amountVerticesRadianceGrid;
 		std::vector<int> amountIndicesRadianceGrid;
-
 
 		std::vector<int>				 directTextureSizes;
 		std::vector<cudaArray_t>         textureArrays;
