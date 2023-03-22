@@ -96,7 +96,17 @@ namespace mcrt {
 
         glm::vec3 UVWorldPos = glm::vec3{ uvWorldPos3f.x, uvWorldPos3f.y, uvWorldPos3f.z };
         const glm::vec3 UVNormal = glm::vec3{ uvWorldNormal3f.x, uvWorldNormal3f.y, uvWorldNormal3f.z };
-        const glm::vec3 diffuseColor = glm::vec3{ uvDiffuseColor3f.x, uvDiffuseColor3f.y, uvDiffuseColor3f.z };
+        glm::vec3 diffuseColor = glm::vec3{ uvDiffuseColor3f.x, uvDiffuseColor3f.y, uvDiffuseColor3f.z };
+
+        if (optixLaunchParams.hasTexture[gameObjectNr])
+        {
+            // Get diffuse texture coordinates
+            float4 diffuseTextureUV = tex2D<float4>(optixLaunchParams.diffuseTextureUVs[gameObjectNr], uv.x, uv.y);
+
+            // Read color from diffuse texture
+            float4 diffuseTexColor = tex2D<float4>(optixLaunchParams.diffuseTextures[gameObjectNr], diffuseTextureUV.x, diffuseTextureUV.y);
+            diffuseColor = glm::vec3{ diffuseTexColor.x, diffuseTexColor.y, diffuseTexColor.z };
+        }
 
         // Small offset to world position to 'mitigate' floating point errors
         UVWorldPos = glm::vec3{ UVWorldPos.x + UVNormal.x * 0.00001f, UVWorldPos.y + UVNormal.y * 0.00001f, UVWorldPos.z + UVNormal.z * 0.00001f };
@@ -165,6 +175,9 @@ namespace mcrt {
             totalRadiance += glm::vec3{ cosContribution * prd.resultColor.x, cosContribution * prd.resultColor.y, cosContribution * prd.resultColor.z };
             ++numSamples;
         }
+
+        // "Diffuse BRDF" 
+        totalRadiance *= diffuseColor;
 
         // Monte-Carlo weighted estimation
         const float r_result = totalRadiance.x / (float(numSamples) * PI);

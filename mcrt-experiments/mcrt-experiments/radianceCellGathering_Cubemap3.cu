@@ -53,15 +53,6 @@ namespace mcrt {
 
         float4 incomingRadiance = tex2D<float4>(optixLaunchParams.lightSourceTextures[sbtData.objectNr], tc.x, tc.y);
 
-        //const int uTexelCoord = tc.x * optixLaunchParams.lightSourceTexture.size;
-        //const int vTexelCoord = tc.y * optixLaunchParams.lightSourceTexture.size;
-
-        //// Read color (outgoing radiance) at intersection (NOTE THAT WE ASSUME LAMBERTIAN SURFACE HERE)
-        //// --> Otherwise BRDF needs to be evaluated for the incoming direction at this point
-        //float r = optixLaunchParams.lightSourceTexture.colorBuffer[(vTexelCoord * optixLaunchParams.lightSourceTexture.size * 3) + (uTexelCoord * 3) + 0];
-        //float g = optixLaunchParams.lightSourceTexture.colorBuffer[(vTexelCoord * optixLaunchParams.lightSourceTexture.size * 3) + (uTexelCoord * 3) + 1];
-        //float b = optixLaunchParams.lightSourceTexture.colorBuffer[(vTexelCoord * optixLaunchParams.lightSourceTexture.size * 3) + (uTexelCoord * 3) + 2];
-
         RadianceCellGatherPRDAlt prd = loadRadianceCellGatherPRD();
         prd.resultColor = glm::vec3{ incomingRadiance.x, incomingRadiance.y, incomingRadiance.z };
 

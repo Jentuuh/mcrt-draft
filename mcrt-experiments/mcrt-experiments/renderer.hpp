@@ -198,7 +198,8 @@ namespace mcrt {
 
 		std::vector<int>				 directTextureSizes;
 		std::vector<cudaArray_t>         textureArrays;
-		std::vector<cudaTextureObject_t> textureObjects;
+		std::vector<cudaTextureObject_t> diffuseTextureObjects;
+		CUDABuffer diffuseTextureObjectPointersBuffer;
 
 		std::vector<cudaTextureObject_t> textureObjectsDirect;
 		std::vector<cudaSurfaceObject_t> surfaceObjectsDirect;
@@ -219,10 +220,12 @@ namespace mcrt {
 		std::vector<cudaTextureObject_t> UVWorldPositionsTextures;
 		std::vector<cudaTextureObject_t> UVNormalsTextures;
 		std::vector<cudaTextureObject_t> UVDiffuseColorTextures;
-		std::vector<cudaTextureObject_t> diffuseTextureUVsTextures;
+		std::vector<cudaTextureObject_t> diffuseTextureUVsTextures; // Textures that contain the diffuse texture UVs for each texel of an object (since we need both lightmapped UVs and diff. texture UVs)
+		std::vector<int> objectHasTexture;
 		CUDABuffer uvWorldPositionTextureObjectPointersBuffer;
 		CUDABuffer uvNormalTextureObjectPointersBuffer;
 		CUDABuffer uvDiffuseColorTextureObjectPointersBuffer;
 		CUDABuffer diffuseTextureUVsTextureObjectPointersBuffer;
+		CUDABuffer objectHasTextureBuffer;
 	};
 }

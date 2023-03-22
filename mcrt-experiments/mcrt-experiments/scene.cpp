@@ -114,7 +114,6 @@ namespace mcrt {
         loadModelFromOBJWithMultipleUVs("../models/sponza-components/spikes.obj", "../models/sponza-components/spikes.obj");
         loadModelFromOBJWithMultipleUVs("../models/sponza-components/square_panel_back.obj", "../models/sponza-components/square_panel_back.obj");
         loadModelFromOBJWithMultipleUVs("../models/sponza-components/water_dish.obj", "../models/sponza-components/water_dish.obj");
-
     }
 
 

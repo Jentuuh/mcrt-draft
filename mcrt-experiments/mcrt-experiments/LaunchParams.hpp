@@ -100,6 +100,10 @@ namespace mcrt {
 		cudaSurfaceObject_t* currentBounceTextures;
 		int* objectTextureResolutions;
 
+		int* hasTexture;
+		cudaTextureObject_t* diffuseTextures;
+		cudaTextureObject_t* diffuseTextureUVs;
+
 		glm::vec2* uvsInside;
 		int* uvsInsideOffsets;
 		int* uvGameObjectNrs;
@@ -166,10 +170,13 @@ namespace mcrt {
 		cudaSurfaceObject_t* currentBounceTextures;
 		int* objectTextureResolutions;
 
+		int* hasTexture;
+		cudaTextureObject_t* diffuseTextures;
+		cudaTextureObject_t* diffuseTextureUVs;
+
 		glm::vec2* uvsInside;
 		int* uvsInsideOffsets;
 		int* uvGameObjectNrs;
-
 
 		glm::vec3 cellCenter;
 		float cellSize;

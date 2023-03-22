@@ -102,7 +102,17 @@ namespace mcrt {
 
         glm::vec3 UVWorldPos = glm::vec3{ uvWorldPos3f.x, uvWorldPos3f.y, uvWorldPos3f.z };
         const glm::vec3 UVNormal = glm::vec3{ uvWorldNormal3f.x, uvWorldNormal3f.y, uvWorldNormal3f.z };
-        const glm::vec3 diffuseColor = glm::vec3{ uvDiffuseColor3f.x, uvDiffuseColor3f.y, uvDiffuseColor3f.z };
+        glm::vec3 diffuseColor = glm::vec3{ uvDiffuseColor3f.x, uvDiffuseColor3f.y, uvDiffuseColor3f.z };
+
+        if (optixLaunchParams.hasTexture[gameObjectNr])
+        {
+            // Get diffuse texture coordinates
+            float4 diffuseTextureUV = tex2D<float4>(optixLaunchParams.diffuseTextureUVs[gameObjectNr], uv.x, uv.y);
+
+            // Read color from diffuse texture
+            float4 diffuseTexColor = tex2D<float4>(optixLaunchParams.diffuseTextures[gameObjectNr], diffuseTextureUV.x, diffuseTextureUV.y);
+            diffuseColor = glm::vec3{ diffuseTexColor.x, diffuseTexColor.y, diffuseTexColor.z };
+        }
 
         float3 uvNormal3f = float3{ UVNormal.x, UVNormal.y, UVNormal.z };
 
@@ -242,6 +252,10 @@ namespace mcrt {
             }
         }
 
+        // "Diffuse BRDF" 
+        totalRadiance *= diffuseColor;
+
+        // Monte-Carlo weighted estimation
         const float r = totalRadiance.x / (float(numSamples) * PI);
         const float g = totalRadiance.y / (float(numSamples) * PI);
         const float b = totalRadiance.z / (float(numSamples) * PI);

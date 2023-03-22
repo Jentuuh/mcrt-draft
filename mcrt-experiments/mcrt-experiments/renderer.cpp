@@ -38,7 +38,7 @@ namespace mcrt {
         createTextures();
 
         std::cout << "Setting up pipelines..." << std::endl;
-        GeometryBufferHandle geometryData = GeometryBufferHandle{ vertexBuffers, indexBuffers, normalBuffers, texcoordBuffers, diffuseTextureUVBuffers, textureObjects, amountVertices, amountIndices };
+        GeometryBufferHandle geometryData = GeometryBufferHandle{ vertexBuffers, indexBuffers, normalBuffers, texcoordBuffers, diffuseTextureUVBuffers, diffuseTextureObjects, amountVertices, amountIndices };
 
         if (irradianceStorage == OCTREE_TEXTURE)
         {
@@ -115,7 +115,7 @@ namespace mcrt {
                 initLightProbeCubeMaps(64, scene.grid.resolution.x);
             }
             calculateDirectLighting();
-            // calculateIndirectLighting(bias, probeType);
+            calculateIndirectLighting(bias, probeType);
         }
 
         std::cout << "Context, module, pipelines, etc, all set up." << std::endl;
@@ -178,7 +178,7 @@ namespace mcrt {
         int numTextures = (int)scene.getTextures().size();
 
         textureArrays.resize(numTextures);
-        textureObjects.resize(numTextures);
+        diffuseTextureObjects.resize(numTextures);
 
         for (int textureID = 0; textureID < numTextures; textureID++) {
             auto texture = scene.getTextures()[textureID];
@@ -222,8 +222,10 @@ namespace mcrt {
             // Create texture object
             cudaTextureObject_t cuda_tex = 0;
             CUDA_CHECK(CreateTextureObject(&cuda_tex, &res_desc, &tex_desc, nullptr));
-            textureObjects[textureID] = cuda_tex;
+            diffuseTextureObjects[textureID] = cuda_tex;
         }
+
+        diffuseTextureObjectPointersBuffer.alloc_and_upload(diffuseTextureObjects);
     }
 
 
@@ -575,6 +577,9 @@ namespace mcrt {
 
     void Renderer::initLightingTexturesPerObject()
     {   
+        // Hardcoded for sponza scene
+        std::vector<int> textureSizes{ 4096, 4096, 8192, 4096, 2048, 2048, 2048, 1024, 2048, 2048, 2048, 1024, 1024, 1024, 1024, 2048, 1024, 1024, 2048, 1024, 8192, 2048, 256, 256, 1024 };
+
         int numTextures = scene.getGameObjects().size();
 
         textureObjectsDirect.resize(numTextures);
@@ -591,8 +596,9 @@ namespace mcrt {
             // Decide texture resolution based on the object's surface area
             float objectArea = scene.getGameObjects()[textureID]->surfaceArea();
             //int size = objectArea * 512;
-            int size = 1024;
-            size = GeneralUtils::pow2roundup(size);
+            int size = 800;
+            //int size = textureSizes[textureID];
+            //size = GeneralUtils::pow2roundup(size);
 
             // We cannot have textures of 0x0
             if (size == 0)
@@ -836,7 +842,7 @@ namespace mcrt {
             // Diffuse color texture (per object)
             directLightPipeline->launchParams.hasTexture = scene.getGameObjects()[o]->model->mesh->diffuseTextureID > -1;
             if (directLightPipeline->launchParams.hasTexture) {
-                directLightPipeline->launchParams.diffuseTexture = textureObjects[o];
+                directLightPipeline->launchParams.diffuseTexture = diffuseTextureObjects[o];
             }
 
             // Irradiance texture data
@@ -1266,6 +1272,11 @@ namespace mcrt {
 
             radianceCellScatterCubeMapPipeline->launchParams.objectTextureResolutions = (int*) textureSizesBuffer.d_pointer();
 
+            // Diffuse texture data
+            radianceCellScatterCubeMapPipeline->launchParams.hasTexture = (int*) objectHasTextureBuffer.d_pointer();
+            radianceCellScatterCubeMapPipeline->launchParams.diffuseTextures = (cudaTextureObject_t*) diffuseTextureObjectPointersBuffer.d_pointer();
+            radianceCellScatterCubeMapPipeline->launchParams.diffuseTextureUVs = (cudaTextureObject_t*)diffuseTextureUVsTextureObjectPointersBuffer.d_pointer();
+
             radianceCellScatterCubeMapPipeline->uploadLaunchParams();
 
             OPTIX_CHECK(optixLaunch(
@@ -1422,8 +1433,12 @@ namespace mcrt {
             radianceCellScatterUnbiasedPipeline->launchParams.uvPositions = (cudaTextureObject_t*)uvWorldPositionTextureObjectPointersBuffer.d_pointer();
             radianceCellScatterUnbiasedPipeline->launchParams.uvNormals = (cudaTextureObject_t*)uvNormalTextureObjectPointersBuffer.d_pointer();
             radianceCellScatterUnbiasedPipeline->launchParams.uvDiffuseColors = (cudaTextureObject_t*)uvDiffuseColorTextureObjectPointersBuffer.d_pointer();
-
             radianceCellScatterUnbiasedPipeline->launchParams.objectTextureResolutions = (int*)textureSizesBuffer.d_pointer();
+
+            // Diffuse texture data
+            radianceCellScatterUnbiasedPipeline->launchParams.hasTexture = (int*)objectHasTextureBuffer.d_pointer();
+            radianceCellScatterUnbiasedPipeline->launchParams.diffuseTextures = (cudaTextureObject_t*)diffuseTextureObjectPointersBuffer.d_pointer();
+            radianceCellScatterUnbiasedPipeline->launchParams.diffuseTextureUVs = (cudaTextureObject_t*)diffuseTextureUVsTextureObjectPointersBuffer.d_pointer();
 
             radianceCellScatterUnbiasedPipeline->uploadLaunchParams();
 
@@ -1941,10 +1956,13 @@ namespace mcrt {
         UVNormalsTextures.resize(numObjects);
         UVDiffuseColorTextures.resize(numObjects);
         diffuseTextureUVsTextures.resize(numObjects);
+        objectHasTexture.resize(numObjects);
 
         for (int o = 0; o < numObjects; o++)
         {
             std::cout << "SANITY CHECK: amount of vertices " << scene.getGameObjects()[o]->model->mesh->vertices.size() << ", amount of diffuse UVs: " << scene.getGameObjects()[o]->model->mesh->diffuseTextureCoords.size() << std::endl;
+
+            objectHasTexture[o] = scene.getGameObjects()[o]->model->mesh->diffuseTextureID > -1;
 
             int texSize = directTextureSizes[o];
 
@@ -2109,6 +2127,7 @@ namespace mcrt {
         uvNormalTextureObjectPointersBuffer.alloc_and_upload(UVNormalsTextures);
         uvDiffuseColorTextureObjectPointersBuffer.alloc_and_upload(UVDiffuseColorTextures);
         diffuseTextureUVsTextureObjectPointersBuffer.alloc_and_upload(diffuseTextureUVsTextures);
+        objectHasTextureBuffer.alloc_and_upload(objectHasTexture);
     }
 
 
@@ -2226,7 +2245,7 @@ namespace mcrt {
                     if (g->model->mesh->diffuseTextureID >= 0)
                     {   
                         newSamplePoint.hasTexture = true;
-                        newSamplePoint.textureObject = textureObjects[g->model->mesh->diffuseTextureID];
+                        newSamplePoint.textureObject = diffuseTextureObjects[g->model->mesh->diffuseTextureID];
                         newSamplePoint.uvCoords = w * g->model->mesh->texCoords[triangle[0]] + u * g->model->mesh->texCoords[triangle[1]] + v * g->model->mesh->texCoords[triangle[2]];
                     }
                     
