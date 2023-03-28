@@ -7,6 +7,6 @@ namespace mcrt {
 
 	void HDRImage::saveImage(std::string fileName)
 	{
-		stbi_write_hdr(fileName.c_str(), width, height, 3, pixels);
+		stbi_write_hdr(fileName.c_str(), width, height, 4, pixels);
 	}
 }

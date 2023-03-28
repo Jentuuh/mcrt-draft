@@ -35,7 +35,7 @@ namespace mcrt {
         fillGeometryBuffers();
 
         std::cout << "Loading textures..." << std::endl;
-        createTextures();
+        createDiffuseTextures();
 
         std::cout << "Setting up pipelines..." << std::endl;
         GeometryBufferHandle geometryData = GeometryBufferHandle{ vertexBuffers, indexBuffers, normalBuffers, texcoordBuffers, diffuseTextureUVBuffers, diffuseTextureObjects, amountVertices, amountIndices };
@@ -102,7 +102,8 @@ namespace mcrt {
             }
 
             initLightingTexturesPerObject();
-            prepareUVWorldPositionsPerObject();
+            //createWorldDataTextures();
+            prepareUVWorldPositionsPerObject(LOAD_WORLD_DATA);
             prepareUVsInsideBuffer();
 
             if (bias == BIASED_PROBES && probeType == CUBE_MAP)
@@ -168,15 +169,15 @@ namespace mcrt {
         }
     }
 
-    void Renderer::createTextures()
+    void Renderer::createDiffuseTextures()
     {
-        int numTextures = (int)scene.getTextures().size();
+        int numTextures = (int)scene.getDiffuseTextures().size();
 
         textureArrays.resize(numTextures);
         diffuseTextureObjects.resize(numTextures);
 
         for (int textureID = 0; textureID < numTextures; textureID++) {
-            auto texture = scene.getTextures()[textureID];
+            auto texture = scene.getDiffuseTextures()[textureID];
 
             cudaResourceDesc res_desc = {};
 
@@ -222,6 +223,172 @@ namespace mcrt {
 
         diffuseTextureObjectPointersBuffer.alloc_and_upload(diffuseTextureObjects);
     }
+
+    void Renderer::createWorldDataTextures()
+    {
+        // ===================
+        // World position data
+        // ===================
+        int numTextures = (int)scene.getWorldPosTextures().size();
+
+        textureArrays.resize(numTextures);
+        UVWorldPositionsTextures.resize(numTextures);
+
+        for (int textureID = 0; textureID < numTextures; textureID++) {
+            auto texture = scene.getWorldPosTextures()[textureID];
+
+            for (int i = 8627066; i < 8627066 + 16; i++)
+            {
+                std::cout << texture->pixel[i] << std::endl;
+            }
+
+            cudaResourceDesc res_desc = {};
+
+            cudaChannelFormatDesc channel_desc;
+            int32_t width = texture->resolution.x;
+            int32_t height = texture->resolution.y;
+            int32_t pitch = width * sizeof(float4);;
+            channel_desc = cudaCreateChannelDesc<float4>();
+
+            //cudaArray_t& pixelArray = textureArrays[textureID];
+            cudaArray* worldPosArray;
+
+            CUDA_CHECK(MallocArray(&worldPosArray,
+                &channel_desc,
+                width, height));
+
+            CUDA_CHECK(Memcpy2DToArray(worldPosArray,
+                /* offset */0, 0,
+                texture->pixel,
+                pitch, pitch, height,
+                cudaMemcpyHostToDevice));
+
+            res_desc.resType = cudaResourceTypeArray;
+            res_desc.res.array.array = worldPosArray;
+
+            cudaTextureDesc tex_desc = {};
+            tex_desc.addressMode[0] = cudaAddressModeWrap;
+            tex_desc.addressMode[1] = cudaAddressModeWrap;
+            tex_desc.filterMode = cudaFilterModePoint;
+            tex_desc.readMode = cudaReadModeElementType;
+            tex_desc.normalizedCoords = 1;
+            tex_desc.maxAnisotropy = 1;
+            tex_desc.maxMipmapLevelClamp = 99;
+            tex_desc.minMipmapLevelClamp = 0;
+            tex_desc.mipmapFilterMode = cudaFilterModePoint;
+            tex_desc.borderColor[0] = 1.0f;
+            tex_desc.sRGB = 0;
+
+            // Create texture object
+            cudaTextureObject_t cuda_tex = 0;
+            CUDA_CHECK(CreateTextureObject(&cuda_tex, &res_desc, &tex_desc, nullptr));
+            UVWorldPositionsTextures[textureID] = cuda_tex;
+        }
+
+        // =================
+        // World normal data
+        // =================
+        numTextures = (int)scene.getWorldNormalTextures().size();
+
+        UVNormalsTextures.resize(numTextures);
+
+        for (int textureID = 0; textureID < numTextures; textureID++) {
+            auto texture = scene.getWorldNormalTextures()[textureID];
+
+            cudaResourceDesc res_desc = {};
+
+            cudaChannelFormatDesc channel_desc;
+            int32_t width = texture->resolution.x;
+            int32_t height = texture->resolution.y;
+            int32_t pitch = width * sizeof(float4);;
+            channel_desc = cudaCreateChannelDesc<float4>();
+
+            cudaArray* worldNormalArray;
+
+            CUDA_CHECK(MallocArray(&worldNormalArray,
+                &channel_desc,
+                width, height));
+
+            CUDA_CHECK(Memcpy2DToArray(worldNormalArray,
+                /* offset */0, 0,
+                texture->pixel,
+                pitch, pitch, height,
+                cudaMemcpyHostToDevice));
+
+            res_desc.resType = cudaResourceTypeArray;
+            res_desc.res.array.array = worldNormalArray;
+
+            cudaTextureDesc tex_desc = {};
+            tex_desc.addressMode[0] = cudaAddressModeWrap;
+            tex_desc.addressMode[1] = cudaAddressModeWrap;
+            tex_desc.filterMode = cudaFilterModePoint;
+            tex_desc.readMode = cudaReadModeElementType;
+            tex_desc.normalizedCoords = 1;
+            tex_desc.maxAnisotropy = 1;
+            tex_desc.maxMipmapLevelClamp = 99;
+            tex_desc.minMipmapLevelClamp = 0;
+            tex_desc.mipmapFilterMode = cudaFilterModePoint;
+            tex_desc.borderColor[0] = 1.0f;
+            tex_desc.sRGB = 0;
+
+            // Create texture object
+            cudaTextureObject_t cuda_tex = 0;
+            CUDA_CHECK(CreateTextureObject(&cuda_tex, &res_desc, &tex_desc, nullptr));
+            UVNormalsTextures[textureID] = cuda_tex;
+        }
+
+        // =============================
+        // World diffuse tex coords data
+        // =============================
+        numTextures = (int)scene.getWorldDiffuseCoordsTextures().size();
+        diffuseTextureUVsTextures.resize(numTextures);
+
+        for (int textureID = 0; textureID < numTextures; textureID++) {
+            auto texture = scene.getWorldNormalTextures()[textureID];
+
+            cudaResourceDesc res_desc = {};
+
+            cudaChannelFormatDesc channel_desc;
+            int32_t width = texture->resolution.x;
+            int32_t height = texture->resolution.y;
+            int32_t pitch = width * sizeof(float4);;
+            channel_desc = cudaCreateChannelDesc<float4>();
+
+            cudaArray* diffuseTextureUVArray;
+
+            CUDA_CHECK(MallocArray(&diffuseTextureUVArray,
+                &channel_desc,
+                width, height));
+
+            CUDA_CHECK(Memcpy2DToArray(diffuseTextureUVArray,
+                /* offset */0, 0,
+                texture->pixel,
+                pitch, pitch, height,
+                cudaMemcpyHostToDevice));
+
+            res_desc.resType = cudaResourceTypeArray;
+            res_desc.res.array.array = diffuseTextureUVArray;
+
+            cudaTextureDesc tex_desc = {};
+            tex_desc.addressMode[0] = cudaAddressModeWrap;
+            tex_desc.addressMode[1] = cudaAddressModeWrap;
+            tex_desc.filterMode = cudaFilterModePoint;
+            tex_desc.readMode = cudaReadModeElementType;
+            tex_desc.normalizedCoords = 1;
+            tex_desc.maxAnisotropy = 1;
+            tex_desc.maxMipmapLevelClamp = 99;
+            tex_desc.minMipmapLevelClamp = 0;
+            tex_desc.mipmapFilterMode = cudaFilterModePoint;
+            tex_desc.borderColor[0] = 1.0f;
+            tex_desc.sRGB = 0;
+
+            // Create texture object
+            cudaTextureObject_t cuda_tex = 0;
+            CUDA_CHECK(CreateTextureObject(&cuda_tex, &res_desc, &tex_desc, nullptr));
+            diffuseTextureUVsTextures[textureID] = cuda_tex;
+        }
+    }
+
 
 
     void Renderer::initOptix()
@@ -388,7 +555,7 @@ namespace mcrt {
     void Renderer::initLightingTexturesPerObject()
     {   
         // Hardcoded for sponza scene
-        std::vector<int> textureSizes{ 4096, 4096, 8192, 4096, 2048, 2048, 2048, 1024, 2048, 2048, 2048, 1024, 1024, 1024, 1024, 2048, 1024, 1024, 2048, 1024, 8192, 2048, 256, 256, 1024 };
+        std::vector<int> textureSizes{ 2048, 2048, 4096, 2048, 2048, 2048, 2048, 1024, 2048, 2048, 2048, 1024, 1024, 1024, 1024, 2048, 1024, 1024, 2048, 1024, 4096, 2048, 256, 256, 1024 };
 
         int numTextures = scene.getGameObjects().size();
 
@@ -404,10 +571,10 @@ namespace mcrt {
         for (int textureID = 0; textureID < numTextures; textureID++) {
 
             // Decide texture resolution based on the object's surface area
-            float objectArea = scene.getGameObjects()[textureID]->surfaceArea();
-            int size = objectArea * 512;
-            //int size = 1200;
-            //int size = textureSizes[textureID];
+            //float objectArea = scene.getGameObjects()[textureID]->surfaceArea();
+            //int size = objectArea * 512;
+            //int size = 2048;
+            int size = textureSizes[textureID];
             size = GeneralUtils::pow2roundup(size);
 
             // We cannot have textures of 0x0
@@ -646,7 +813,7 @@ namespace mcrt {
             // UV world data
             directLightPipeline->launchParams.uvPositions = UVWorldPositionsTextures[o];
             directLightPipeline->launchParams.uvNormals = UVNormalsTextures[o];
-            directLightPipeline->launchParams.uvDiffuseColors = UVDiffuseColorTextures[o];
+            //directLightPipeline->launchParams.uvDiffuseColors = UVDiffuseColorTextures[o];
             directLightPipeline->launchParams.diffuseTextureUVs = diffuseTextureUVsTextures[o];
             
             // Diffuse color texture (per object)
@@ -1600,8 +1767,17 @@ namespace mcrt {
         }
     }
 
-    void Renderer::prepareUVWorldPositionsPerObject()
+    void Renderer::prepareUVWorldPositionsPerObject(WORLD_DATA_LOAD loadOrCalculate)
     {
+        std::string saveDirPositions = "../data/world_data_textures/positions/";
+        std::string saveDirNormals = "../data/world_data_textures/normals/";
+        std::string saveDirDiffuseCoords = "../data/world_data_textures/diffuse_coords/";
+
+        std::vector<std::string> fileNames {"arcs.txt", "arcs2.txt", "building_core.txt", "bushes.txt", "curtains.txt", 
+        "curtains2.txt", "curtains3.txt","doors.txt","drapes.txt", "drapes2.txt", "drapes3.txt", "fire_pit.txt", "lion.txt", 
+        "lion_background.txt", "pillars.txt", "pillars_up.txt", "pillars_up2.txt", "plants.txt", "platforms.txt", "pots.txt",
+        "roof.txt", "spears.txt", "spikes.txt", "square_panel_back.txt", "water_dish.txt"};
+
         int numObjects = scene.getGameObjects().size();
 
         UVWorldPositionsTextures.resize(numObjects);
@@ -1618,49 +1794,104 @@ namespace mcrt {
 
             int texSize = directTextureSizes[o];
 
-            std::vector<float> worldPositions(texSize * texSize * 4, -1000.0f);
-            std::vector<float> worldNormals(texSize * texSize * 4, 0.0f);
-            std::vector<float> diffuseColors(texSize * texSize * 4, 0.0f);
-            std::vector<float> diffuseTextureUVs(texSize * texSize * 4, 0.0f);
+            std::vector<float> worldPositions;
+            std::vector<float> worldNormals;
+            std::vector<float> diffuseColors;
+            std::vector<float> diffuseTextureUVs;
 
-            float progress = 0.1f;
-            for (int i = 0; i < texSize * texSize; i++)
+            if (loadOrCalculate == LOAD_WORLD_DATA)
             {
-                const float u = float(i % texSize) / float(texSize);
-                // (i - i % texSize) / texSize gives us the row number, divided by texSize gives us the V coordinate 
-                const float v = (float((i - (i % texSize))) / float(texSize)) / float(texSize);
-                glm::vec2 uv = glm::vec2{ u,v };
-                UVWorldData uvWorldData = UVto3DPerObject(uv, scene.getGameObjects()[o]);
+                diffuseColors.resize(texSize * texSize * 4, 0.0f);                
 
-                worldPositions[i * 4 + 0] = uvWorldData.worldPosition.x;
-                worldPositions[i * 4 + 1] = uvWorldData.worldPosition.y;
-                worldPositions[i * 4 + 2] = uvWorldData.worldPosition.z;
-                worldPositions[i * 4 + 3] = 0.0f;
+                readWorldDataTextureFromFile(saveDirPositions + fileNames[o], worldPositions);
+                readWorldDataTextureFromFile(saveDirNormals + fileNames[o], worldNormals);
+                readWorldDataTextureFromFile(saveDirDiffuseCoords + fileNames[o], diffuseTextureUVs);
 
-                worldNormals[i * 4 + 0] = uvWorldData.worldNormal.x;
-                worldNormals[i * 4 + 1] = uvWorldData.worldNormal.y;
-                worldNormals[i * 4 + 2] = uvWorldData.worldNormal.z;
-                worldNormals[i * 4 + 3] = 0.0f;
-
-                diffuseColors[i * 4 + 0] = uvWorldData.diffuseColor.x;
-                diffuseColors[i * 4 + 1] = uvWorldData.diffuseColor.y;
-                diffuseColors[i * 4 + 2] = uvWorldData.diffuseColor.z;
-                diffuseColors[i * 4 + 3] = 0.0f;
-
-                diffuseTextureUVs[i * 4 + 0] = uvWorldData.diffuseTextureUV.x;
-                diffuseTextureUVs[i * 4 + 1] = uvWorldData.diffuseTextureUV.y;
-                diffuseTextureUVs[i * 4 + 2] = 0.0f;
-                diffuseTextureUVs[i * 4 + 3] = 0.0f;
-
-                // Assign this UV to the cell that it belongs to, so in the scattering pass we can operate on local UVs
-                scene.grid.assignUVToCells(uv, uvWorldData.worldPosition, o);
-
-                if (float(i) / float(texSize * texSize) > progress)
+                // Assign UVs to radiance grid cells
+                for (int i = 0; i < texSize * texSize; i++)
                 {
-                    std::cout << "Progress: " << progress * 100 << "%." << std::endl;
-                    progress += 0.1f;
+                    const float u = float(i % texSize) / float(texSize);
+                    // (i - i % texSize) / texSize gives us the row number, divided by texSize gives us the V coordinate 
+                    const float v = (float((i - (i % texSize))) / float(texSize)) / float(texSize);
+                    glm::vec2 uv = glm::vec2{ u,v };
+                    
+                    glm::vec3 worldPosition = glm::vec3{ worldPositions[i * 4 + 0], worldPositions[i * 4 + 1], worldPositions[i * 4 + 2] };
+
+                    // If this uv coordinate actually contains a surface (and therefore changed the initialization value)
+                    if (worldPosition.x != -1000.0f)
+                    {
+                        scene.grid.assignUVToCells(uv, worldPosition, o);
+                    }
                 }
             }
+            else if (loadOrCalculate == CALCULATE_WORLD_DATA)
+            {
+                worldPositions.clear();
+                worldNormals.clear();
+                diffuseColors.clear();
+                diffuseTextureUVs.clear();
+                worldPositions.resize(texSize * texSize * 4, -1000.0f);
+                worldNormals.resize(texSize * texSize * 4, 0.0f);
+                diffuseColors.resize(texSize * texSize * 4, 0.0f);
+                diffuseTextureUVs.resize(texSize * texSize * 4, 0.0f);
+
+                float progress = 0.1f;
+                for (int i = 0; i < texSize * texSize; i++)
+                {
+                    const float u = float(i % texSize) / float(texSize);
+                    // (i - i % texSize) / texSize gives us the row number, divided by texSize gives us the V coordinate 
+                    const float v = (float((i - (i % texSize))) / float(texSize)) / float(texSize);
+                    glm::vec2 uv = glm::vec2{ u,v };
+                    UVWorldData uvWorldData = UVto3DPerObject(uv, scene.getGameObjects()[o]);
+
+                    worldPositions[i * 4 + 0] = uvWorldData.worldPosition.x;
+                    worldPositions[i * 4 + 1] = uvWorldData.worldPosition.y;
+                    worldPositions[i * 4 + 2] = uvWorldData.worldPosition.z;
+                    worldPositions[i * 4 + 3] = 0.0f;
+
+                    worldNormals[i * 4 + 0] = uvWorldData.worldNormal.x;
+                    worldNormals[i * 4 + 1] = uvWorldData.worldNormal.y;
+                    worldNormals[i * 4 + 2] = uvWorldData.worldNormal.z;
+                    worldNormals[i * 4 + 3] = 0.0f;
+
+                    diffuseColors[i * 4 + 0] = uvWorldData.diffuseColor.x;
+                    diffuseColors[i * 4 + 1] = uvWorldData.diffuseColor.y;
+                    diffuseColors[i * 4 + 2] = uvWorldData.diffuseColor.z;
+                    diffuseColors[i * 4 + 3] = 0.0f;
+
+                    diffuseTextureUVs[i * 4 + 0] = uvWorldData.diffuseTextureUV.x;
+                    diffuseTextureUVs[i * 4 + 1] = uvWorldData.diffuseTextureUV.y;
+                    diffuseTextureUVs[i * 4 + 2] = 0.0f;
+                    diffuseTextureUVs[i * 4 + 3] = 0.0f;
+
+                    // Assign this UV to the cell that it belongs to, so in the scattering pass we can operate on local UVs
+                    scene.grid.assignUVToCells(uv, uvWorldData.worldPosition, o);
+
+                    if (float(i) / float(texSize * texSize) > progress)
+                    {
+                        std::cout << "Progress: " << progress * 100 << "%." << std::endl;
+                        progress += 0.1f;
+                    }
+                }
+
+ /*               writeWorldDataTextureToFile(worldPositions, saveDirPositions + fileNames[o]);
+                writeWorldDataTextureToFile(worldNormals, saveDirNormals + fileNames[o]);
+                writeWorldDataTextureToFile(diffuseTextureUVs, saveDirDiffuseCoords + fileNames[o]);*/
+            }
+
+  /*          for (int i = 0; i < worldPositions.size(); i++)
+            {
+                std::cout << worldPositions[i] << std::endl;
+            }*/
+            
+            //HDRImage hdr{ texSize , texSize, worldPositions.data() };
+            //hdr.saveImage("../debug_output/worldpos.hdr");
+
+            //HDRImage hdrNormals{ texSize , texSize, worldNormals.data() };
+            //hdrNormals.saveImage("../debug_output/worldnormals.hdr");
+
+            //HDRImage hdrDiffCoord{ texSize , texSize, diffuseTextureUVs.data() };
+            //hdrDiffCoord.saveImage("../debug_output/diffcoords.hdr");
 
             cudaChannelFormatDesc channelDesc;
             channelDesc = cudaCreateChannelDesc<float4>();
@@ -1746,7 +1977,7 @@ namespace mcrt {
             cudaTextureDesc texDesc = {};
             texDesc.addressMode[0] = cudaAddressModeWrap;
             texDesc.addressMode[1] = cudaAddressModeWrap;
-            texDesc.filterMode = cudaFilterModeLinear;
+            texDesc.filterMode = cudaFilterModePoint;
             texDesc.readMode = cudaReadModeElementType;
             texDesc.normalizedCoords = 1;
             texDesc.maxAnisotropy = 1;
@@ -1915,6 +2146,37 @@ namespace mcrt {
         }
 
         std::cout << "Done generating world sample points. Amount of points generated: " << samplePointWorldData.size() << std::endl;
+    }
+
+    void Renderer::writeWorldDataTextureToFile(std::vector<float>& worldDataTexture, std::string fileName)
+    {
+        std::ofstream outputFile(fileName);
+        for (auto& e : worldDataTexture)
+        {
+            outputFile << e << std::endl;
+        }
+        outputFile.close();
+        std::cout << "Saved " << fileName << " to file." << std::endl;
+    }
+
+    void Renderer::readWorldDataTextureFromFile(std::string fileName, std::vector<float>& container)
+    {
+        // Create a text string, which is used to output the text file
+        std::string line;
+
+        // Read from the text file
+        std::ifstream inputFile(fileName);
+
+        // Use a while loop together with the getline() function to read the file line by line
+        while (getline(inputFile, line)) {
+            
+            container.push_back(std::stof(line));
+        }
+
+        // Close the file
+        inputFile.close();
+        std::cout << "Read " << fileName << " from file." << std::endl;
+
     }
 
 

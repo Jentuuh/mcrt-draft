@@ -117,6 +117,91 @@ namespace mcrt {
     }
 
 
+    void Scene::loadWorldDataTextures()
+    {
+        // World position data
+        //loadDataTexture("../data/world_data_textures/positions/arcs.png", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/arcs2.png", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/building_core.png", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/bushes.png", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/curtains.png", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/curtains2.png", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/curtains3.png", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/doors.png", worldPosTextures);
+        loadHDRDataTexture("../data/world_data_textures/positions/drapes.hdr", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/drapes2.png", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/drapes3.png", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/fire_pit.png", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/lion.png", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/lion_background.png", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/pillars.png", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/pillars_up.png", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/pillars_up2.png", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/plants.png", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/platforms.png", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/pots.png", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/roof.png", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/spears.png", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/spikes.png", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/square_panel_back.png", worldPosTextures);
+        //loadDataTexture("../data/world_data_textures/positions/water_dish.png", worldPosTextures);
+
+        // World normal data
+        //loadDataTexture("../data/world_data_textures/normals/arcs.png", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/arcs2.png", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/building_core.png", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/bushes.png", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/curtains.png", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/curtains2.png", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/curtains3.png", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/doors.png", worldNormalTextures);
+        loadHDRDataTexture("../data/world_data_textures/normals/drapes.hdr", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/drapes2.png", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/drapes3.png", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/fire_pit.png", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/lion.png", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/lion_background.png", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/pillars.png", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/pillars_up.png", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/pillars_up2.png", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/plants.png", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/platforms.png", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/pots.png", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/roof.png", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/spears.png", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/spikes.png", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/square_panel_back.png", worldNormalTextures);
+        //loadDataTexture("../data/world_data_textures/normals/water_dish.png", worldNormalTextures);
+
+        // Diffuse tex coords data
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/arcs.png", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/arcs2.png", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/building_core.png", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/bushes.png", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/curtains.png", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/curtains2.png", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/curtains3.png", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/doors.png", worldDiffuseCoordsTextures);
+        loadHDRDataTexture("../data/world_data_textures/diffuse_coords/drapes.hdr", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/drapes2.png", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/drapes3.png", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/fire_pit.png", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/lion.png", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/lion_background.png", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/pillars.png", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/pillars_up.png", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/pillars_up2.png", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/plants.png", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/platforms.png", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/pots.png", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/roof.png", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/spears.png", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/spikes.png", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/square_panel_back.png", worldDiffuseCoordsTextures);
+        //loadDataTexture("../data/world_data_textures/diffuse_coords/water_dish.png", worldDiffuseCoordsTextures);
+    }
+
+
 
 	void Scene::addGameObject(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale, std::shared_ptr<Model> model)
 	{
@@ -599,7 +684,7 @@ namespace mcrt {
             &res.x, &res.y, &comp, STBI_rgb_alpha);
         int textureID = -1;
         if (image) {
-            textureID = (int)textures.size();
+            textureID = (int)diffuseTextures.size();
             std::shared_ptr<Texture> texture = std::make_shared<Texture>();
             texture->resolution = res;
             texture->pixel = (uint32_t*)image;
@@ -615,7 +700,7 @@ namespace mcrt {
                 }
             }
 
-            textures.push_back(texture);
+            diffuseTextures.push_back(texture);
         }
         else {
             std::cout << "Could not load texture from " << fileName << "!" << std::endl;
@@ -625,6 +710,98 @@ namespace mcrt {
         return textureID;
     }
 
+    void Scene::loadDataTexture(const std::string& filePath, std::vector<std::shared_ptr<Texture>>& storageVector)
+    {
+        glm::ivec2 res;
+        int   comp;
+        unsigned char* image = stbi_load(filePath.c_str(),
+            &res.x, &res.y, &comp, STBI_rgb_alpha);
+        if (image) {
+            std::shared_ptr<Texture> texture = std::make_shared<Texture>();
+            texture->resolution = res;
+            texture->pixel = (uint32_t*)image;
+
+            //for (int i = 0; i < res.x * res.x; i++)
+            //{
+            //    uint32_t color = texture->pixel[i];
+
+            //    int red = (color & 0x000000FF) >> 0;
+            //    int green = (color & 0x0000FF00) >> 8;
+            //    int blue = (color & 0x00FF0000) >> 16;
+            //    int alpha = (color & 0xFF000000) >> 24;
+            //    if (!(red == 0 && green == 0 && blue == 0))
+            //    {
+            //        std::cout << "r: " << red << " g: " << green << " b: " << blue <<  " a: " << alpha << std::endl;
+            //    }
+            //}
+
+            /* iw - actually, it seems that stbi loads the pictures
+               mirrored along the y axis - mirror them here */
+            for (int y = 0; y < res.y / 2; y++) {
+                uint32_t* line_y = texture->pixel + y * res.x;
+                uint32_t* mirrored_y = texture->pixel + (res.y - 1 - y) * res.x;
+                int mirror_y = res.y - 1 - y;
+                for (int x = 0; x < res.x; x++) {
+                    std::swap(line_y[x], mirrored_y[x]);
+                }
+            }
+
+            storageVector.push_back(texture);
+        }
+        else {
+            std::cout << "Could not load data texture from " << filePath << "!" << std::endl;
+        }
+    }
+
+    void Scene::loadHDRDataTexture(const std::string& filePath, std::vector<std::shared_ptr<HDRTexture>>& storageVector)
+    {
+        glm::ivec2 res;
+        int   comp;
+        //unsigned char* image = stbi_load(filePath.c_str(),
+        //    &res.x, &res.y, &comp, STBI_rgb_alpha);
+        stbi_ldr_to_hdr_gamma(1.0f);
+        stbi_ldr_to_hdr_scale(1.0f);
+        stbi_hdr_to_ldr_gamma(1.0f);
+        stbi_hdr_to_ldr_scale(1.0f);
+        float* image = stbi_loadf(filePath.c_str(),
+            &res.x, &res.y, &comp, STBI_rgb_alpha);
+
+        if (image) {
+            std::shared_ptr<HDRTexture> texture = std::make_shared<HDRTexture>();
+            texture->resolution = res;
+            texture->pixel = image;
+
+            //for (int i = 0; i < res.x * res.x; i++)
+            //{
+            //    uint32_t color = texture->pixel[i];
+
+            //    int red = (color & 0x000000FF) >> 0;
+            //    int green = (color & 0x0000FF00) >> 8;
+            //    int blue = (color & 0x00FF0000) >> 16;
+            //    int alpha = (color & 0xFF000000) >> 24;
+            //    if (!(red == 0 && green == 0 && blue == 0))
+            //    {
+            //        std::cout << "r: " << red << " g: " << green << " b: " << blue <<  " a: " << alpha << std::endl;
+            //    }
+            //}
+
+            ///* iw - actually, it seems that stbi loads the pictures
+            //   mirrored along the y axis - mirror them here */
+            //for (int y = 0; y < res.y / 2; y++) {
+            //    float* line_y = texture->pixel + y * res.x;
+            //    float* mirrored_y = texture->pixel + (res.y - 1 - y) * res.x;
+            //    int mirror_y = res.y - 1 - y;
+            //    for (int x = 0; x < res.x; x++) {
+            //        std::swap(line_y[x], mirrored_y[x]);
+            //    }
+            //}
+
+            storageVector.push_back(texture);
+        }
+        else {
+            std::cout << "Could not load data texture from " << filePath << "!" << std::endl;
+        }
+    }
 
 
 }

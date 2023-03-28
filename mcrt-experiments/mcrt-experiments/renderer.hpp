@@ -31,6 +31,11 @@ namespace mcrt {
 		BIASED_PROBES
 	};
 
+	enum WORLD_DATA_LOAD {
+		LOAD_WORLD_DATA,
+		CALCULATE_WORLD_DATA
+	};
+
 	enum PROBE_MODE {
 		CUBE_MAP,
 		SPHERICAL_HARMONICS,
@@ -81,7 +86,7 @@ namespace mcrt {
 		void calculateRadianceCellScatterUnbiasedOctree(int iteration, CUDABuffer& prevBounceOctreeTexture, CUDABuffer& dstOctreeTexture);
 
 		// Generate world sample data
-		void prepareUVWorldPositionsPerObject();
+		void prepareUVWorldPositionsPerObject(WORLD_DATA_LOAD loadOrCalculate);
 		void prepareUVsInsideBuffer();
 		void prepareWorldSamplePoints(float octreeLeafFaceArea);
 
@@ -94,6 +99,8 @@ namespace mcrt {
 		void barycentricCoordinates(glm::vec3 p, glm::vec3 a, glm::vec3 b, glm::vec3 c, float& u, float& v, float& w);
 		UVWorldData UVto3D(glm::vec2 uv);
 		UVWorldData UVto3DPerObject(glm::vec2 uv, std::shared_ptr<GameObject> o);
+		void writeWorldDataTextureToFile(std::vector<float>& worldDataTexture, std::string fileName);
+		void readWorldDataTextureFromFile(std::string fileName, std::vector<float>& container);
 
 		// Debug
 		void writeUVsPerCellToImage(std::vector<int>& offsets, std::vector<glm::vec2>& uvs, int texRes);
@@ -115,7 +122,10 @@ namespace mcrt {
 		void fillGeometryBuffers();
 
 		// Upload textures and create CUDA texture objects for them
-		void createTextures();
+		void createDiffuseTextures();
+
+		// Upload textures and create CUDA texture objects for them
+		void createWorldDataTextures();
 
 	protected:
 		// Renderer properties

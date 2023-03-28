@@ -25,8 +25,10 @@ namespace mcrt {
 	void App::loadScene()
 	{
 		//scene.loadModelFromOBJ("../models/crytek-sponza/sponza4.obj");
-		scene.loadModelFromOBJ("../models/cornell/cornell.obj");
-		//scene.loadSponzaComponents();
+		//scene.loadModelFromOBJ("../models/cornell/cornell.obj");
+		scene.loadSponzaComponents();
+
+		//scene.loadWorldDataTextures();
 
 		std::cout << "Loaded scene: " << scene.amountVertices() << " vertices. Scene Max: " << glm::to_string(scene.maxCoord()) << " Scene Min: " << glm::to_string(scene.minCoord()) << std::endl;
 		

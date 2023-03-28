@@ -353,3 +353,4 @@ MigrationBackup/
 # Custom ignores
 mcrt-experiments/*.png
 models/
+data/world_data_textures/
