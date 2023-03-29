@@ -14,22 +14,21 @@ namespace mcrt {
     {
         MCRTWindow(const std::string& title,
             Scene& model,
-            const Camera& camera,
+            Camera& camera,
             const float worldScale)
             : GLFCameraWindow(title, camera.position, camera.target, camera.up, worldScale),
             sample(model, camera, UNBIASED, NA, TEXTURE_2D)
         {
-            sample.updateCamera(camera);
+            viewerObject = std::make_unique<GameObject>(Transform{ {0.5f, 0.5f, 0.5f}, {0.0f, glm::pi<float>(), 0.0f}, {1.0f, 1.0f, 1.0f}}, nullptr);
+            sample.updateCamera(viewerObject.get());
         }
 
-        virtual void render() override
+        virtual void render(float deltaTime) override
         {
-            if (cameraFrame.modified) {
-
-                sample.updateCamera(Camera{ cameraFrame.get_from(),
-                                         cameraFrame.get_at(),
-                                         cameraFrame.get_up() });
-                cameraFrame.modified = false;
+            cameraController.moveInPlaneXZ(this->handle, deltaTime, viewerObject.get());
+            if (cameraController.cameraModified) {
+                sample.updateCamera(viewerObject.get());
+                cameraController.cameraModified = false;
             }
             sample.render();
         }
@@ -85,11 +84,12 @@ namespace mcrt {
         virtual void resize(const glm::ivec2& newSize)
         {
             fbSize = newSize;
-            sample.resize(newSize);
+            sample.resize(newSize, viewerObject.get());
             pixels.resize(newSize.x * newSize.y);
         }
 
-
+        std::unique_ptr<GameObject> viewerObject;
+        KeyboardMovementController cameraController;
         glm::ivec2                  fbSize;
         GLuint                      fbTexture{ 0 };
         Renderer                    sample;

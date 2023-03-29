@@ -21,6 +21,8 @@
 #include "geometry_utils.hpp"
 #include "general_utils.hpp"
 #include "hdr_image.hpp"
+#include "keyboard_movement_controller.hpp"
+#include "timer.hpp"
 
 #include <stb/stb_image.h>
 
@@ -51,17 +53,17 @@ namespace mcrt {
 	public:
 		/*! Constructor : performs setup, including initializing OptiX, creation of module
 		 pipelines, programs, SBT etc. */
-		Renderer(Scene& scene, const Camera& camera, BIAS_MODE bias, PROBE_MODE probeType, IRRADIANCE_STORAGE_TYPE irradianceStorage);
+		Renderer(Scene& scene, Camera& camera, BIAS_MODE bias, PROBE_MODE probeType, IRRADIANCE_STORAGE_TYPE irradianceStorage);
 
 		void render();
 
-		void resize(const glm::ivec2& newSize);
+		void resize(const glm::ivec2& newSize, GameObject* viewerObject);
 
 		// Download rendered color buffer from device
 		void downloadPixels(uint32_t h_pixels[]);
 
 		// Update camera to render from
-		void updateCamera(const Camera& camera);
+		void updateCamera(GameObject* viewerObject);
 
 	private:
 		void initLightingTexturesPerObject();
@@ -176,7 +178,7 @@ namespace mcrt {
 
 		std::unique_ptr<OctreeTexture> octreeTextures;
 
-		Camera renderCamera;
+		Camera& renderCamera;
 
 		// Scene we are tracing rays against
 		Scene& scene;

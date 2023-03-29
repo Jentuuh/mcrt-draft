@@ -427,7 +427,6 @@ namespace mcrt {
     }
 
 
-
     void Scene::loadModelFromOBJ(const std::string& fileName)
     {
         const std::string modelDir
@@ -484,6 +483,7 @@ namespace mcrt {
                         addVertexTextured(mesh, attributes, idx2, knownVertices, diffuseUVVertexIndexMap));
                     mesh->indices.push_back(idx);
                     mesh->diffuse = (const glm::vec3&)materials[materialID].diffuse;
+
                     //mesh->diffuse = generateRandomColor();
                     mesh->diffuseTextureID = loadTexture(knownTextures,
                         materials[materialID].diffuse_texname,
@@ -638,7 +638,8 @@ namespace mcrt {
                         addVertexLightMapped(meshLightMapped, attributesLightMapped, idx1, knownVertices, diffuseUVVertexIndexMap),
                         addVertexLightMapped(meshLightMapped, attributesLightMapped, idx2, knownVertices, diffuseUVVertexIndexMap));
                     meshLightMapped->indices.push_back(idx);
-                    meshLightMapped->diffuse = (const glm::vec3&)materialsLightMapped[materialID].diffuse;
+                    //meshLightMapped->diffuse = (const glm::vec3&)materialsLightMapped[materialID].diffuse;
+                    meshLightMapped->diffuse = glm::vec3{ 0.0f, 0.0f, 0.0f };
                     meshLightMapped->diffuseTextureID = textureID;
                 }
 

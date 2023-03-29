@@ -9,7 +9,7 @@
 #include "glm/gtx/transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
-#define NUM_SAMPLES_PER_STRATIFY_CELL 150
+#define NUM_SAMPLES_PER_STRATIFY_CELL 5
 #define PI 3.14159265358979323846f
 #define EPSILON 0.0000000000002f
 
@@ -144,6 +144,12 @@ namespace mcrt {
         glm::vec3 UVWorldPos = glm::vec3{ uvWorldPos3f.x, uvWorldPos3f.y, uvWorldPos3f.z };
         const glm::vec3 UVNormal = glm::vec3{ uvWorldNormal3f.x, uvWorldNormal3f.y, uvWorldNormal3f.z };
         glm::vec3 diffuseColor = glm::vec3{ uvDiffuseColor3f.x, uvDiffuseColor3f.y, uvDiffuseColor3f.z };
+
+        // We skip uninitialized texels (this means that they are empty in the UV map, that is, they map to no point in 3D)
+        if (UVWorldPos.x == -1000.0f)
+        {
+            return;
+        }
 
         if (optixLaunchParams.hasTexture)
         {

@@ -157,6 +157,7 @@
     <ClCompile Include="ias.cpp" />
     <ClCompile Include="image.cpp" />
     <ClCompile Include="intersection_tester.cpp" />
+    <ClCompile Include="keyboard_movement_controller.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mcrt_pipeline.cpp" />
     <ClCompile Include="model.cpp" />
@@ -205,6 +206,7 @@
     <ClInclude Include="ias.hpp" />
     <ClInclude Include="image.hpp" />
     <ClInclude Include="intersection_tester.hpp" />
+    <ClInclude Include="keyboard_movement_controller.hpp" />
     <ClInclude Include="LaunchParams.hpp" />
     <ClInclude Include="mcrt_pipeline.hpp" />
     <ClInclude Include="model.hpp" />

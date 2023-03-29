@@ -23,10 +23,9 @@
 
 namespace mcrt {
 
-    Renderer::Renderer(Scene& scene, const Camera& camera, BIAS_MODE bias, PROBE_MODE probeType, IRRADIANCE_STORAGE_TYPE irradianceStorage): renderCamera{camera}, scene{scene}, irradStorageType{irradianceStorage}
+    Renderer::Renderer(Scene& scene, Camera& camera, BIAS_MODE bias, PROBE_MODE probeType, IRRADIANCE_STORAGE_TYPE irradianceStorage): renderCamera{camera}, scene{scene}, irradStorageType{irradianceStorage}
     {
         initOptix();
-        updateCamera(camera);
 
         std::cout << "Creating OptiX context..." << std::endl;
         createContext();
@@ -36,6 +35,8 @@ namespace mcrt {
 
         std::cout << "Loading textures..." << std::endl;
         createDiffuseTextures();
+
+        Timer timer;
 
         std::cout << "Setting up pipelines..." << std::endl;
         GeometryBufferHandle geometryData = GeometryBufferHandle{ vertexBuffers, indexBuffers, normalBuffers, texcoordBuffers, diffuseTextureUVBuffers, diffuseTextureObjects, amountVertices, amountIndices };
@@ -80,6 +81,7 @@ namespace mcrt {
             //calculateIndirectLightingOctree(bias, probeType);
         }
         else if (irradianceStorage == TEXTURE_2D) {
+            timer.startTimedEvent("Pipeline creation");
             cameraPipeline = std::make_unique<DefaultPipeline>(optixContext, geometryData, scene);
             directLightPipeline = std::make_unique<DirectLightPipeline>(optixContext, geometryData, scene);
 
@@ -100,20 +102,35 @@ namespace mcrt {
             {
                 radianceCellScatterUnbiasedPipeline = std::make_unique<RadianceCellScatterUnbiasedPipeline>(optixContext, geometryData, scene);
             }
+            timer.stopTimedEvent("Pipeline creation");
 
+            timer.startTimedEvent("Irradiance texture creation");
             initLightingTexturesPerObject();
+            timer.stopTimedEvent("Irradiance texture creation");
             //createWorldDataTextures();
+            timer.startTimedEvent("UV world data generation/loading");
             prepareUVWorldPositionsPerObject(LOAD_WORLD_DATA);
+            timer.stopTimedEvent("UV world data generation/loading");
+
+            timer.startTimedEvent("Assigning UVs to cells");
             prepareUVsInsideBuffer();
+            timer.stopTimedEvent("Assigning UVs to cells");
+
 
             if (bias == BIASED_PROBES && probeType == CUBE_MAP)
             {
                 initLightProbeCubeMaps(64, scene.grid.resolution.x);
             }
+            timer.startTimedEvent("Direct lighting");
             calculateDirectLighting();
+            timer.stopTimedEvent("Direct lighting");
+
+            timer.startTimedEvent("Indirect lighting");
             calculateIndirectLighting(bias, probeType);
+            timer.stopTimedEvent("Indirect lighting");
         }
 
+        timer.printSummary();
         std::cout << "Context, module, pipelines, etc, all set up." << std::endl;
         std::cout << "MCRT renderer fully set up." << std::endl;
     }
@@ -172,6 +189,8 @@ namespace mcrt {
     void Renderer::createDiffuseTextures()
     {
         int numTextures = (int)scene.getDiffuseTextures().size();
+
+        std::cout << "Found " << numTextures << " textures." << std::endl;
 
         textureArrays.resize(numTextures);
         diffuseTextureObjects.resize(numTextures);
@@ -507,40 +526,38 @@ namespace mcrt {
         }
     }
 
-    void Renderer::updateCamera(const Camera& camera)
+
+
+    void Renderer::updateCamera(GameObject* viewerObject)
     {
         if (irradStorageType == OCTREE_TEXTURE)
         {
             if (cameraPipelineOctree != nullptr)
             {
-                renderCamera = camera;
-                cameraPipelineOctree->launchParams.camera.position = camera.position;
-                cameraPipelineOctree->launchParams.camera.direction = normalize(camera.target - camera.position);
+                //renderCamera = camera;
+                cameraPipelineOctree->launchParams.camera.position = viewerObject->worldTransform.translation;
+                cameraPipelineOctree->launchParams.camera.direction = normalize(renderCamera.getViewDirection(viewerObject->worldTransform.translation, viewerObject->worldTransform.rotation));
                 const float cosFovy = 0.66f;
                 const float aspect = float(cameraPipelineOctree->launchParams.frame.size.x) / float(cameraPipelineOctree->launchParams.frame.size.y);
                 cameraPipelineOctree->launchParams.camera.horizontal
-                    = cosFovy * aspect * normalize(cross(cameraPipelineOctree->launchParams.camera.direction,
-                        camera.up));
+                    = cosFovy * aspect * normalize(renderCamera.getViewRight(viewerObject->worldTransform.translation, viewerObject->worldTransform.rotation));
                 cameraPipelineOctree->launchParams.camera.vertical
-                    = cosFovy * normalize(cross(cameraPipelineOctree->launchParams.camera.horizontal,
-                        cameraPipelineOctree->launchParams.camera.direction));
+                    = cosFovy * normalize(renderCamera.getViewUp(viewerObject->worldTransform.translation, viewerObject->worldTransform.rotation));
             }
         }
         else if (irradStorageType == TEXTURE_2D)
         {
             if (cameraPipeline != nullptr)
             {
-                renderCamera = camera;
-                cameraPipeline->launchParams.camera.position = camera.position;
-                cameraPipeline->launchParams.camera.direction = normalize(camera.target - camera.position);
+                //renderCamera = camera;
+                cameraPipeline->launchParams.camera.position = viewerObject->worldTransform.translation;
+                cameraPipeline->launchParams.camera.direction = normalize(renderCamera.getViewDirection(viewerObject->worldTransform.translation, viewerObject->worldTransform.rotation));
                 const float cosFovy = 0.66f;
                 const float aspect = float(cameraPipeline->launchParams.frame.size.x) / float(cameraPipeline->launchParams.frame.size.y);
                 cameraPipeline->launchParams.camera.horizontal
-                    = cosFovy * aspect * normalize(cross(cameraPipeline->launchParams.camera.direction,
-                        camera.up));
+                    = cosFovy * aspect * normalize(renderCamera.getViewRight(viewerObject->worldTransform.translation, viewerObject->worldTransform.rotation));
                 cameraPipeline->launchParams.camera.vertical
-                    = cosFovy * normalize(cross(cameraPipeline->launchParams.camera.horizontal,
-                        cameraPipeline->launchParams.camera.direction));
+                    = cosFovy * normalize(renderCamera.getViewUp(viewerObject->worldTransform.translation, viewerObject->worldTransform.rotation));
             }
         }
     }
@@ -573,7 +590,7 @@ namespace mcrt {
             // Decide texture resolution based on the object's surface area
             //float objectArea = scene.getGameObjects()[textureID]->surfaceArea();
             //int size = objectArea * 512;
-            //int size = 2048;
+            //int size = 256;
             int size = textureSizes[textureID];
             size = GeneralUtils::pow2roundup(size);
 
@@ -813,7 +830,7 @@ namespace mcrt {
             // UV world data
             directLightPipeline->launchParams.uvPositions = UVWorldPositionsTextures[o];
             directLightPipeline->launchParams.uvNormals = UVNormalsTextures[o];
-            //directLightPipeline->launchParams.uvDiffuseColors = UVDiffuseColorTextures[o];
+            directLightPipeline->launchParams.uvDiffuseColors = UVDiffuseColorTextures[o];
             directLightPipeline->launchParams.diffuseTextureUVs = diffuseTextureUVsTextures[o];
             
             // Diffuse color texture (per object)
@@ -2304,7 +2321,7 @@ namespace mcrt {
     }
 
 
-    void Renderer::resize(const glm::ivec2& newSize)
+    void Renderer::resize(const glm::ivec2& newSize, GameObject* viewerObject)
     {
         // If window minimized
         if (newSize.x == 0 | newSize.y == 0) return;
@@ -2325,7 +2342,7 @@ namespace mcrt {
         }
 
         // Reset camera, aspect may have changed
-        updateCamera(renderCamera);
+        updateCamera(viewerObject);
     }
 
     // Copy rendered color buffer from device to host memory for display

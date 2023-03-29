@@ -4,6 +4,8 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
+#include "keyboard_movement_controller.hpp"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtx/transform.hpp>
@@ -38,7 +40,7 @@ namespace mcrt {
 			return glm::ivec2((int)x, (int)y);
 		}
 
-		virtual void render() {}
+		virtual void render(float deltaTime) {}
 		void run();
 
 		GLFWwindow* handle = nullptr;
