@@ -12,7 +12,7 @@
 
 #define PI 3.14159265358979323846f
 #define EPSILON 0.0000000000002f
-#define NUM_DIRECTION_SAMPLES 100
+#define NUM_DIRECTION_SAMPLES 80
 #define PI_OVER_4 0.785398163397425f
 #define PI_OVER_2 1.5707963267945f
 
@@ -180,9 +180,9 @@ namespace mcrt {
         totalRadiance *= diffuseColor;
 
         // Monte-Carlo weighted estimation
-        const float r_result = totalRadiance.x / (float(numSamples) * PI);
-        const float g_result = totalRadiance.y / (float(numSamples) * PI);
-        const float b_result = totalRadiance.z / (float(numSamples) * PI);
+        const float r_result = totalRadiance.x / (float(numSamples) * 2 * PI);
+        const float g_result = totalRadiance.y / (float(numSamples) * 2 * PI);
+        const float b_result = totalRadiance.z / (float(numSamples) * 2 * PI);
         
         float4 resultValue = float4{ r_result, g_result, b_result, 0.0f };
         surf2Dwrite(resultValue, optixLaunchParams.currentBounceTextures[gameObjectNr], int(uv.x * optixLaunchParams.objectTextureResolutions[gameObjectNr]) * 16, int(uv.y * optixLaunchParams.objectTextureResolutions[gameObjectNr]));

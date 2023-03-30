@@ -11,8 +11,8 @@
 #include "utils.cuh"
 
 #define PI 3.14159265358979323846f
-#define NUM_SAMPLES_HEMISPHERE 400
-#define TRACING_RANGE 0.7f
+#define NUM_SAMPLES_HEMISPHERE 80
+#define TRACING_RANGE 0.3f
 
 using namespace mcrt;
 
@@ -153,17 +153,35 @@ namespace mcrt {
         // =============================================
         for (int s = 0; s < NUM_SAMPLES_HEMISPHERE; s++)
         {
-            // Generate random direction on sphere
+
+            // =============================================================================================================================================================================
+            // Random direction generation (equal-area projection of sphere onto rectangle)  : https://math.stackexchange.com/questions/44689/how-to-find-a-random-axis-or-unit-vector-in-3d
+            // =============================================================================================================================================================================
             float2 uniformRandoms = float2{ rnd(seed), rnd(seed) };
-            float theta = acos(1.0f - (2.0f * uniformRandoms.x));
-            float phi = 2 * PI * uniformRandoms.y;
-            float3 randomDir = float3{ sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta) };
-            
+            float randomTheta = uniformRandoms.x * 2 * PI;
+            float randomZ = (uniformRandoms.y * 2.0f) - 1.0f;
+            float3 randomDir = float3{ sqrtf(1 - (randomZ * randomZ)) * cos(randomTheta), sqrtf(1 - (randomZ * randomZ)) * sin(randomTheta), randomZ };
+
             // If the generated random direction is not in the oriented hemisphere, invert it
-            if (dot(normalize(randomDir), normalize(uvNormal3f)) < 0)
+            if (dot(randomDir, uvNormal3f) < 0)
             {
-                randomDir = float3{-randomDir.x, -randomDir.y, -randomDir.z};
+                randomDir = float3{ -randomDir.x, -randomDir.y, -randomDir.z };
             }
+
+            //// =================================================================================================================================================================================
+            //// Random direction generation (uniform direction generation with spherical coords)  : https://math.stackexchange.com/questions/44689/how-to-find-a-random-axis-or-unit-vector-in-3d
+            //// =================================================================================================================================================================================
+            //float2 uniformRandoms = float2{ rnd(seed), rnd(seed) };
+            //float theta = acos(1.0f - (2.0f * uniformRandoms.x));
+            //float phi = 2 * PI * uniformRandoms.y;
+            //float3 randomDir = float3{ sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta) };
+            //
+            //// If the generated random direction is not in the oriented hemisphere, invert it
+            //if (dot(normalize(randomDir), normalize(uvNormal3f)) < 0)
+            //{
+            //    randomDir = float3{-randomDir.x, -randomDir.y, -randomDir.z};
+            //}
+
 
             // Note that this is important! A ray has the following equation: `O + td`. If d is normalized, 
             // t represents the exact range or length along which we trace the ray. This assumption is necessary
@@ -211,7 +229,6 @@ namespace mcrt {
                 double t_max;
                 find_distant_point_along_direction(UVWorldPos, glm::vec3{ randomDir.x, randomDir.y, randomDir.z }, cubeMin, cubeMax, &t_min, &t_max);
                 glm::vec3 distantProjectedPoint = UVWorldPos + (glm::vec3{ randomDir.x * t_max,  randomDir.y * t_max,  randomDir.z * t_max });
-                //printf("UVWorldPos:%f %f %f , projected: %f %f %f, dir: %f %f %f \n", UVWorldPos.x, UVWorldPos.y, UVWorldPos.z, distantProjectedPoint.x, distantProjectedPoint.y, distantProjectedPoint.z, randomDir.x, randomDir.y, randomDir.z);
 
                 float faceU, faceV;
                 int cubeMapFaceIndex;
@@ -256,9 +273,9 @@ namespace mcrt {
         totalRadiance *= diffuseColor;
 
         // Monte-Carlo weighted estimation
-        const float r = totalRadiance.x / (float(numSamples) * PI);
-        const float g = totalRadiance.y / (float(numSamples) * PI);
-        const float b = totalRadiance.z / (float(numSamples) * PI);
+        const float r = totalRadiance.x / (float(numSamples) * 2 * PI);
+        const float g = totalRadiance.y / (float(numSamples) * 2 * PI);
+        const float b = totalRadiance.z / (float(numSamples) * 2 * PI);
 
         float4 resultValue = float4{ r, g, b, 0.0f };
         surf2Dwrite(resultValue, optixLaunchParams.currentBounceTextures[gameObjectNr], int(uv.x * optixLaunchParams.objectTextureResolutions[gameObjectNr]) * 16, int(uv.y * optixLaunchParams.objectTextureResolutions[gameObjectNr]));

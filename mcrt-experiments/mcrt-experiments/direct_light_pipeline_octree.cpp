@@ -50,7 +50,7 @@ namespace mcrt {
     {
         moduleCompileOptions.maxRegisterCount = 50;
         moduleCompileOptions.optLevel = OPTIX_COMPILE_OPTIMIZATION_DEFAULT;
-        moduleCompileOptions.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_NONE;
+        moduleCompileOptions.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_MODERATE;
 
         pipelineCompileOptions = {};
         pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_SINGLE_GAS;
@@ -62,6 +62,7 @@ namespace mcrt {
 
         // Max # of ray bounces
         pipelineLinkOptions.maxTraceDepth = 2;
+        pipelineLinkOptions.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_MODERATE;
 
         const std::string ptxCode = embedded_ptx_code_direct_lighting_gathering_octree;
 

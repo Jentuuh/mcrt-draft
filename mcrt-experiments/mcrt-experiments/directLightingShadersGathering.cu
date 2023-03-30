@@ -96,15 +96,34 @@ namespace mcrt {
             (1.f - u - v) * sbtData.vertex[index.x]
             + u * sbtData.vertex[index.y]
             + v * sbtData.vertex[index.z];
+        
+        // Geometric normal
+        glm::vec3 Ng;
+        const glm::vec3& A = sbtData.vertex[index.x];
+        const glm::vec3& B = sbtData.vertex[index.y];
+        const glm::vec3& C = sbtData.vertex[index.z];
+        Ng = cross(B - A, C - A);
 
+        LightData light = optixLaunchParams.lights[0];
         DirectLightingPRD prd = loadDirectLightingPRD();
-        float squaredDistOriginLight = (((prd.lightSamplePos.x - prd.rayOrigin.x) * (prd.lightSamplePos.x - prd.rayOrigin.x)) + ((prd.lightSamplePos.y - prd.rayOrigin.y) * (prd.lightSamplePos.y - prd.rayOrigin.y)) + ((prd.lightSamplePos.z - prd.rayOrigin.z) * (prd.lightSamplePos.z - prd.rayOrigin.z)));
-        float squaredDistOriginIntersection = (((worldPos.x - prd.rayOrigin.x) * (worldPos.x - prd.rayOrigin.x)) + ((worldPos.y - prd.rayOrigin.y) * (worldPos.y - prd.rayOrigin.y)) + ((worldPos.z - prd.rayOrigin.z) * (worldPos.z - prd.rayOrigin.z)));
+        const float distanceToLightSample = glm::length(prd.lightSamplePos - prd.rayOrigin);
+        const float distanceToIntersection = glm::length(worldPos - prd.rayOrigin);
+        //float squaredDistOriginLight = (((prd.lightSamplePos.x - prd.rayOrigin.x) * (prd.lightSamplePos.x - prd.rayOrigin.x)) + ((prd.lightSamplePos.y - prd.rayOrigin.y) * (prd.lightSamplePos.y - prd.rayOrigin.y)) + ((prd.lightSamplePos.z - prd.rayOrigin.z) * (prd.lightSamplePos.z - prd.rayOrigin.z)));
+        //float squaredDistOriginIntersection = (((worldPos.x - prd.rayOrigin.x) * (worldPos.x - prd.rayOrigin.x)) + ((worldPos.y - prd.rayOrigin.y) * (worldPos.y - prd.rayOrigin.y)) + ((worldPos.z - prd.rayOrigin.z) * (worldPos.z - prd.rayOrigin.z)));
+        const glm::vec3 dirToLightSample = normalize(prd.lightSamplePos - prd.rayOrigin);
 
-        if (squaredDistOriginLight < squaredDistOriginIntersection || squaredDistOriginIntersection < EPSILON)
+        if (distanceToLightSample < distanceToIntersection || distanceToIntersection < EPSILON)
         {
-            //printf("Contribute!");
-            prd.resultColor = { 1.0f, 1.0f, 1.0f };
+            float angleRayGeometry = dot(Ng, dirToLightSample);
+            float angleLightRay = -dot(light.normal, dirToLightSample);
+            float weight = 0.0f;
+
+            if (angleRayGeometry > 0.0f && angleLightRay > 0.0f)
+            {
+                const float A = length(cross(light.du * light.width, light.dv * light.height));
+                weight = angleRayGeometry * angleLightRay * A / (PI * distanceToLightSample * distanceToLightSample);
+            }
+            prd.resultColor = light.power * weight; // { 1.0f, 1.0f, 1.0f };
         }
         else {
             prd.resultColor = { 0.0f, 0.0f, 0.0f };
@@ -231,8 +250,8 @@ namespace mcrt {
                         {
                             // TODO: (Note that BRDF is currently omitted here)
                             //float intensity = 255.99f * cosContribution * prd.resultColor.x * lightProperties.power.x;
-                            float intensity = cosContribution * prd.resultColor.x * lightProperties.power.x;
-                            totalLightContribution += intensity * diffuseColor;
+                            //float intensity = cosContribution * prd.resultColor.x * lightProperties.power.x;
+                            totalLightContribution += prd.resultColor * diffuseColor;
                         }
                     }
                 }
@@ -240,7 +259,6 @@ namespace mcrt {
 
             // Average out the samples contributions
             totalLightContribution /= NUM_SAMPLES_PER_STRATIFY_CELL * optixLaunchParams.stratifyResX * optixLaunchParams.stratifyResY;
-            // totalLightContribution /= PI;
 
             float4 resultValue = float4{ totalLightContribution.x,totalLightContribution.y, totalLightContribution.z, 0.0f };
             surf2Dwrite(resultValue, optixLaunchParams.directLightingTexture, uIndex * 16, vIndex);

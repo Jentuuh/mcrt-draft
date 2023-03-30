@@ -17,7 +17,7 @@ namespace mcrt {
             Camera& camera,
             const float worldScale)
             : GLFCameraWindow(title, camera.position, camera.target, camera.up, worldScale),
-            sample(model, camera, UNBIASED, NA, TEXTURE_2D)
+            sample(model, camera, BIASED_PROBES, CUBE_MAP, TEXTURE_2D)
         {
             viewerObject = std::make_unique<GameObject>(Transform{ {0.5f, 0.5f, 0.5f}, {0.0f, glm::pi<float>(), 0.0f}, {1.0f, 1.0f, 1.0f}}, nullptr);
             sample.updateCamera(viewerObject.get());

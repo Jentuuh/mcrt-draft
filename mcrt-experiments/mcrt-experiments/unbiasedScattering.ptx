@@ -554,17 +554,17 @@ $L__BB3_3:
 	fma.rn.ftz.f32 	%f148, %f133, %f122, %f99;
 	.loc	8 250 3, function_name $L__info_string25, inlined_at 1 175 13
 	fma.rn.ftz.f32 	%f147, %f133, %f123, %f100;
-	.loc	1 124 34
+	.loc	1 124 33
 	add.s32 	%r235, %r235, 2;
 	.loc	1 124 9
-	setp.ne.s32 	%p4, %r235, 100;
+	setp.ne.s32 	%p4, %r235, 80;
 	@%p4 bra 	$L__BB3_3;
 
 	.loc	1 180 9
 	.loc	8 308 3, function_name $L__info_string26, inlined_at 1 180 9
 	mul.ftz.f32 	%f134, %f144, %f149;
 	.loc	1 183 30
-	mov.f32 	%f135, 0f439D1463;
+	mov.f32 	%f135, 0f437B53D2;
 	div.approx.ftz.f32 	%f136, %f134, %f135;
 	.loc	8 309 3, function_name $L__info_string26, inlined_at 1 180 9
 	mul.ftz.f32 	%f137, %f145, %f148;
