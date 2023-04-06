@@ -116,10 +116,9 @@ namespace mcrt {
 		int probeHeightRes;	// Amount of probes in the y-direction
 		int nonEmptyCellIndex;
 
-		float* cubeMaps; // A pointer to cubemap faces
+		cudaTextureObject_t* cubeMaps; // A pointer to cubemap faces
 		int cubeMapResolution;
 		
-
 		OptixTraversableHandle sceneTraversable;
 	};
 
@@ -147,7 +146,7 @@ namespace mcrt {
 		int probeHeightRes;	// Amount of probes in the y-direction
 		int nonEmptyCellIndex;
 
-		float* cubeMaps; // A pointer to cubemap faces
+		cudaTextureObject_t* cubeMaps; // A pointer to cubemap faces
 		int cubeMapResolution;
 
 		float* octreeTexture;
@@ -178,10 +177,7 @@ namespace mcrt {
 		int* uvsInsideOffsets;
 		int* uvGameObjectNrs;
 
-		glm::vec3 cellCenter;
-		float cellSize;
 		int nonEmptyCellIndex;
-
 
 		OptixTraversableHandle sceneTraversable;
 	};
@@ -243,7 +239,7 @@ namespace mcrt {
 
 		//cudaTextureObject_t lightSourceTexture;
 
-		float* cubeMaps; // A pointer to cubemap faces
+		cudaSurfaceObject_t* cubeMaps; // A pointer to cubemap faces
 		int cubeMapResolution;
 
 		OptixTraversableHandle sceneTraversable;
@@ -262,7 +258,7 @@ namespace mcrt {
 
 		float* lightSourceOctreeTexture;
 
-		float* cubeMaps; // A pointer to cubemap faces
+		cudaSurfaceObject_t* cubeMaps; // A pointer to cubemap faces
 		int cubeMapResolution;
 
 		OptixTraversableHandle sceneTraversable;

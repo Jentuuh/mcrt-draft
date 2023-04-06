@@ -116,13 +116,9 @@ namespace mcrt {
             u0, u1, u2
         );
 
-        prd.resultColor = glm::vec3{ __uint_as_float(u0), __uint_as_float(u1), __uint_as_float(u2) };
-
-        int uvIndex = vPixel * optixLaunchParams.cubeMapResolution + uPixel;
-
         // Write rgb
-        optixLaunchParams.cubeMaps[((probeOffset + faceIndex * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution)) * 3) + uvIndex * 3 + 0] = prd.resultColor.x;
-        optixLaunchParams.cubeMaps[((probeOffset + faceIndex * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution)) * 3) + uvIndex * 3 + 1] = prd.resultColor.y;
-        optixLaunchParams.cubeMaps[((probeOffset + faceIndex * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution)) * 3) + uvIndex * 3 + 2] = prd.resultColor.z;
+        float4 resultValue = float4{ __uint_as_float(u0), __uint_as_float(u1), __uint_as_float(u2), 0.0f };
+        surf2Dwrite(resultValue, optixLaunchParams.cubeMaps[probeOffset + faceIndex], uPixel * 16, vPixel);
+
     }
 }

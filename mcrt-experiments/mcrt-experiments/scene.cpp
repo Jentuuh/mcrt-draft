@@ -116,6 +116,13 @@ namespace mcrt {
         loadModelFromOBJWithMultipleUVs("../models/sponza-components/water_dish.obj", "../models/sponza-components/water_dish.obj");
     }
 
+    // Static objects need to be loaded before dynamic objects!
+    void Scene::loadDynamicObjects()
+    {
+        dynamicObjectsIndex = numObjects();
+        loadModelFromOBJ("../models/dynamic/cube.obj");
+    }
+
 
     void Scene::loadWorldDataTextures()
     {
@@ -200,7 +207,6 @@ namespace mcrt {
         //loadDataTexture("../data/world_data_textures/diffuse_coords/square_panel_back.png", worldDiffuseCoordsTextures);
         //loadDataTexture("../data/world_data_textures/diffuse_coords/water_dish.png", worldDiffuseCoordsTextures);
     }
-
 
 
 	void Scene::addGameObject(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale, std::shared_ptr<Model> model)

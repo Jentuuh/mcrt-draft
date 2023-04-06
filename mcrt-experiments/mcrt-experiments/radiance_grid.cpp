@@ -9,9 +9,9 @@ namespace mcrt {
 	{
 		this->cellSize = cellSize;
 		// Assuming the scene is normalized and shifted into the positive quadrant
-		resolution.x = 1.0f / cellSize;
-		resolution.y = 1.0f / cellSize;
-		resolution.z = 1.0f / cellSize;
+		resolution.x = std::ceil(1.0f / cellSize);
+		resolution.y = std::ceil(1.0f / cellSize);
+		resolution.z = std::ceil(1.0f / cellSize);
 
 
 		for (int z = 0; z < resolution.z; z++)

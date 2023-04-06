@@ -163,7 +163,11 @@ namespace mcrt {
 
 
 		CUDABuffer lightDataBuffer;	// In this buffer we'll store our light source data
-		CUDABuffer cubeMaps; // In this buffer we'll store the light probe cubemaps
+		std::vector<cudaTextureObject_t> cubeMapTextureObjects;
+		std::vector<cudaSurfaceObject_t> cubeMapSurfaceObjects;
+		CUDABuffer cubeMapTextureObjectPointersBuffer;
+		CUDABuffer cubeMapSurfaceObjectPointersBuffer;
+		//CUDABuffer cubeMaps; // In this buffer we'll store the light probe cubemaps
 
 		// TODO: clean up!
 		CUDABuffer nonEmptyCellDataBuffer;	// In this buffer we'll store our data for non empty radiance cells
@@ -175,6 +179,7 @@ namespace mcrt {
 		CUDABuffer UVsInsideBuffer;		// In this buffer we'll store the UV worldpositions for all texels inside each cell
 		CUDABuffer UVsInsideOffsets;	// In this buffer we'll store the offsets to index the UVsInsideBuffer
 		CUDABuffer UVsGameObjectNrsBuffer; // In this buffer we'll store the game object identifiers that show for each UV to which game object it belongs (so we know from which texture we should read)
+		int totalAmountUVs;
 
 		std::unique_ptr<OctreeTexture> octreeTextures;
 
@@ -189,9 +194,13 @@ namespace mcrt {
 		std::vector<CUDABuffer> normalBuffers;
 		std::vector<CUDABuffer> texcoordBuffers;
 		std::vector<CUDABuffer> diffuseTextureUVBuffers;
-
 		std::vector<int> amountVertices;
 		std::vector<int> amountIndices;
+
+		std::vector<CUDABuffer> sceneBoundsVertexBuffers;
+		std::vector<CUDABuffer> sceneBoundsIndexBuffers;
+		std::vector<int> amountVerticesSceneBounds;
+		std::vector<int> amountIndicesSceneBounds;
 
 		std::vector<CUDABuffer> radianceGridVertexBuffers;
 		std::vector<CUDABuffer> radianceGridIndexBuffers;

@@ -27,6 +27,7 @@ namespace mcrt {
 		//scene.loadModelFromOBJ("../models/crytek-sponza/sponza4.obj");
 		//scene.loadModelFromOBJ("../models/cornell/cornell.obj");
 		scene.loadSponzaComponents();
+		//scene.loadDynamicObjects();
 
 		//scene.loadWorldDataTextures();
 
@@ -42,7 +43,7 @@ namespace mcrt {
 		scene.loadLights();
 
 		// Build radiance grid that is contained within the scene
-		scene.buildRadianceGrid(.33f);
+		scene.buildRadianceGrid(0.5f);
 
 		//// For each radiance cell, check which objects are (partially) in it
 		//scene.grid.assignObjectsToCells(scene.getVoxelizers());

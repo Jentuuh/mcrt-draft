@@ -152,6 +152,7 @@ namespace mcrt {
             std::cout << log << std::endl;
         }
 
+
         //---------------------------------------
         //  HITGROUP PROGRAMS
         //---------------------------------------
@@ -180,6 +181,7 @@ namespace mcrt {
         {
             std::cout << log << std::endl;
         }
+
     }
 
     void RadianceCellGatherCubeMapPipeline::buildSBT(GeometryBufferHandle& geometryBuffers, Scene& scene)

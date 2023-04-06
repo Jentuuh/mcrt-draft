@@ -4,9 +4,9 @@ namespace mcrt {
 	Camera::Camera(glm::vec3 pos, glm::vec3 target, glm::vec3 up) :position{ pos }, target{ target }, up{ up } {}
 
 	/**
-Provides an orthographic projection matrix to perform the projection transform from 'camera space' into the
-canonical view volume.
-*/
+	Provides an orthographic projection matrix to perform the projection transform from 'camera space' into the
+	canonical view volume.
+	*/
 	void Camera::setOrthographicProjection(
 		float left, float right, float top, float bottom, float near, float far) {
 		projectionMatrix = glm::mat4{ 1.0f };

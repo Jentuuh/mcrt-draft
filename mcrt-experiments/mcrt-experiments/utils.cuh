@@ -25,7 +25,6 @@ namespace mcrt {
 		*t_min = (cubeMin.x - o.x) / dir.x;
 		*t_max = (cubeMax.x - o.x) / dir.x;
 
-
 		double t_min_y = (cubeMin.y - o.y) / dir.y;
 		double t_max_y = (cubeMax.y - o.y) / dir.y;
 

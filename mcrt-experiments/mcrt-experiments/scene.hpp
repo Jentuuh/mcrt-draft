@@ -47,6 +47,7 @@ namespace mcrt {
 		std::vector<LightData> getLightsData();
 
 		void loadSponzaComponents();
+		void loadDynamicObjects();
 		void loadWorldDataTextures();
 		void addGameObject(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale, std::shared_ptr<Model> model);
 		void loadModelFromOBJ(const std::string& fileName);
@@ -55,7 +56,6 @@ namespace mcrt {
 		void loadDataTexture(const std::string& filePath, std::vector<std::shared_ptr<Texture>>& storageVector);
 		void loadHDRDataTexture(const std::string& filePath, std::vector<std::shared_ptr<HDRTexture>>& storageVector);
 
-		
 		void voxelizeObjects();
 		void buildRadianceGrid(float cellSize);
 		void normalize();
@@ -63,6 +63,7 @@ namespace mcrt {
 
 		RadianceGrid grid;
 	private:
+		int dynamicObjectsIndex;
 		std::vector<std::shared_ptr<Voxelizer>> voxelizers;
 		std::vector<std::shared_ptr<GameObject>> gameObjects;
 		std::vector<std::shared_ptr<Texture>> diffuseTextures;

@@ -9,7 +9,7 @@
 #include "glm/gtx/transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
-#define NUM_SAMPLES_PER_STRATIFY_CELL 5
+#define NUM_SAMPLES_PER_STRATIFY_CELL 2
 #define PI 3.14159265358979323846f
 #define EPSILON 0.0000000000002f
 
@@ -219,7 +219,7 @@ namespace mcrt {
                         prd.rayOrigin = UVWorldPos;
                         prd.lightSamplePos = rayDestination;
 
-                        unsigned int u0, u1, u2, u3, u4, u5, u6, u7, u8;
+                        unsigned int u0, u1, u2, u3, u4, u5, u6, u7, u8;    
 
                         u0 = __float_as_uint(prd.rayOrigin.x);
                         u1 = __float_as_uint(prd.rayOrigin.y);

@@ -11,8 +11,8 @@
 #include "utils.cuh"
 
 #define PI 3.14159265358979323846f
-#define NUM_SAMPLES_HEMISPHERE 80
-#define TRACING_RANGE 0.3f
+#define NUM_SAMPLES_HEMISPHERE 10
+#define TRACING_RANGE 0.0f
 
 using namespace mcrt;
 
@@ -77,6 +77,7 @@ namespace mcrt {
         // Do nothing
     }
 
+
     extern "C" __global__ void __raygen__renderFrame__cell__scattering()
     {
         const int uvIndex = optixGetLaunchIndex().x;
@@ -123,24 +124,26 @@ namespace mcrt {
         float3 rayOrigin3f = float3{ UVWorldPos.x, UVWorldPos.y, UVWorldPos.z };
         
         // Probes coordinates
-        glm::vec3 probeCoords[7] = {
-            optixLaunchParams.cellCenter,
-            optixLaunchParams.cellCenter + glm::vec3{optixLaunchParams.cellSize, 0.0f, 0.0f},
-            optixLaunchParams.cellCenter - glm::vec3{optixLaunchParams.cellSize, 0.0f, 0.0f},
-            optixLaunchParams.cellCenter + glm::vec3{0.0f, optixLaunchParams.cellSize, 0.0f},
-            optixLaunchParams.cellCenter - glm::vec3{0.0f, optixLaunchParams.cellSize, 0.0f},
-            optixLaunchParams.cellCenter + glm::vec3{0.0f, 0.0f, optixLaunchParams.cellSize},
-            optixLaunchParams.cellCenter - glm::vec3{0.0f, 0.0f, optixLaunchParams.cellSize},
-        };
-
-        // Probe buffer offsets
-        int probeOffsets[7] = { ((cellCoords.z * probeResWidth * probeResHeight) + (cellCoords.y * probeResWidth) + cellCoords.x) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution), 
-                                ((cellCoords.z * probeResWidth * probeResHeight) + (cellCoords.y * probeResWidth) + cellCoords.x + 1) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution),
-                                ((cellCoords.z * probeResWidth * probeResHeight) + (cellCoords.y * probeResWidth) + cellCoords.x - 1) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution),
-                                ((cellCoords.z * probeResWidth * probeResHeight) + ((cellCoords.y + 1) * probeResWidth) + cellCoords.x) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution),
-                                ((cellCoords.z * probeResWidth * probeResHeight) + ((cellCoords.y - 1) * probeResWidth) + cellCoords.x) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution),
-                                (((cellCoords.z + 1) * probeResWidth * probeResHeight) + (cellCoords.y * probeResWidth) + cellCoords.x) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution),
-                                (((cellCoords.z - 1) * probeResWidth * probeResHeight) + (cellCoords.y * probeResWidth) + cellCoords.x) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution) };
+        //glm::vec3 probeCoords[7] = {
+        //    optixLaunchParams.cellCenter,
+        //    optixLaunchParams.cellCenter + glm::vec3{optixLaunchParams.cellSize, 0.0f, 0.0f},
+        //    optixLaunchParams.cellCenter - glm::vec3{optixLaunchParams.cellSize, 0.0f, 0.0f},
+        //    optixLaunchParams.cellCenter + glm::vec3{0.0f, optixLaunchParams.cellSize, 0.0f},
+        //    optixLaunchParams.cellCenter - glm::vec3{0.0f, optixLaunchParams.cellSize, 0.0f},
+        //    optixLaunchParams.cellCenter + glm::vec3{0.0f, 0.0f, optixLaunchParams.cellSize},
+        //    optixLaunchParams.cellCenter - glm::vec3{0.0f, 0.0f, optixLaunchParams.cellSize},
+        //};
+        glm::vec3 probeCoord = optixLaunchParams.cellCenter;
+        //int probeOffset = ((cellCoords.z * probeResWidth * probeResHeight) + (cellCoords.y * probeResWidth) + cellCoords.x) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution);
+        int probeOffset = ((cellCoords.z * probeResWidth * probeResHeight) + (cellCoords.y * probeResWidth) + cellCoords.x) * 6;
+        //// Probe buffer offsets
+        //int probeOffsets[7] = { ((cellCoords.z * probeResWidth * probeResHeight) + (cellCoords.y * probeResWidth) + cellCoords.x) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution), 
+        //                        ((cellCoords.z * probeResWidth * probeResHeight) + (cellCoords.y * probeResWidth) + cellCoords.x + 1) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution),
+        //                        ((cellCoords.z * probeResWidth * probeResHeight) + (cellCoords.y * probeResWidth) + cellCoords.x - 1) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution),
+        //                        ((cellCoords.z * probeResWidth * probeResHeight) + ((cellCoords.y + 1) * probeResWidth) + cellCoords.x) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution),
+        //                        ((cellCoords.z * probeResWidth * probeResHeight) + ((cellCoords.y - 1) * probeResWidth) + cellCoords.x) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution),
+        //                        (((cellCoords.z + 1) * probeResWidth * probeResHeight) + (cellCoords.y * probeResWidth) + cellCoords.x) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution),
+        //                        (((cellCoords.z - 1) * probeResWidth * probeResHeight) + (cellCoords.y * probeResWidth) + cellCoords.x) * 6 * (optixLaunchParams.cubeMapResolution * optixLaunchParams.cubeMapResolution) };
 
         // Radiance accumulator
         glm::vec3 totalRadiance = glm::vec3{ 0.0f, 0.0f, 0.0f };
@@ -218,17 +221,23 @@ namespace mcrt {
             if(u0 == 1)  // TRACED CONTRIBUTION
             {
                 // Cosine weighted contribution
-                float cosContribution = dot(normalize(randomDir), normalize(uvNormal3f));
+                float cosContribution = dot(randomDir, normalize(uvNormal3f));
                 totalRadiance += glm::vec3{ cosContribution * prd.resultColor.x, cosContribution * prd.resultColor.y, cosContribution * prd.resultColor.z };
                 ++numSamples;
             }
             else {  // PROBE CONTRIBUTION (How to make the distinction between an actual miss and out of range?)
                 // Find "distant projection" along ray direction of point that we are calculating incoming radiance for, 
                 // this is necessary to sample an approximated correct direction on the radiance probes.
-                double t_min;
-                double t_max;
-                find_distant_point_along_direction(UVWorldPos, glm::vec3{ randomDir.x, randomDir.y, randomDir.z }, cubeMin, cubeMax, &t_min, &t_max);
-                glm::vec3 distantProjectedPoint = UVWorldPos + (glm::vec3{ randomDir.x * t_max,  randomDir.y * t_max,  randomDir.z * t_max });
+                // 
+                //double t_min;
+                //double t_max;
+                //find_distant_point_along_direction(UVWorldPos, glm::vec3{ randomDir.x, randomDir.y, randomDir.z }, cubeMin, cubeMax, &t_min, &t_max);
+
+
+                //glm::vec3 distantProjectedPoint = UVWorldPos + (glm::vec3{ randomDir.x * t_max,  randomDir.y * t_max,  randomDir.z * t_max });
+                glm::vec3 distantProjectedPoint = UVWorldPos + (glm::vec3{ randomDir.x * 1.0f,  randomDir.y * 1.0f,  randomDir.z * 1.0f });
+
+                //glm::vec3 distantProjectedPoint = glm::vec3{ __uint_as_float(u0), __uint_as_float(u1), __uint_as_float(u2) };
 
                 float faceU, faceV;
                 int cubeMapFaceIndex;
@@ -238,7 +247,7 @@ namespace mcrt {
                 // ==================================================================================
                 glm::vec3 averageProbeContribution = {0.0f, 0.0f, 0.0f};
                 int numProbeContributions = 0;
-                for (int p = 0; p < 1; p++)
+                /* for (int p = 0; p < 1; p++)
                 {
                     if (probeCoords[p].x >= 0.0f && probeCoords[p].x <= 1.0f && probeCoords[p].y >= 0.0f && probeCoords[p].y <= 1.0f && probeCoords[p].z >= 0.0f && probeCoords[p].z <= 1.0f)
                     {
@@ -256,8 +265,19 @@ namespace mcrt {
                         averageProbeContribution += glm::vec3{ r, g, b };
                         numProbeContributions++;
                     }
-                }
-                averageProbeContribution = glm::vec3{ averageProbeContribution.x / float(numProbeContributions), averageProbeContribution.y / float(numProbeContributions), averageProbeContribution.z / float(numProbeContributions) };
+                }*/
+
+   
+                glm::vec3 probeSampleDirection = distantProjectedPoint - probeCoord;
+                convert_xyz_to_cube_uv(probeSampleDirection.x, probeSampleDirection.y, probeSampleDirection.z, &cubeMapFaceIndex, &faceU, &faceV);
+
+                int uIndex = optixLaunchParams.cubeMapResolution * faceU;
+                int vIndex = optixLaunchParams.cubeMapResolution * faceV;
+                int uvOffset = vIndex * optixLaunchParams.cubeMapResolution + uIndex;
+
+                float4 incomingRadiance = tex2D<float4>(optixLaunchParams.cubeMaps[probeOffset + cubeMapFaceIndex], faceU, faceV);
+
+                averageProbeContribution += glm::vec3{ incomingRadiance.x, incomingRadiance.y, incomingRadiance.z };
 
                 // Cosine weighted contribution
                 float cosContribution = dot(normalize(randomDir), normalize(uvNormal3f));
@@ -278,6 +298,6 @@ namespace mcrt {
         const float b = totalRadiance.z / (float(numSamples) * 2 * PI);
 
         float4 resultValue = float4{ r, g, b, 0.0f };
-        surf2Dwrite(resultValue, optixLaunchParams.currentBounceTextures[gameObjectNr], int(uv.x * optixLaunchParams.objectTextureResolutions[gameObjectNr]) * 16, int(uv.y * optixLaunchParams.objectTextureResolutions[gameObjectNr]));
+        surf2Dwrite(resultValue, optixLaunchParams.currentBounceTextures[gameObjectNr], int(uv.x * (optixLaunchParams.objectTextureResolutions[gameObjectNr])) * 16, int(uv.y * (optixLaunchParams.objectTextureResolutions[gameObjectNr])));
     }
 }

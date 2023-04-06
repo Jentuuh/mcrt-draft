@@ -28,14 +28,17 @@ namespace mcrt {
 
 	void Timer::printSummary()
 	{
+		int totalTime = 0;
 		std::cout << std::endl;
 		std::cout << "============= TIMER SUMMARY ==============" << std::endl;
 		for (auto const& [key, val] : timedEventsInMs)
 		{
 			std::cout << "==========================================" << std::endl;
 			std::cout << key << ':' << val << " ms." << std::endl;
+			totalTime += val;
 		}
 		std::cout << "==========================================" << std::endl;
+		std::cout << "Total time: " << totalTime << " ms." << std::endl;
 		std::cout << std::endl;
 	}
 }

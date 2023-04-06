@@ -228,8 +228,8 @@
 {
 	.reg .pred 	%p<7>;
 	.reg .f32 	%f<41>;
-	.reg .b32 	%r<94>;
-	.reg .b64 	%rd<6>;
+	.reg .b32 	%r<91>;
+	.reg .b64 	%rd<7>;
 	.loc	1 75 0
 
 
@@ -239,28 +239,28 @@
 	.loc	1 81 28
 	.loc	2 1246 5, function_name $L__info_string15, inlined_at 1 81 28
 	// begin inline asm
-	call (%r6), _optix_get_launch_index_x, ();
+	call (%r5), _optix_get_launch_index_x, ();
 	// end inline asm
 	.loc	1 82 28
 	.loc	2 1247 5, function_name $L__info_string15, inlined_at 1 82 28
 	// begin inline asm
-	call (%r10), _optix_get_launch_index_y, ();
+	call (%r9), _optix_get_launch_index_y, ();
 	// end inline asm
 	.loc	1 83 31
 	.loc	2 1248 5, function_name $L__info_string15, inlined_at 1 83 31
 	// begin inline asm
-	call (%r14), _optix_get_launch_index_z, ();
+	call (%r13), _optix_get_launch_index_z, ();
 	// end inline asm
 	.loc	1 85 23
-	cvt.rn.f32.s32 	%f15, %r6;
-	ld.const.u32 	%r4, [optixLaunchParams+40];
-	cvt.rn.f32.s32 	%f16, %r4;
+	cvt.rn.f32.s32 	%f15, %r5;
+	ld.const.u32 	%r14, [optixLaunchParams+40];
+	cvt.rn.f32.s32 	%f16, %r14;
 	div.approx.ftz.f32 	%f17, %f15, %f16;
 	.loc	1 86 23
-	cvt.rn.f32.s32 	%f18, %r10;
+	cvt.rn.f32.s32 	%f18, %r9;
 	div.approx.ftz.f32 	%f19, %f18, %f16;
 	.loc	1 89 25
-	ld.const.u32 	%r5, [optixLaunchParams+16];
+	ld.const.u32 	%r4, [optixLaunchParams+16];
 	.loc	1 93 9
 	.loc	5 90 18, function_name $L__info_string16, inlined_at 1 93 9
 	fma.rn.ftz.f32 	%f40, %f17, 0f40000000, 0fBF800000;
@@ -268,18 +268,18 @@
 	.loc	5 91 18, function_name $L__info_string16, inlined_at 1 93 9
 	fma.rn.ftz.f32 	%f5, %f19, 0f40000000, 0fBF800000;
 	.loc	5 92 9, function_name $L__info_string16, inlined_at 1 93 9
-	setp.gt.s32 	%p1, %r14, 2;
+	setp.gt.s32 	%p1, %r13, 2;
 	@%p1 bra 	$L__BB3_3;
 	bra.uni 	$L__BB3_1;
 
 $L__BB3_3:
-	setp.eq.s32 	%p2, %r14, 3;
+	setp.eq.s32 	%p2, %r13, 3;
 	@%p2 bra 	$L__BB3_7;
 
-	setp.eq.s32 	%p3, %r14, 5;
+	setp.eq.s32 	%p3, %r13, 5;
 	@%p3 bra 	$L__BB3_9;
 
-	setp.ne.s32 	%p4, %r14, 4;
+	setp.ne.s32 	%p4, %r13, 4;
 	mov.f32 	%f39, %f5;
 	@%p4 bra 	$L__BB3_11;
 
@@ -293,10 +293,10 @@ $L__BB3_3:
 
 $L__BB3_1:
 	.loc	5 92 9, function_name $L__info_string16, inlined_at 1 93 9
-	setp.eq.s32 	%p5, %r14, 0;
+	setp.eq.s32 	%p5, %r13, 0;
 	@%p5 bra 	$L__BB3_10;
 
-	setp.eq.s32 	%p6, %r14, 2;
+	setp.eq.s32 	%p6, %r13, 2;
 	mov.f32 	%f39, %f5;
 	@%p6 bra 	$L__BB3_8;
 	bra.uni 	$L__BB3_11;
@@ -360,23 +360,18 @@ $L__BB3_11:
 	// begin inline asm
 	call(%r15,%r16,%r17,%r18,%r19,%r20,%r21,%r22,%r23,%r24,%r25,%r26,%r27,%r28,%r29,%r30,%r31,%r32,%r33,%r34,%r35,%r36,%r37,%r38,%r39,%r40,%r41,%r42,%r43,%r44,%r45,%r46),_optix_trace_typed_32,(%r85,%rd1,%f1,%f13,%f14,%f28,%f29,%f30,%f33,%f32,%f33,%r48,%r51,%r85,%r51,%r85,%r53,%r86,%r87,%r88,%r85,%r85,%r85,%r85,%r85,%r85,%r85,%r85,%r85,%r85,%r85,%r85,%r85,%r85,%r85,%r85,%r85,%r85,%r85,%r85,%r85,%r85,%r85,%r85,%r85,%r85,%r85,%r85,%r85);
 	// end inline asm
-	.loc	1 121 21
-	mad.lo.s32 	%r89, %r4, %r10, %r6;
-	.loc	1 124 9
+	.loc	1 121 9
 	ld.const.u64 	%rd2, [optixLaunchParams+32];
 	cvta.to.global.u64 	%rd3, %rd2;
-	mul.lo.s32 	%r90, %r4, %r14;
-	mad.lo.s32 	%r91, %r90, %r4, %r5;
-	add.s32 	%r92, %r91, %r89;
-	mul.lo.s32 	%r93, %r92, 3;
-	mul.wide.s32 	%rd4, %r93, 4;
+	add.s32 	%r89, %r4, %r13;
+	mul.wide.s32 	%rd4, %r89, 8;
 	add.s64 	%rd5, %rd3, %rd4;
-	st.global.u32 	[%rd5], %r15;
-	.loc	1 125 9
-	st.global.u32 	[%rd5+4], %r16;
-	.loc	1 126 9
-	st.global.u32 	[%rd5+8], %r17;
-	.loc	1 127 5
+	ld.global.u64 	%rd6, [%rd5];
+	shl.b32 	%r90, %r5, 4;
+	.loc	1 121 9
+	.loc	7 238 3, function_name $L__info_string21, inlined_at 1 121 9
+	sust.b.2d.v4.b32.trap 	[%rd6, {%r90, %r9}], {%r15, %r16, %r17, %r85};
+	.loc	1 123 5
 	ret;
 
 }
@@ -386,6 +381,7 @@ $L__BB3_11:
 	.file	4 "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.8\\include\\texture_indirect_functions.h"
 	.file	5 "C:\\Users\\jente\\Desktop\\University\\mcrt-draft\\mcrt-draft\\mcrt-experiments\\mcrt-experiments\\cube_mapping.cuh"
 	.file	6 "C:\\Users\\jente\\Desktop\\University\\mcrt-draft\\mcrt-draft\\mcrt-experiments\\3rdparty/nvidia\\vec_math.hpp"
+	.file	7 "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.8\\include\\surface_indirect_functions.h"
 	.section	.debug_str
 	{
 $L__info_string0:
@@ -466,5 +462,10 @@ $L__info_string20:
 .b8 95,90,78,54,52,95,73,78,84,69,82,78,65,76,95,57,100,54,99,52,98,102,51,95,51,51,95,114,97,100,105,97,110,99,101,67,101,108,108,71
 .b8 97,116,104,101,114,105,110,103,95,67,117,98,101,109,97,112,51,95,99,117,95,48,53,51,99,52,55,98,48,49,48,111,112,116,105,120,84,114,97,99
 .b8 101,73,74,106,106,106,69,69,69,118,121,54,102,108,111,97,116,51,83,49,95,102,102,102,106,106,106,106,106,68,112,82,84,95,0
+$L__info_string21:
+.b8 95,90,78,54,52,95,73,78,84,69,82,78,65,76,95,57,100,54,99,52,98,102,51,95,51,51,95,114,97,100,105,97,110,99,101,67,101,108,108,71
+.b8 97,116,104,101,114,105,110,103,95,67,117,98,101,109,97,112,51,95,99,117,95,48,53,51,99,52,55,98,48,49,49,115,117,114,102,50,68,119,114,105
+.b8 116,101,73,54,102,108,111,97,116,52,69,69,78,49,54,95,95,110,118,95,105,115,117,114,102,95,116,114,97,105,116,73,84,95,69,52,116,121,112,101
+.b8 69,83,51,95,121,105,105,50,51,99,117,100,97,83,117,114,102,97,99,101,66,111,117,110,100,97,114,121,77,111,100,101,0
 
 	}
