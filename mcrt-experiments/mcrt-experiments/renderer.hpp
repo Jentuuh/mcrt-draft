@@ -64,6 +64,7 @@ namespace mcrt {
 
 		// Update camera to render from
 		void updateCamera(GameObject* viewerObject);
+		void updateCameraInCircle(GameObject* viewerObject, float dt);
 
 	private:
 		void initLightingTexturesPerObject();
@@ -238,5 +239,9 @@ namespace mcrt {
 		CUDABuffer uvDiffuseColorTextureObjectPointersBuffer;
 		CUDABuffer diffuseTextureUVsTextureObjectPointersBuffer;
 		CUDABuffer objectHasTextureBuffer;
+
+	private:
+		float CURRENT_TIME = 0.0f;
+		float ROTATE_TOTAL_TIME = 7.0f;
 	};
 }

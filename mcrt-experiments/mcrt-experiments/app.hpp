@@ -17,19 +17,25 @@ namespace mcrt {
             Camera& camera,
             const float worldScale)
             : GLFCameraWindow(title, camera.position, camera.target, camera.up, worldScale),
-            sample(model, camera, BIASED_PROBES, CUBE_MAP, TEXTURE_2D)
+            sample(model, camera, UNBIASED, NA, TEXTURE_2D)
         {
             viewerObject = std::make_unique<GameObject>(Transform{ {0.5f, 0.5f, 0.5f}, {0.0f, glm::pi<float>(), 0.0f}, {1.0f, 1.0f, 1.0f}}, nullptr);
+            //sample.updateCameraInCircle(viewerObject.get(), 0.0f);
             sample.updateCamera(viewerObject.get());
         }
 
         virtual void render(float deltaTime) override
         {
+            
             cameraController.moveInPlaneXZ(this->handle, deltaTime, viewerObject.get());
             if (cameraController.cameraModified) {
                 sample.updateCamera(viewerObject.get());
                 cameraController.cameraModified = false;
             }
+
+            //std::cout << "Frame composition time: " << deltaTime << " ms." << std::endl;
+            //sample.updateCameraInCircle(viewerObject.get(), deltaTime);
+
             sample.render();
         }
 

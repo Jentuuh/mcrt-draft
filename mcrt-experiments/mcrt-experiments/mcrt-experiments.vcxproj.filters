@@ -204,9 +204,6 @@
     <ClCompile Include="devicePrograms_embedded.c">
       <Filter>Source Files\GPU\Camera pass\Texture-based</Filter>
     </ClCompile>
-    <ClCompile Include="directLightingShaders_embedded.c">
-      <Filter>Source Files\GPU\Direct Lighting\Texture-based</Filter>
-    </ClCompile>
     <ClCompile Include="directLightingShadersGathering_embedded.c">
       <Filter>Source Files\GPU\Direct Lighting\Texture-based</Filter>
     </ClCompile>
@@ -412,9 +409,6 @@
     <None Include="octreeTesting.cu">
       <Filter>Source Files\GPU\Testing</Filter>
     </None>
-    <None Include="directLightingShaders.cu">
-      <Filter>Source Files\GPU\Direct Lighting\Texture-based</Filter>
-    </None>
     <None Include="directLightingShadersGathering.cu">
       <Filter>Source Files\GPU\Direct Lighting\Texture-based</Filter>
     </None>
@@ -433,25 +427,10 @@
     <None Include="cube_mapping.cuh">
       <Filter>Source Files\GPU\Cubemap\Texture-based</Filter>
     </None>
-    <None Include="radianceCellGathering_Cubemap.cu">
-      <Filter>Source Files\GPU\Cubemap\Texture-based</Filter>
-    </None>
-    <None Include="radianceCellGathering_Cubemap2.cu">
-      <Filter>Source Files\GPU\Cubemap\Texture-based</Filter>
-    </None>
     <None Include="radianceCellGathering_Cubemap3.cu">
       <Filter>Source Files\GPU\Cubemap\Texture-based</Filter>
     </None>
-    <None Include="radianceCellScattering_Cubemap.cu">
-      <Filter>Source Files\GPU\Cubemap\Texture-based</Filter>
-    </None>
     <None Include="radianceCellScattering_Cubemap_hybrid.cu">
-      <Filter>Source Files\GPU\Cubemap\Texture-based</Filter>
-    </None>
-    <None Include="radianceCellScattering_Cubemap2.cu">
-      <Filter>Source Files\GPU\Cubemap\Texture-based</Filter>
-    </None>
-    <None Include="radianceCellScattering_Cubemap3.cu">
       <Filter>Source Files\GPU\Cubemap\Texture-based</Filter>
     </None>
     <None Include="radianceCellGathering_Cubemap_Octree.cu">
@@ -461,9 +440,6 @@
       <Filter>Source Files\GPU\Cubemap\Octree-texture-based</Filter>
     </None>
     <None Include="unbiasedScattering.cu">
-      <Filter>Source Files\GPU\Unbiased\Texture-based</Filter>
-    </None>
-    <None Include="unbiasedScattering2.cu">
       <Filter>Source Files\GPU\Unbiased\Texture-based</Filter>
     </None>
     <None Include="unbiasedScatteringOctree.cu">

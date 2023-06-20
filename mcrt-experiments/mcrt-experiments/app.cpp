@@ -24,26 +24,29 @@ namespace mcrt {
 
 	void App::loadScene()
 	{
-		//scene.loadModelFromOBJ("../models/crytek-sponza/sponza4.obj");
+		// ==============================
+		//		   Scene loading
+		// ==============================
 		//scene.loadModelFromOBJ("../models/cornell/cornell.obj");
+		//scene.loadCornellComponents();
 		scene.loadSponzaComponents();
-		//scene.loadDynamicObjects();
-
-		//scene.loadWorldDataTextures();
+		//scene.loadRungholtComponents();
 
 		std::cout << "Loaded scene: " << scene.amountVertices() << " vertices. Scene Max: " << glm::to_string(scene.maxCoord()) << " Scene Min: " << glm::to_string(scene.minCoord()) << std::endl;
 		
 		// Normalize scene to be contained within [0;1] in each dimension
 		scene.normalize();
-
+		// Create light sources
+		scene.loadLights();
 		// Build proxy geometry
 		//scene.voxelizeObjects();
 
-		// Create light sources
-		scene.loadLights();
 
+		// =======================================
+		//		Algorithm data structure setup
+		// =======================================
 		// Build radiance grid that is contained within the scene
-		scene.buildRadianceGrid(0.5f);
+		scene.buildRadianceGrid(.5f);
 
 		//// For each radiance cell, check which objects are (partially) in it
 		//scene.grid.assignObjectsToCells(scene.getVoxelizers());

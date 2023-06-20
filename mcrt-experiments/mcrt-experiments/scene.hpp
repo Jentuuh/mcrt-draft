@@ -46,12 +46,16 @@ namespace mcrt {
 		std::vector<std::shared_ptr<HDRTexture>>& getWorldDiffuseCoordsTextures() { return worldDiffuseCoordsTextures; };
 		std::vector<LightData> getLightsData();
 
+		void loadRungholtComponents();
 		void loadSponzaComponents();
+		void loadCornellComponents();
 		void loadDynamicObjects();
 		void loadWorldDataTextures();
 		void addGameObject(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale, std::shared_ptr<Model> model);
 		void loadModelFromOBJ(const std::string& fileName);
 		void loadModelFromOBJWithMultipleUVs(const std::string& fileNameLightMappedUVs, const std::string& fileNameTextureUVs);
+		void loadModelFromOBJWithMultipleUVsRungHolt(const std::string& fileNameLightMappedUVs, const std::string& fileNameTextureUVs);
+
 		int loadTexture(std::map<std::string, int>& knownTextures, const std::string& inFileName, const std::string& modelPath);
 		void loadDataTexture(const std::string& filePath, std::vector<std::shared_ptr<Texture>>& storageVector);
 		void loadHDRDataTexture(const std::string& filePath, std::vector<std::shared_ptr<HDRTexture>>& storageVector);
@@ -74,6 +78,8 @@ namespace mcrt {
 
 		glm::vec3 sceneMax;
 		glm::vec3 sceneMin;
+
+		std::map<std::string, int> knownTextures;
 	};
 
 }

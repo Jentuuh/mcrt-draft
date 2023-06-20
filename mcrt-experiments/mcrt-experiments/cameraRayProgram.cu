@@ -67,33 +67,33 @@ namespace mcrt {
 
         float4 directRadiance = tex2D<float4>(optixLaunchParams.directLightTextures[sbtData.objectNr], tc.x, tc.y);
         float4 secondBounceRadiance = tex2D<float4>(optixLaunchParams.secondBounceTextures[sbtData.objectNr], tc.x, tc.y);
+        float4 thirdBounceRadiance = tex2D<float4>(optixLaunchParams.thirdBounceTextures[sbtData.objectNr], tc.x, tc.y);
 
+        const glm::vec3 diffuseColor_direct = glm::vec3{ directRadiance.x, directRadiance.y, directRadiance.z };
+        const glm::vec3 diffuseColor_second = glm::vec3{ secondBounceRadiance.x, secondBounceRadiance.y, secondBounceRadiance.z };
+        const glm::vec3 diffuseColor_third = glm::vec3{ thirdBounceRadiance.x, thirdBounceRadiance.y, thirdBounceRadiance.z };
 
-        const glm::vec3 diffuseColor_direct = { directRadiance.x, directRadiance.y, directRadiance.z };
-        const glm::vec3 diffuseColor_second = { secondBounceRadiance.x, secondBounceRadiance.y, secondBounceRadiance.z };
-        //const glm::vec3 diffuseColor_third = { r_third, g_third, b_third };
+        const glm::vec3 diffuseTotal = diffuseColor_direct + diffuseColor_second + diffuseColor_third;
 
-        const glm::vec3 diffuseTotal = diffuseColor_direct+ diffuseColor_second;// +diffuseColor_third;
-
-        //// ==========================
-        //// HDR Reinhard Tone Mapping
-        //// ==========================
-        //const float gamma = 2.2f;
-        //// Reinhard
-        //glm::vec3 mapped = diffuseTotal / (diffuseTotal + glm::vec3{1.0f, 1.0f, 1.0f});
-        //// Gamma correction 
-        //mapped = glm::vec3{ pow(mapped.x, 1.0f/ gamma), pow(mapped.y, 1.0f / gamma), pow(mapped.z, 1.0f / gamma) };
+        // ==========================
+        // HDR Reinhard Tone Mapping
+        // ==========================
+        const float gamma = 2.2f;
+        // Reinhard
+        glm::vec3 mapped = diffuseTotal / ((diffuseTotal + glm::vec3{1.0f, 1.0f, 1.0f}) * 2.0f);
+        // Gamma correction 
+        mapped = glm::vec3{ pow(mapped.x, 1.0f/ gamma), pow(mapped.y, 1.0f / gamma), pow(mapped.z, 1.0f / gamma) };
 
         // ==========================
         // HDR Exposure Tone Mapping
         // ==========================
-        const float exposure = 0.8f;
-        const float gamma = 2.2f;
+        //const float exposure = 0.8f;
+        //const float gamma = 2.2f;
 
-        glm::vec3 mapped = glm::vec3{ 1.0f, 1.0f, 1.0f } - glm::vec3{ exp(-diffuseTotal.x * exposure), exp(-diffuseTotal.y * exposure), exp(-diffuseTotal.z * exposure) };
+        //glm::vec3 mapped = glm::vec3{ 1.0f, 1.0f, 1.0f } - glm::vec3{ exp(-diffuseTotal.x * exposure), exp(-diffuseTotal.y * exposure), exp(-diffuseTotal.z * exposure) };
 
-        // Gamma correction 
-        mapped = glm::vec3{ pow(mapped.x, 1.0f / gamma), pow(mapped.y, 1.0f / gamma), pow(mapped.z, 1.0f / gamma) };
+        //// Gamma correction 
+        //mapped = glm::vec3{ pow(mapped.x, 1.0f / gamma), pow(mapped.y, 1.0f / gamma), pow(mapped.z, 1.0f / gamma) };
 
 
         glm::vec3& prd = *(glm::vec3*)getPRD<glm::vec3>();
@@ -119,7 +119,7 @@ namespace mcrt {
     extern "C" __global__ void __miss__radiance()
     {
         glm::vec3& prd = *(glm::vec3*)getPRD<glm::vec3>();
-        prd = glm::vec3{ 1.0f, 1.0f, 1.0f };
+        prd = glm::vec3{ 0.0f, 0.0f, 0.0f };
     }
 
     extern "C" __global__ void __miss__shadow()
@@ -149,14 +149,11 @@ namespace mcrt {
         uint32_t u0, u1;
         packPointer(&pixelColorPRD, u0, u1);
 
-        // normalized screen plane position, in [0,1]^2
-        const glm::vec2 screen(glm::vec2{ float(ix) + .5f, float(iy) + .5f }
-        / glm::vec2{ optixLaunchParams.frame.size });
-
-        // generate ray direction
-        glm::vec3 rayDir = glm::normalize(camera.direction
-            + (screen.x - 0.5f) * camera.horizontal
-            + (screen.y - 0.5f) * camera.vertical);
+        const glm::vec2 d = 2.0f * glm::vec2{
+            (static_cast<float>(ix)) / static_cast<float>(optixLaunchParams.frame.size.x),
+            (static_cast<float>(iy)) / static_cast<float>(optixLaunchParams.frame.size.y)
+        } - 1.0f;
+        glm::vec3 rayDir = normalize(d.x * camera.horizontal + d.y * camera.vertical + camera.direction);
 
         float3 camPos = float3{ camera.position.x, camera.position.y, camera.position.z };
         float3 rayDirection = float3{ rayDir.x, rayDir.y, rayDir.z };

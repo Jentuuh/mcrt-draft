@@ -13,6 +13,8 @@
 
 #include <stb/stb_image_write.h>
 
+#include "textureSeams.cuh"
+
 
 #define STRATIFIED_X_SIZE 2
 #define STRATIFIED_Y_SIZE 2
@@ -20,7 +22,10 @@
 #define TEXTURE_DIVISION_RES 1024
 #define IRRADIANCE_TEXTURE_RESOLUTION 2048
 
-
+/**
+* Main renderer implementation. Note that the spherical harmonics approach and octree approach were only partially implemented for experimentation and are not up-to-date with the final data-layouts that the renderer uses. 
+* These need to be updated before using them again. The cubemap approach is fully implemented for both the biased and unbiased approach of the proposed algorithm.
+*/
 namespace mcrt {
 
     Renderer::Renderer(Scene& scene, Camera& camera, BIAS_MODE bias, PROBE_MODE probeType, IRRADIANCE_STORAGE_TYPE irradianceStorage): renderCamera{camera}, scene{scene}, irradStorageType{irradianceStorage}
@@ -103,7 +108,7 @@ namespace mcrt {
             }
 
             initLightingTexturesPerObject();
-            //createWorldDataTextures();
+            //createWorldDataTextures();        // Render world data (g-buffering) into an image, visually looks correct but small inaccuracies happen for some reason...
             prepareUVWorldPositionsPerObject(LOAD_WORLD_DATA);
             prepareUVsInsideBuffer();
 
@@ -113,21 +118,24 @@ namespace mcrt {
                 initLightProbeCubeMaps(64, scene.grid.resolution.x);
             }
 
+            int i = 0;
             //for (int i = 0; i < 100; i++)
             //{
-            //timer.startTimedEvent("Direct lighting" + std::to_string(i));
+            timer.startTimedEvent("Direct lighting" + std::to_string(i));
             calculateDirectLighting();
-            //timer.stopTimedEvent("Direct lighting" + std::to_string(i));
+            timer.stopTimedEvent("Direct lighting" + std::to_string(i));
 
-            //timer.startTimedEvent("Indirect lighting" + std::to_string(i));
+            timer.startTimedEvent("Indirect lighting" + std::to_string(i));
             calculateIndirectLighting(bias, probeType);
-            //timer.stopTimedEvent("Indirect lighting" + std::to_string(i));
+            timer.stopTimedEvent("Indirect lighting" + std::to_string(i));
             //}
         }
 
         timer.printSummary();
         std::cout << "Context, module, pipelines, etc, all set up." << std::endl;
         std::cout << "MCRT renderer fully set up." << std::endl;
+
+        //TextureSeams::removeSeams();
     }
 
     void Renderer::fillGeometryBuffers()
@@ -161,24 +169,6 @@ namespace mcrt {
             if (!mesh->diffuseTextureCoords.empty())
                 diffuseTextureUVBuffers[meshID].alloc_and_upload(mesh->diffuseTextureCoords);
         }
-
-        //// ============================
-        ////    RADIANCE CELL GEOMETRY
-        //// ============================
-        //NonEmptyCells nonEmpties = scene.grid.getNonEmptyCells();
-        //int numNonEmptyCells = nonEmpties.nonEmptyCells.size();
-
-        //radianceGridVertexBuffers.resize(numNonEmptyCells);
-        //radianceGridIndexBuffers.resize(numNonEmptyCells);
-        //amountVerticesRadianceGrid.resize(numNonEmptyCells);
-        //amountIndicesRadianceGrid.resize(numNonEmptyCells);
-
-        //for (int cellID = 0; cellID < numNonEmptyCells; cellID++) {
-        //    radianceGridVertexBuffers[cellID].alloc_and_upload(nonEmpties.nonEmptyCells[cellID]->getVertices());
-        //    radianceGridIndexBuffers[cellID].alloc_and_upload(nonEmpties.nonEmptyCells[cellID]->getIndices());
-        //    amountVerticesRadianceGrid[cellID] = nonEmpties.nonEmptyCells[cellID]->getVertices().size();
-        //    amountIndicesRadianceGrid[cellID] = nonEmpties.nonEmptyCells[cellID]->getIndices().size();
-        //}
     }
 
     void Renderer::createDiffuseTextures()
@@ -250,11 +240,6 @@ namespace mcrt {
 
         for (int textureID = 0; textureID < numTextures; textureID++) {
             auto texture = scene.getWorldPosTextures()[textureID];
-
-            for (int i = 8627066; i < 8627066 + 16; i++)
-            {
-                std::cout << texture->pixel[i] << std::endl;
-            }
 
             cudaResourceDesc res_desc = {};
 
@@ -492,6 +477,7 @@ namespace mcrt {
             // Light bounce textures
             cameraPipeline->launchParams.directLightTextures = (cudaTextureObject_t*)directTextureObjectPointersBuffer.d_pointer();
             cameraPipeline->launchParams.secondBounceTextures = (cudaTextureObject_t*)secondBounceTextureObjectPointersBuffer.d_pointer();
+            cameraPipeline->launchParams.thirdBounceTextures = (cudaTextureObject_t*)thirdBounceTextureObjectPointersBuffer.d_pointer();
 
             //cameraPipeline->launchParams.directLightTexture = textureObjectsDirect[0];
             //cameraPipeline->launchParams.secondBounceTexture = textureObjectsSecond[0];
@@ -557,6 +543,32 @@ namespace mcrt {
         }
     }
 
+    void Renderer::updateCameraInCircle(GameObject* viewerObject, float dt)
+    {
+        CURRENT_TIME = fmod(CURRENT_TIME + dt, ROTATE_TOTAL_TIME);
+        float fraction = CURRENT_TIME / ROTATE_TOTAL_TIME;
+        float angle = fraction * 2.0f * glm::pi<float>();
+
+        float z = glm::sin(angle);
+        float x = glm::cos(angle);
+
+        viewerObject->worldTransform.translation = (glm::vec3{ x, 0.3f, z } + glm::vec3{ 1.0f, 0.0f, 1.0f }) * 0.5f;
+        BasisAxis lookAtBasis = renderCamera.getTargetBasisAxis(viewerObject->worldTransform.translation, glm::vec3{ 0.5000f, 0.0106984f, 0.50f }, glm::vec3{ 0.0f, -1.0f, 0.0f });
+
+        //viewerObject->worldTransform.translation = (glm::vec3{ x, 0.3f, z } + glm::vec3{ 5.0f, 2.0f, 5.0f }) * 0.05f;   // Sponza
+        //BasisAxis lookAtBasis = renderCamera.getTargetBasisAxis(viewerObject->worldTransform.translation, glm::vec3{ 0.495000f, 0.106984f, 0.304413f }, glm::vec3{ 0.0f, -1.0f, 0.0f });
+
+        cameraPipeline->launchParams.camera.position = viewerObject->worldTransform.translation;
+        cameraPipeline->launchParams.camera.direction = lookAtBasis.w;
+        const float cosFovy = 0.66f;
+        const float aspect = float(cameraPipeline->launchParams.frame.size.x) / float(cameraPipeline->launchParams.frame.size.y);
+        cameraPipeline->launchParams.camera.horizontal
+            = cosFovy * aspect * lookAtBasis.u;
+        cameraPipeline->launchParams.camera.vertical
+            = cosFovy * lookAtBasis.v;
+    }
+
+
 
     void writeToImageUnsignedChar(std::string fileName, int resX, int resY, void* data)
     {
@@ -568,6 +580,12 @@ namespace mcrt {
     {   
         // Hardcoded for sponza scene
         std::vector<int> textureSizes{ 2048, 2048, 4096, 2048, 2048, 2048, 2048, 1024, 2048, 2048, 2048, 1024, 1024, 1024, 1024, 2048, 1024, 1024, 2048, 1024, 4096, 2048, 256, 256, 1024 };
+
+        ////Hardcoded for rungholt scene
+        //std::vector<int> textureSizes{ 2048, 2048, 2048, 2048, 2048, 2048, 4096, 4096, 4096, 4096, 4096, 4096, 4096, 4096, 4096 };
+
+        //// Hardcoded for Cornell
+        //std::vector<int> textureSizes{ 256, 256, 256, 256, 256, 256, 256, 256 };
 
         int numTextures = scene.numObjects();
 
@@ -653,7 +671,7 @@ namespace mcrt {
         // Second bounce
         for (int textureID = 0; textureID < numTextures; textureID++) {
 
-            int size = directTextureSizes[textureID];
+            int size = directTextureSizes[textureID] / 2;
 
             std::vector<float> zeros(size * size * 4, 0.0f);
 
@@ -710,7 +728,7 @@ namespace mcrt {
         // Third bounce
         for (int textureID = 0; textureID < numTextures; textureID++) {
 
-            int size = directTextureSizes[textureID];
+            int size = directTextureSizes[textureID] / 2;
 
             std::vector<float> zeros(size * size * 4, 0.0f);
 
@@ -900,6 +918,7 @@ namespace mcrt {
             directLightPipeline->launchParams.hasTexture = scene.getGameObjects()[o]->model->mesh->diffuseTextureID > -1;
             if (directLightPipeline->launchParams.hasTexture) {
                 directLightPipeline->launchParams.diffuseTexture = diffuseTextureObjects[o];
+                //directLightPipeline->launchParams.diffuseTexture = diffuseTextureObjects[0];    // VERANDER DEZE VOOR SPONZA!
             }
 
             // Irradiance texture data
@@ -1466,6 +1485,26 @@ namespace mcrt {
     {
         NonEmptyCells nonEmpties = scene.grid.getNonEmptyCells();
 
+        // Light source texture data
+        radianceCellScatterUnbiasedPipeline->launchParams.prevBounceTextures = prevBounceTexture;
+
+        // Destination texture data
+        radianceCellScatterUnbiasedPipeline->launchParams.currentBounceTextures = dstTexture;
+
+        // UV world position data
+        radianceCellScatterUnbiasedPipeline->launchParams.uvPositions = (cudaTextureObject_t*)uvWorldPositionTextureObjectPointersBuffer.d_pointer();
+        radianceCellScatterUnbiasedPipeline->launchParams.uvNormals = (cudaTextureObject_t*)uvNormalTextureObjectPointersBuffer.d_pointer();
+        radianceCellScatterUnbiasedPipeline->launchParams.uvDiffuseColors = (cudaTextureObject_t*)uvDiffuseColorTextureObjectPointersBuffer.d_pointer();
+        radianceCellScatterUnbiasedPipeline->launchParams.objectTextureResolutions = (int*)textureSizesBuffer.d_pointer();
+
+        // Diffuse texture data
+        radianceCellScatterUnbiasedPipeline->launchParams.hasTexture = (int*)objectHasTextureBuffer.d_pointer();
+        radianceCellScatterUnbiasedPipeline->launchParams.diffuseTextures = (cudaTextureObject_t*)diffuseTextureObjectPointersBuffer.d_pointer();
+        radianceCellScatterUnbiasedPipeline->launchParams.diffuseTextureUVs = (cudaTextureObject_t*)diffuseTextureUVsTextureObjectPointersBuffer.d_pointer();
+
+        // ==============================================================
+        //    Per-cell approach (computing indirect irradiance per cell)
+        // ==============================================================
         for (int i = 0; i < nonEmpties.nonEmptyCells.size(); i++)
         {
             // UVs in this cell
@@ -1476,24 +1515,6 @@ namespace mcrt {
 
             radianceCellScatterUnbiasedPipeline->launchParams.nonEmptyCellIndex = i;
 
-            // Light source texture data
-            radianceCellScatterUnbiasedPipeline->launchParams.prevBounceTextures = prevBounceTexture;
-
-            // Destination texture data
-            radianceCellScatterUnbiasedPipeline->launchParams.currentBounceTextures = dstTexture;
-
-
-            // UV world position data
-            radianceCellScatterUnbiasedPipeline->launchParams.uvPositions = (cudaTextureObject_t*)uvWorldPositionTextureObjectPointersBuffer.d_pointer();
-            radianceCellScatterUnbiasedPipeline->launchParams.uvNormals = (cudaTextureObject_t*)uvNormalTextureObjectPointersBuffer.d_pointer();
-            radianceCellScatterUnbiasedPipeline->launchParams.uvDiffuseColors = (cudaTextureObject_t*)uvDiffuseColorTextureObjectPointersBuffer.d_pointer();
-            radianceCellScatterUnbiasedPipeline->launchParams.objectTextureResolutions = (int*)textureSizesBuffer.d_pointer();
-
-            // Diffuse texture data
-            radianceCellScatterUnbiasedPipeline->launchParams.hasTexture = (int*)objectHasTextureBuffer.d_pointer();
-            radianceCellScatterUnbiasedPipeline->launchParams.diffuseTextures = (cudaTextureObject_t*)diffuseTextureObjectPointersBuffer.d_pointer();
-            radianceCellScatterUnbiasedPipeline->launchParams.diffuseTextureUVs = (cudaTextureObject_t*)diffuseTextureUVsTextureObjectPointersBuffer.d_pointer();
-
             radianceCellScatterUnbiasedPipeline->uploadLaunchParams();
 
             OPTIX_CHECK(optixLaunch(
@@ -1501,13 +1522,50 @@ namespace mcrt {
                 radianceCellScatterUnbiasedPipeline->launchParamsBuffer.d_pointer(),
                 radianceCellScatterUnbiasedPipeline->launchParamsBuffer.sizeInBytes,
                 &radianceCellScatterUnbiasedPipeline->sbt,
-                amountCellUVs,                                        // dimension X: amount of UV texels in the cell
+                amountCellUVs,                                         // dimension X: amount of UV texels in the cell
                 1,                                                     // dimension Y: 1
                 1                                                      // dimension Z: 1
             ));
 
             CUDA_SYNC_CHECK();
         }
+
+        // ===================================================================
+        //    Per-object approach (computing indirect irradiance per object)
+        // ===================================================================
+        //for (int o = 0; o < scene.getGameObjects().size(); o++)
+        //{
+        //    // UV world data
+        //    directLightPipeline->launchParams.uvPositions = UVWorldPositionsTextures[o];
+        //    directLightPipeline->launchParams.uvNormals = UVNormalsTextures[o];
+        //    directLightPipeline->launchParams.uvDiffuseColors = UVDiffuseColorTextures[o];
+        //    directLightPipeline->launchParams.diffuseTextureUVs = diffuseTextureUVsTextures[o];
+
+        //    // Diffuse color texture (per object)
+        //    directLightPipeline->launchParams.hasTexture = scene.getGameObjects()[o]->model->mesh->diffuseTextureID > -1;
+        //    if (directLightPipeline->launchParams.hasTexture) {
+        //        directLightPipeline->launchParams.diffuseTexture = diffuseTextureObjects[o];
+        //    }
+
+        //    // Irradiance texture data
+        //    directLightPipeline->launchParams.directLightingTexture = surfaceObjectsDirect[o];
+        //    directLightPipeline->launchParams.textureSize = directTextureSizes[o];
+        //    directLightPipeline->uploadLaunchParams();
+
+        //    // Launch direct lighting pipeline
+        //    OPTIX_CHECK(optixLaunch(
+        //        directLightPipeline->pipeline, stream,
+        //        directLightPipeline->launchParamsBuffer.d_pointer(),
+        //        directLightPipeline->launchParamsBuffer.sizeInBytes,
+        //        &directLightPipeline->sbt,
+        //        directTextureSizes[o],                                              // dimension X: x resolution of UV map
+        //        directTextureSizes[o],                                              // dimension Y: y resolution of UV map
+        //        1                                                                   // dimension Z: 1
+        //        // dimension X * dimension Y * dimension Z CUDA threads will be spawned 
+        //    ));
+
+        //    CUDA_SYNC_CHECK();
+        //}
     }
 
     void Renderer::calculateDirectLightingOctree()
@@ -1842,10 +1900,19 @@ namespace mcrt {
         std::string saveDirNormals = "../data/world_data_textures/normals/";
         std::string saveDirDiffuseCoords = "../data/world_data_textures/diffuse_coords/";
 
+        // ========
+        // SPONZA
+        // ========
         std::vector<std::string> fileNames {"arcs.txt", "arcs2.txt", "building_core.txt", "bushes.txt", "curtains.txt", 
         "curtains2.txt", "curtains3.txt","doors.txt","drapes.txt", "drapes2.txt", "drapes3.txt", "fire_pit.txt", "lion.txt", 
         "lion_background.txt", "pillars.txt", "pillars_up.txt", "pillars_up2.txt", "plants.txt", "platforms.txt", "pots.txt",
         "roof.txt", "spears.txt", "spikes.txt", "square_panel_back.txt", "water_dish.txt"};
+
+        // ==========
+        // RUNGHOLT
+        // ==========
+        //std::vector<std::string> fileNames{ "tile_1.txt","tile_2.txt","tile_3.txt","tile_4.txt","tile_5.txt","tile_6.txt",
+        //"tile_7.txt","tile_8.txt","tile_9.txt","tile_10.txt","tile_11.txt", "tile_12.txt","tile_13.txt","tile_14.txt","tile_15.txt" };
 
         int numObjects = scene.getGameObjects().size();
 
@@ -1943,15 +2010,13 @@ namespace mcrt {
                     }
                 }
 
- /*               writeWorldDataTextureToFile(worldPositions, saveDirPositions + fileNames[o]);
-                writeWorldDataTextureToFile(worldNormals, saveDirNormals + fileNames[o]);
-                writeWorldDataTextureToFile(diffuseTextureUVs, saveDirDiffuseCoords + fileNames[o]);*/
+                // =====================================================
+                // Comment out to save world data (g-buffering) to file
+                // =====================================================
+                //writeWorldDataTextureToFile(worldPositions, saveDirPositions + fileNames[o]);
+                //writeWorldDataTextureToFile(worldNormals, saveDirNormals + fileNames[o]);
+                //writeWorldDataTextureToFile(diffuseTextureUVs, saveDirDiffuseCoords + fileNames[o]);
             }
-
-  /*          for (int i = 0; i < worldPositions.size(); i++)
-            {
-                std::cout << worldPositions[i] << std::endl;
-            }*/
             
             //HDRImage hdr{ texSize , texSize, worldPositions.data() };
             //hdr.saveImage("../debug_output/worldpos.hdr");

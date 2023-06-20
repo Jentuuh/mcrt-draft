@@ -61,34 +61,30 @@ namespace mcrt {
     }
 
 
+    void Scene::loadRungholtComponents()
+    {
+        // Had to do some tricky stuff by loading the .OBJ files twice because the .OBJ format does not support multiple UV-mappings...
+        loadModelFromOBJWithMultipleUVsRungHolt("../models/rungholt-components/tile_1.obj", "../models/rungholt-components-textured/tile_1.obj");
+        loadModelFromOBJWithMultipleUVsRungHolt("../models/rungholt-components/tile_2.obj", "../models/rungholt-components-textured/tile_2.obj");
+        loadModelFromOBJWithMultipleUVsRungHolt("../models/rungholt-components/tile_3.obj", "../models/rungholt-components-textured/tile_3.obj");
+        loadModelFromOBJWithMultipleUVsRungHolt("../models/rungholt-components/tile_4.obj", "../models/rungholt-components-textured/tile_4.obj");
+        loadModelFromOBJWithMultipleUVsRungHolt("../models/rungholt-components/tile_5.obj", "../models/rungholt-components-textured/tile_5.obj");
+        loadModelFromOBJWithMultipleUVsRungHolt("../models/rungholt-components/tile_6.obj", "../models/rungholt-components-textured/tile_6.obj");
+        loadModelFromOBJWithMultipleUVsRungHolt("../models/rungholt-components/tile_7.obj", "../models/rungholt-components-textured/tile_7.obj");
+        loadModelFromOBJWithMultipleUVsRungHolt("../models/rungholt-components/tile_8.obj", "../models/rungholt-components-textured/tile_8.obj");
+        loadModelFromOBJWithMultipleUVsRungHolt("../models/rungholt-components/tile_9.obj", "../models/rungholt-components-textured/tile_9.obj");
+        loadModelFromOBJWithMultipleUVsRungHolt("../models/rungholt-components/tile_10.obj", "../models/rungholt-components-textured/tile_10.obj");
+        loadModelFromOBJWithMultipleUVsRungHolt("../models/rungholt-components/tile_11.obj", "../models/rungholt-components-textured/tile_11.obj");
+        loadModelFromOBJWithMultipleUVsRungHolt("../models/rungholt-components/tile_12.obj", "../models/rungholt-components-textured/tile_12.obj");
+        loadModelFromOBJWithMultipleUVsRungHolt("../models/rungholt-components/tile_13.obj", "../models/rungholt-components-textured/tile_13.obj");
+        loadModelFromOBJWithMultipleUVsRungHolt("../models/rungholt-components/tile_14.obj", "../models/rungholt-components-textured/tile_14.obj");
+        loadModelFromOBJWithMultipleUVsRungHolt("../models/rungholt-components/tile_15.obj", "../models/rungholt-components-textured/tile_15.obj");
+    }
+
+
     void Scene::loadSponzaComponents()
     {
-     /*   loadModelFromOBJ("../models/sponza-components/arcs.obj");
-        loadModelFromOBJ("../models/sponza-components/arcs2.obj");
-        loadModelFromOBJ("../models/sponza-components/building_core.obj");
-        loadModelFromOBJ("../models/sponza-components/bushes.obj");
-        loadModelFromOBJ("../models/sponza-components/curtains.obj");
-        loadModelFromOBJ("../models/sponza-components/curtains2.obj");
-        loadModelFromOBJ("../models/sponza-components/curtains3.obj");
-        loadModelFromOBJ("../models/sponza-components/doors.obj");
-        loadModelFromOBJ("../models/sponza-components/drapes.obj");
-        loadModelFromOBJ("../models/sponza-components/drapes2.obj");
-        loadModelFromOBJ("../models/sponza-components/drapes3.obj");
-        loadModelFromOBJ("../models/sponza-components/fire_pit.obj");
-        loadModelFromOBJ("../models/sponza-components/lion.obj");
-        loadModelFromOBJ("../models/sponza-components/lion_background.obj");
-        loadModelFromOBJ("../models/sponza-components/pillars.obj");
-        loadModelFromOBJ("../models/sponza-components/pillars_up.obj");
-        loadModelFromOBJ("../models/sponza-components/pillars_up2.obj");
-        loadModelFromOBJ("../models/sponza-components/plants.obj");
-        loadModelFromOBJ("../models/sponza-components/platforms.obj");
-        loadModelFromOBJ("../models/sponza-components/pots.obj");
-        loadModelFromOBJ("../models/sponza-components/roof.obj");
-        loadModelFromOBJ("../models/sponza-components/spears.obj");
-        loadModelFromOBJ("../models/sponza-components/spikes.obj");
-        loadModelFromOBJ("../models/sponza-components/square_panel_back.obj");
-        loadModelFromOBJ("../models/sponza-components/water_dish.obj");*/
-
+        // Had to do some tricky stuff by loading the .OBJ files twice because the .OBJ format does not support multiple UV-mappings...
         loadModelFromOBJWithMultipleUVs("../models/sponza-components/arcs.obj", "../models/sponza-components-textured/arcs.obj");
         loadModelFromOBJWithMultipleUVs("../models/sponza-components/arcs2.obj", "../models/sponza-components-textured/arcs2.obj");
         loadModelFromOBJWithMultipleUVs("../models/sponza-components/building_core.obj", "../models/sponza-components-textured/building_core.obj");
@@ -110,11 +106,25 @@ namespace mcrt {
         loadModelFromOBJWithMultipleUVs("../models/sponza-components/platforms.obj", "../models/sponza-components-textured/platforms.obj");
         loadModelFromOBJWithMultipleUVs("../models/sponza-components/pots.obj", "../models/sponza-components-textured/pots.obj");
         loadModelFromOBJWithMultipleUVs("../models/sponza-components/roof.obj", "../models/sponza-components-textured/roof.obj");
-        loadModelFromOBJWithMultipleUVs("../models/sponza-components/spears.obj", "../models/sponza-components/spears.obj");
-        loadModelFromOBJWithMultipleUVs("../models/sponza-components/spikes.obj", "../models/sponza-components/spikes.obj");
-        loadModelFromOBJWithMultipleUVs("../models/sponza-components/square_panel_back.obj", "../models/sponza-components/square_panel_back.obj");
-        loadModelFromOBJWithMultipleUVs("../models/sponza-components/water_dish.obj", "../models/sponza-components/water_dish.obj");
+        loadModelFromOBJWithMultipleUVs("../models/sponza-components/spears.obj", "../models/sponza-components-textured/spears.obj");
+        loadModelFromOBJWithMultipleUVs("../models/sponza-components/spikes.obj", "../models/sponza-components-textured/spikes.obj");
+        loadModelFromOBJWithMultipleUVs("../models/sponza-components/square_panel_back.obj", "../models/sponza-components-textured/square_panel_back.obj");
+        loadModelFromOBJWithMultipleUVs("../models/sponza-components/water_dish.obj", "../models/sponza-components-textured/water_dish.obj");
     }
+
+    void Scene::loadCornellComponents()
+    {
+        // Had to do some tricky stuff by loading the .OBJ files twice because the .OBJ format does not support multiple UV-mappings...
+        loadModelFromOBJWithMultipleUVs("../models/cornell/components/area_light.obj", "../models/cornell/components/area_light.obj");
+        loadModelFromOBJWithMultipleUVs("../models/cornell/components/back_wall.obj", "../models/cornell/components/back_wall.obj" );
+        loadModelFromOBJWithMultipleUVs("../models/cornell/components/ceiling.obj", "../models/cornell/components/ceiling.obj" );
+        loadModelFromOBJWithMultipleUVs("../models/cornell/components/floor.obj", "../models/cornell/components/floor.obj");
+        loadModelFromOBJWithMultipleUVs("../models/cornell/components/left_wall.obj", "../models/cornell/components/left_wall.obj");
+        loadModelFromOBJWithMultipleUVs("../models/cornell/components/right_wall.obj", "../models/cornell/components/right_wall.obj");
+        loadModelFromOBJWithMultipleUVs("../models/cornell/components/short_box.obj", "../models/cornell/components/short_box.obj");
+        loadModelFromOBJWithMultipleUVs("../models/cornell/components/tall_box.obj", "../models/cornell/components/tall_box.obj");
+    }
+
 
     // Static objects need to be loaded before dynamic objects!
     void Scene::loadDynamicObjects()
@@ -282,7 +292,7 @@ namespace mcrt {
     {
         // LightData{origin, du, dv, normal, power, width, height}
         //lights.push_back(AreaLight{ false, LightData{{0.4f, 0.4f, 0.88f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}, {0.8f, 0.8f, 0.8f}, 0.2f, 0.2f} });
-        lights.push_back(AreaLight{ false, LightData{{0.45f, 0.965f, 0.45f }, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, -1.0f, 0.0f}, {2.0f, 2.0f, 2.0f}, 0.1f, 0.1f} });
+        lights.push_back(AreaLight{ false, LightData{{0.45f, 0.965f, 0.45f }, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, -1.0f, 0.0f}, {100.0f, 100.0f, 100.0f}, 0.1f, 0.1f} });
     }
 
 
@@ -432,6 +442,72 @@ namespace mcrt {
         return newID;
     }
 
+    int addVertexOneModel(std::shared_ptr<TriangleMesh> mesh,
+        tinyobj::attrib_t& attributes,
+        const tinyobj::index_t& idx,
+        std::map<tinyobj::index_t, int>& knownVertices
+        )
+    {
+        if (knownVertices.find(idx) != knownVertices.end())
+            return knownVertices[idx];
+
+        const glm::vec3* vertex_array = (const glm::vec3*)attributes.vertices.data();
+        const glm::vec3* normal_array = (const glm::vec3*)attributes.normals.data();
+        const glm::vec2* texcoord_array = (const glm::vec2*)attributes.texcoords.data();
+
+        int newID = mesh->vertices.size();
+        knownVertices[idx] = newID;
+
+        // Update mesh's bounding box
+        if (vertex_array[idx.vertex_index].x < mesh->boundingBox.min.x)
+        {
+            mesh->boundingBox.min.x = vertex_array[idx.vertex_index].x;
+        }
+        if (vertex_array[idx.vertex_index].x > mesh->boundingBox.max.x)
+        {
+            mesh->boundingBox.max.x = vertex_array[idx.vertex_index].x;
+        }
+        if (vertex_array[idx.vertex_index].y < mesh->boundingBox.min.y)
+        {
+            mesh->boundingBox.min.y = vertex_array[idx.vertex_index].y;
+        }
+        if (vertex_array[idx.vertex_index].y > mesh->boundingBox.max.y)
+        {
+            mesh->boundingBox.max.y = vertex_array[idx.vertex_index].y;
+        }
+        if (vertex_array[idx.vertex_index].z < mesh->boundingBox.min.z)
+        {
+            mesh->boundingBox.min.z = vertex_array[idx.vertex_index].z;
+        }
+        if (vertex_array[idx.vertex_index].z > mesh->boundingBox.max.z)
+        {
+            mesh->boundingBox.max.z = vertex_array[idx.vertex_index].z;
+        }
+
+        mesh->vertices.push_back(vertex_array[idx.vertex_index]);
+        if (idx.normal_index >= 0) {
+            while (mesh->normals.size() < mesh->vertices.size())
+                mesh->normals.push_back(normal_array[idx.normal_index]);
+        }
+        if (idx.texcoord_index >= 0) {
+            while (mesh->texCoords.size() < mesh->vertices.size())
+            {
+                mesh->texCoords.push_back(texcoord_array[idx.texcoord_index]);
+                mesh->diffuseTextureCoords.push_back(texcoord_array[idx.texcoord_index]);
+            }
+        }
+
+        // just for sanity's sake:
+        if (mesh->texCoords.size() > 0)
+            mesh->texCoords.resize(mesh->vertices.size());
+        // just for sanity's sake:
+        if (mesh->normals.size() > 0)
+            mesh->normals.resize(mesh->vertices.size());
+
+        return newID;
+    }
+
+
 
     void Scene::loadModelFromOBJ(const std::string& fileName)
     {
@@ -476,7 +552,7 @@ namespace mcrt {
             for (int materialID : materialIDs) {
                 // We split each different material up in a different gameObject
                 std::shared_ptr<TriangleMesh> mesh = std::make_shared<TriangleMesh>();
-                std::map<int, glm::vec2> diffuseUVVertexIndexMap;
+                //std::map<int, glm::vec2> diffuseUVVertexIndexMap;
 
                 for (int faceID = 0; faceID < shape.mesh.material_ids.size(); faceID++) {
                     if (shape.mesh.material_ids[faceID] != materialID) continue;
@@ -484,9 +560,9 @@ namespace mcrt {
                     tinyobj::index_t idx1 = shape.mesh.indices[3 * faceID + 1];
                     tinyobj::index_t idx2 = shape.mesh.indices[3 * faceID + 2];
 
-                    glm::ivec3 idx(addVertexTextured(mesh, attributes, idx0, knownVertices, diffuseUVVertexIndexMap),
-                        addVertexTextured(mesh, attributes, idx1, knownVertices, diffuseUVVertexIndexMap),
-                        addVertexTextured(mesh, attributes, idx2, knownVertices, diffuseUVVertexIndexMap));
+                    glm::ivec3 idx(addVertexOneModel(mesh, attributes, idx0, knownVertices),
+                        addVertexOneModel(mesh, attributes, idx1, knownVertices),
+                        addVertexOneModel(mesh, attributes, idx2, knownVertices));
                     mesh->indices.push_back(idx);
                     mesh->diffuse = (const glm::vec3&)materials[materialID].diffuse;
 
@@ -547,8 +623,6 @@ namespace mcrt {
         if (materialsTextured.empty())
             throw std::runtime_error("could not parse materials ...");
 
-        std::map<std::string, int> knownTextures;
-
         for (int shapeID = 0; shapeID < (int)shapesTextured.size(); shapeID++) {
             tinyobj::shape_t& shape = shapesTextured[shapeID];
 
@@ -584,7 +658,157 @@ namespace mcrt {
                     meshTextured.reset();
                 }
                 else {
-                    // We do not add the textured version of the model to the scene, we just wanted to extract the UVs and load in the textures
+                    // We do not add the textured version of the model to the scene, we just want to extract the UVs and load in the textures
+                    textureID = meshTextured->diffuseTextureID;
+                }
+            }
+        }
+
+        // ===========================================================================
+        //            LOAD LIGHTMAPPED OBJECT (we'll actually use this as geometry)
+        // ===========================================================================
+        const std::string modelDirLightMapped
+            = fileNameLightMappedUVs.substr(0, fileNameLightMappedUVs.rfind('/') + 1);
+
+        std::cout << "Loading OBJ file from: " << fileNameLightMappedUVs << std::endl;
+
+        tinyobj::attrib_t attributesLightMapped;
+        std::vector<tinyobj::shape_t> shapesLightMapped;
+        std::vector<tinyobj::material_t> materialsLightMapped;
+        err = "";
+
+        readOK
+            = tinyobj::LoadObj(&attributesLightMapped,
+                &shapesLightMapped,
+                &materialsLightMapped,
+                &err,
+                &err,
+                fileNameLightMappedUVs.c_str(),
+                modelDirLightMapped.c_str(),
+                /* triangulate */true);
+        if (!readOK) {
+            throw std::runtime_error("Could not read OBJ model from " + fileNameLightMappedUVs + ":" + modelDirLightMapped + " : " + err);
+        }
+
+        if (materialsLightMapped.empty())
+            throw std::runtime_error("could not parse materials ...");
+
+        std::cout << "Done loading obj file - found " << shapesLightMapped.size() << " shapes with " << materialsLightMapped.size() << " materials" << std::endl;
+
+        for (int shapeID = 0; shapeID < (int)shapesLightMapped.size(); shapeID++) {
+            tinyobj::shape_t& shape = shapesLightMapped[shapeID];
+
+            std::set<int> materialIDs;
+            for (auto faceMatID : shape.mesh.material_ids)
+                materialIDs.insert(faceMatID);
+
+            std::map<tinyobj::index_t, int> knownVertices;
+
+            for (int materialID : materialIDs) {
+                // We split each different material up in a different gameObject
+                std::shared_ptr<TriangleMesh> meshLightMapped = std::make_shared<TriangleMesh>();
+
+                for (int faceID = 0; faceID < shape.mesh.material_ids.size(); faceID++) {
+                    if (shape.mesh.material_ids[faceID] != materialID) continue;
+                    tinyobj::index_t idx0 = shape.mesh.indices[3 * faceID + 0];
+                    tinyobj::index_t idx1 = shape.mesh.indices[3 * faceID + 1];
+                    tinyobj::index_t idx2 = shape.mesh.indices[3 * faceID + 2];
+
+                    glm::ivec3 idx(addVertexLightMapped(meshLightMapped, attributesLightMapped, idx0, knownVertices, diffuseUVVertexIndexMap),
+                        addVertexLightMapped(meshLightMapped, attributesLightMapped, idx1, knownVertices, diffuseUVVertexIndexMap),
+                        addVertexLightMapped(meshLightMapped, attributesLightMapped, idx2, knownVertices, diffuseUVVertexIndexMap));
+                    meshLightMapped->indices.push_back(idx);
+                    //meshLightMapped->diffuse = (const glm::vec3&)materialsLightMapped[materialID].diffuse;
+                    meshLightMapped->diffuse = glm::vec3{ 0.0f, 0.0f, 0.0f };
+                    meshLightMapped->diffuseTextureID = textureID;
+                }
+
+                if (meshLightMapped->vertices.empty())
+                {
+                    meshLightMapped.reset();
+                }
+                else {
+                    std::shared_ptr<Model> model = std::make_shared<Model>();
+                    model->mesh = meshLightMapped;
+                    addGameObject(glm::vec3{ 0.0f, 0.0f, 0.0f }, glm::vec3{ 0.0f, 0.0f, 0.0f }, glm::vec3{ 1.0f, 1.0f, 1.0f }, model);
+                }
+            }
+        }
+        std::cout << "Succesfully loaded in scene model. Resulted in " << gameObjects.size() << " game objects." << std::endl;
+    }
+
+    // Because .OBJ file does not support multiple UV layers, we load one version of the model with lightmap UVs and one version with texture UVs
+// and combine the data into our engine's GameObject
+    void Scene::loadModelFromOBJWithMultipleUVsRungHolt(const std::string& fileNameLightMappedUVs, const std::string& fileNameTextureUVs)
+    {
+        int textureID;
+        std::map<int, glm::vec2> diffuseUVVertexIndexMap;
+
+        // =============================================
+        //            LOAD TEXTURED OBJECT
+        // =============================================
+        const std::string modelDirTextured
+            = fileNameTextureUVs.substr(0, fileNameTextureUVs.rfind('/') + 1);
+
+        std::cout << "Loading OBJ file from: " << fileNameTextureUVs << std::endl;
+
+        tinyobj::attrib_t attributesTextured;
+        std::vector<tinyobj::shape_t> shapesTextured;
+        std::vector<tinyobj::material_t> materialsTextured;
+        std::string err = "";
+
+        bool readOK
+            = tinyobj::LoadObj(&attributesTextured,
+                &shapesTextured,
+                &materialsTextured,
+                &err,
+                &err,
+                fileNameTextureUVs.c_str(),
+                modelDirTextured.c_str(),
+                /* triangulate */true);
+        if (!readOK) {
+            throw std::runtime_error("Could not read OBJ model from " + fileNameTextureUVs + ":" + modelDirTextured + " : " + err);
+        }
+
+        if (materialsTextured.empty())
+            throw std::runtime_error("could not parse materials ...");
+
+        for (int shapeID = 0; shapeID < (int)shapesTextured.size(); shapeID++) {
+            tinyobj::shape_t& shape = shapesTextured[shapeID];
+
+            std::set<int> materialIDs;
+            for (auto faceMatID : shape.mesh.material_ids)
+                materialIDs.insert(faceMatID);
+
+            std::map<tinyobj::index_t, int> knownVertices;
+
+            for (int materialID : materialIDs) {
+                // We split each different material up in a different gameObject
+                std::shared_ptr<TriangleMesh> meshTextured = std::make_shared<TriangleMesh>();
+
+                for (int faceID = 0; faceID < shape.mesh.material_ids.size(); faceID++) {
+                    if (shape.mesh.material_ids[faceID] != materialID) continue;
+                    tinyobj::index_t idx0 = shape.mesh.indices[3 * faceID + 0];
+                    tinyobj::index_t idx1 = shape.mesh.indices[3 * faceID + 1];
+                    tinyobj::index_t idx2 = shape.mesh.indices[3 * faceID + 2];
+
+                    glm::ivec3 idx(addVertexTextured(meshTextured, attributesTextured, idx0, knownVertices, diffuseUVVertexIndexMap),
+                        addVertexTextured(meshTextured, attributesTextured, idx1, knownVertices, diffuseUVVertexIndexMap),
+                        addVertexTextured(meshTextured, attributesTextured, idx2, knownVertices, diffuseUVVertexIndexMap));
+                    meshTextured->indices.push_back(idx);
+                    meshTextured->diffuse = (const glm::vec3&)materialsTextured[materialID].diffuse;
+                    //mesh->diffuse = generateRandomColor();
+                    meshTextured->diffuseTextureID = loadTexture(knownTextures,
+                        "rungholt-RGB.png",
+                        modelDirTextured);
+                }
+
+                if (meshTextured->vertices.empty())
+                {
+                    meshTextured.reset();
+                }
+                else {
+                    // We do not add the textured version of the model to the scene, we just want to extract the UVs and load in the textures
                     textureID = meshTextured->diffuseTextureID;
                 }
             }

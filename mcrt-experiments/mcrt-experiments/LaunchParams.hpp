@@ -423,9 +423,11 @@ namespace mcrt {
 			glm::vec3 vertical;
 		} camera;
 
+
+		//cudaTextureObject_t* lightingTextures; // [0] is direct, [1] is second bounce, [2] is third bounce.
 		cudaTextureObject_t* directLightTextures;
 		cudaTextureObject_t* secondBounceTextures;
-		//cudaTextureObject_t thirdBounceTexture;
+		cudaTextureObject_t* thirdBounceTextures;
 
 		OptixTraversableHandle traversable;
 	};

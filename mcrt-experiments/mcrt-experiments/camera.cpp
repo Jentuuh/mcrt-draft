@@ -125,5 +125,15 @@ namespace mcrt {
 		return glm::vec3{ (c3 * s1 * s2 - c1 * s3), (c2 * c3), (c1 * c3 * s2 + s1 * s3) };
 	}
 
+	BasisAxis Camera::getTargetBasisAxis(glm::vec3 position, glm::vec3 target, glm::vec3 up)
+	{
+		BasisAxis basis;
+
+		glm::vec3 direction = target - position;
+		basis.w = glm::normalize(direction);
+		basis.u = glm::normalize(glm::cross(basis.w, up));
+		basis.v = glm::cross(basis.w, basis.u);
+		return basis;
+	}
 
 }

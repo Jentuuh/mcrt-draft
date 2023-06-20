@@ -12,7 +12,7 @@
 
 #define PI 3.14159265358979323846f
 #define EPSILON 0.0000000000002f
-#define NUM_DIRECTION_SAMPLES 10
+#define NUM_DIRECTION_SAMPLES 800
 #define PI_OVER_4 0.785398163397425f
 #define PI_OVER_2 1.5707963267945f
 
@@ -104,7 +104,8 @@ namespace mcrt {
             float4 diffuseTextureUV = tex2D<float4>(optixLaunchParams.diffuseTextureUVs[gameObjectNr], uv.x, uv.y);
 
             // Read color from diffuse texture
-            float4 diffuseTexColor = tex2D<float4>(optixLaunchParams.diffuseTextures[gameObjectNr], diffuseTextureUV.x, diffuseTextureUV.y);
+            //float4 diffuseTexColor = tex2D<float4>(optixLaunchParams.diffuseTextures[0], diffuseTextureUV.x, diffuseTextureUV.y);
+            float4 diffuseTexColor = tex2D<float4>(optixLaunchParams.diffuseTextures[gameObjectNr], diffuseTextureUV.x, diffuseTextureUV.y);  // Exchange this line with the one above for Sponza!!!
             diffuseColor = glm::vec3{ diffuseTexColor.x, diffuseTexColor.y, diffuseTexColor.z };
         }
 
@@ -185,6 +186,6 @@ namespace mcrt {
         const float b_result = totalRadiance.z / (float(numSamples) * 2 * PI);
         
         float4 resultValue = float4{ r_result, g_result, b_result, 0.0f };
-        surf2Dwrite(resultValue, optixLaunchParams.currentBounceTextures[gameObjectNr], int(uv.x * optixLaunchParams.objectTextureResolutions[gameObjectNr]) * 16, int(uv.y * optixLaunchParams.objectTextureResolutions[gameObjectNr]));
+        surf2Dwrite(resultValue, optixLaunchParams.currentBounceTextures[gameObjectNr], int(uv.x * optixLaunchParams.objectTextureResolutions[gameObjectNr] / 2) * 16, int(uv.y * optixLaunchParams.objectTextureResolutions[gameObjectNr] / 2));
     }
 }

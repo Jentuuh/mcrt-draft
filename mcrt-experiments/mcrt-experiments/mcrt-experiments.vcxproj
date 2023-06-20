@@ -130,9 +130,9 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\lib\x64\cudart_static.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\lib\x64\cuda.lib;opengl32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;glfw3.lib</AdditionalDependencies>
+      <AdditionalDependencies>cudadevrt.lib;curand.lib;cudart.lib;cuda.lib;opengl32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;glfw3.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <AdditionalLibraryDirectories>$(SolutionDir)\3rdparty\glfw-3.3.8\lib-vc2022</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(CUDA_PATH)\lib\x64;$(SolutionDir)\3rdparty\glfw-3.3.8\lib-vc2022</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -145,7 +145,6 @@
     <ClCompile Include="devicePrograms_embedded_octree.c" />
     <ClCompile Include="directLightingShadersGathering_embedded.c" />
     <ClCompile Include="directLightingShadersGathering_embedded_octree.c" />
-    <ClCompile Include="directLightingShaders_embedded.c" />
     <ClCompile Include="direct_light_pipeline.cpp" />
     <ClCompile Include="direct_light_pipeline_octree.cpp" />
     <ClCompile Include="game_object.cpp" />
@@ -233,22 +232,16 @@
     <None Include="cameraRayProgramOctree.cu" />
     <None Include="cube_mapping.cuh" />
     <None Include="devicePrograms.cu" />
-    <None Include="directLightingShaders.cu" />
     <None Include="directLightingShadersGathering.cu" />
     <None Include="cameraRayProgram.cu" />
     <None Include="directLightingShadersGatheringOctree.cu" />
     <None Include="octreeTesting.cu" />
     <None Include="probeTesting.cu" />
     <None Include="radianceCellGathering3.cu" />
-    <None Include="radianceCellGathering_Cubemap.cu" />
-    <None Include="radianceCellGathering_Cubemap2.cu" />
     <None Include="radianceCellGathering_Cubemap3.cu" />
     <None Include="radianceCellGathering_Cubemap_Octree.cu" />
     <None Include="radianceCellScattering.cu" />
     <None Include="radianceCellGathering2.cu" />
-    <None Include="radianceCellScattering_Cubemap.cu" />
-    <None Include="radianceCellScattering_Cubemap2.cu" />
-    <None Include="radianceCellScattering_Cubemap3.cu" />
     <None Include="radianceCellScattering_Cubemap_hybrid.cu" />
     <None Include="radianceCellScattering_Cubemap_hybrid_Octree.cu" />
     <None Include="radianceCellScattering_last.cu" />
@@ -258,7 +251,6 @@
     <None Include="radianceCellGathering.cu" />
     <None Include="textureTesting.cu" />
     <None Include="unbiasedScattering.cu" />
-    <None Include="unbiasedScattering2.cu" />
     <None Include="unbiasedScatteringOctree.cu" />
     <None Include="utils.cuh" />
   </ItemGroup>

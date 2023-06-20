@@ -3,6 +3,13 @@
 #include "glm/glm.hpp"
 
 namespace mcrt {
+
+	struct BasisAxis {
+		glm::vec3 u;
+		glm::vec3 v;
+		glm::vec3 w;
+	};
+
 	class Camera
 	{
 	public:
@@ -18,6 +25,8 @@ namespace mcrt {
 		glm::vec3 getViewDirection(glm::vec3 position, glm::vec3 rotation);
 		glm::vec3 getViewRight(glm::vec3 position, glm::vec3 rotation);
 		glm::vec3 getViewUp(glm::vec3 position, glm::vec3 rotation);
+
+		BasisAxis getTargetBasisAxis(glm::vec3 position, glm::vec3 target, glm::vec3 up);
 
 		const glm::mat4& getProjection() const { return projectionMatrix; };
 		const glm::mat4& getView() const { return viewMatrix; };

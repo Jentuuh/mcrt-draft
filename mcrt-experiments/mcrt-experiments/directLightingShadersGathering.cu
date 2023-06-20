@@ -9,7 +9,7 @@
 #include "glm/gtx/transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
-#define NUM_SAMPLES_PER_STRATIFY_CELL 2
+#define NUM_SAMPLES_PER_STRATIFY_CELL 100
 #define PI 3.14159265358979323846f
 #define EPSILON 0.0000000000002f
 
@@ -96,7 +96,7 @@ namespace mcrt {
             (1.f - u - v) * sbtData.vertex[index.x]
             + u * sbtData.vertex[index.y]
             + v * sbtData.vertex[index.z];
-        
+
         // Geometric normal
         glm::vec3 Ng;
         const glm::vec3& A = sbtData.vertex[index.x];
@@ -108,8 +108,6 @@ namespace mcrt {
         DirectLightingPRD prd = loadDirectLightingPRD();
         const float distanceToLightSample = glm::length(prd.lightSamplePos - prd.rayOrigin);
         const float distanceToIntersection = glm::length(worldPos - prd.rayOrigin);
-        //float squaredDistOriginLight = (((prd.lightSamplePos.x - prd.rayOrigin.x) * (prd.lightSamplePos.x - prd.rayOrigin.x)) + ((prd.lightSamplePos.y - prd.rayOrigin.y) * (prd.lightSamplePos.y - prd.rayOrigin.y)) + ((prd.lightSamplePos.z - prd.rayOrigin.z) * (prd.lightSamplePos.z - prd.rayOrigin.z)));
-        //float squaredDistOriginIntersection = (((worldPos.x - prd.rayOrigin.x) * (worldPos.x - prd.rayOrigin.x)) + ((worldPos.y - prd.rayOrigin.y) * (worldPos.y - prd.rayOrigin.y)) + ((worldPos.z - prd.rayOrigin.z) * (worldPos.z - prd.rayOrigin.z)));
         const glm::vec3 dirToLightSample = normalize(prd.lightSamplePos - prd.rayOrigin);
 
         if (distanceToLightSample < distanceToIntersection || distanceToIntersection < EPSILON)
@@ -154,7 +152,6 @@ namespace mcrt {
 
         const float u = (float)uIndex / (float)optixLaunchParams.textureSize;
         const float v = (float)vIndex / (float)optixLaunchParams.textureSize;
-
 
         float4 uvWorldPos3f = tex2D<float4>(optixLaunchParams.uvPositions, u, v);
         float4 uvWorldNormal3f = tex2D<float4>(optixLaunchParams.uvNormals, u, v);
@@ -219,7 +216,7 @@ namespace mcrt {
                         prd.rayOrigin = UVWorldPos;
                         prd.lightSamplePos = rayDestination;
 
-                        unsigned int u0, u1, u2, u3, u4, u5, u6, u7, u8;    
+                        unsigned int u0, u1, u2, u3, u4, u5, u6, u7, u8;
 
                         u0 = __float_as_uint(prd.rayOrigin.x);
                         u1 = __float_as_uint(prd.rayOrigin.y);
@@ -248,9 +245,6 @@ namespace mcrt {
 
                         if (cosContribution > 0.0f)
                         {
-                            // TODO: (Note that BRDF is currently omitted here)
-                            //float intensity = 255.99f * cosContribution * prd.resultColor.x * lightProperties.power.x;
-                            //float intensity = cosContribution * prd.resultColor.x * lightProperties.power.x;
                             totalLightContribution += prd.resultColor * diffuseColor;
                         }
                     }

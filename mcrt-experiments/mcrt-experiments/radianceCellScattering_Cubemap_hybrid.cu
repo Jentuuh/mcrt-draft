@@ -107,11 +107,11 @@ namespace mcrt {
 
         if (optixLaunchParams.hasTexture[gameObjectNr])
         {
-            // Get diffuse texture coordinates
             float4 diffuseTextureUV = tex2D<float4>(optixLaunchParams.diffuseTextureUVs[gameObjectNr], uv.x, uv.y);
 
             // Read color from diffuse texture
-            float4 diffuseTexColor = tex2D<float4>(optixLaunchParams.diffuseTextures[gameObjectNr], diffuseTextureUV.x, diffuseTextureUV.y);
+            float4 diffuseTexColor = tex2D<float4>(optixLaunchParams.diffuseTextures[0], diffuseTextureUV.x, diffuseTextureUV.y); 
+            //float4 diffuseTexColor = tex2D<float4>(optixLaunchParams.diffuseTextures[gameObjectNr], diffuseTextureUV.x, diffuseTextureUV.y);  // Exchange this line with the one above for Sponza!!!
             diffuseColor = glm::vec3{ diffuseTexColor.x, diffuseTexColor.y, diffuseTexColor.z };
         }
 
@@ -148,8 +148,6 @@ namespace mcrt {
         // Radiance accumulator
         glm::vec3 totalRadiance = glm::vec3{ 0.0f, 0.0f, 0.0f };
 
-        // Number of samples accumulator
-        int numSamples = 0;
 
         // =============================================
         // Take hemisphere samples of incoming radiance
@@ -164,12 +162,6 @@ namespace mcrt {
             float randomTheta = uniformRandoms.x * 2 * PI;
             float randomZ = (uniformRandoms.y * 2.0f) - 1.0f;
             float3 randomDir = float3{ sqrtf(1 - (randomZ * randomZ)) * cos(randomTheta), sqrtf(1 - (randomZ * randomZ)) * sin(randomTheta), randomZ };
-
-            // If the generated random direction is not in the oriented hemisphere, invert it
-            if (dot(randomDir, uvNormal3f) < 0)
-            {
-                randomDir = float3{ -randomDir.x, -randomDir.y, -randomDir.z };
-            }
 
             //// =================================================================================================================================================================================
             //// Random direction generation (uniform direction generation with spherical coords)  : https://math.stackexchange.com/questions/44689/how-to-find-a-random-axis-or-unit-vector-in-3d
@@ -190,6 +182,13 @@ namespace mcrt {
             // t represents the exact range or length along which we trace the ray. This assumption is necessary
             // when we want to set a maximum tracing range.
             randomDir = normalize(randomDir);
+
+            // If the generated random direction is not in the oriented hemisphere, invert it
+            float cosContribution = dot(randomDir, normalize(uvNormal3f));
+            if (cosContribution < 0)
+            {
+                randomDir = float3{ -randomDir.x, -randomDir.y, -randomDir.z };
+            }
 
             // ===============================================
             // Test ray for intersections within tracing range
@@ -221,23 +220,18 @@ namespace mcrt {
             if(u0 == 1)  // TRACED CONTRIBUTION
             {
                 // Cosine weighted contribution
-                float cosContribution = dot(randomDir, normalize(uvNormal3f));
                 totalRadiance += glm::vec3{ cosContribution * prd.resultColor.x, cosContribution * prd.resultColor.y, cosContribution * prd.resultColor.z };
-                ++numSamples;
             }
             else {  // PROBE CONTRIBUTION (How to make the distinction between an actual miss and out of range?)
                 // Find "distant projection" along ray direction of point that we are calculating incoming radiance for, 
                 // this is necessary to sample an approximated correct direction on the radiance probes.
-                // 
-                //double t_min;
-                //double t_max;
-                //find_distant_point_along_direction(UVWorldPos, glm::vec3{ randomDir.x, randomDir.y, randomDir.z }, cubeMin, cubeMax, &t_min, &t_max);
 
+             /*   double t_min;
+                double t_max;
+                find_distant_point_along_direction(UVWorldPos, glm::vec3{ randomDir.x, randomDir.y, randomDir.z }, cubeMin, cubeMax, &t_min, &t_max);
+                glm::vec3 distantProjectedPoint = UVWorldPos + (glm::vec3{ randomDir.x * t_max,  randomDir.y * t_max,  randomDir.z * t_max });*/
 
-                //glm::vec3 distantProjectedPoint = UVWorldPos + (glm::vec3{ randomDir.x * t_max,  randomDir.y * t_max,  randomDir.z * t_max });
                 glm::vec3 distantProjectedPoint = UVWorldPos + (glm::vec3{ randomDir.x * 1.0f,  randomDir.y * 1.0f,  randomDir.z * 1.0f });
-
-                //glm::vec3 distantProjectedPoint = glm::vec3{ __uint_as_float(u0), __uint_as_float(u1), __uint_as_float(u2) };
 
                 float faceU, faceV;
                 int cubeMapFaceIndex;
@@ -246,7 +240,7 @@ namespace mcrt {
                 // Sample the probe in the center of this cell
                 // ==================================================================================
                 glm::vec3 averageProbeContribution = {0.0f, 0.0f, 0.0f};
-                int numProbeContributions = 0;
+                //int numProbeContributions = 0;
                 /* for (int p = 0; p < 1; p++)
                 {
                     if (probeCoords[p].x >= 0.0f && probeCoords[p].x <= 1.0f && probeCoords[p].y >= 0.0f && probeCoords[p].y <= 1.0f && probeCoords[p].z >= 0.0f && probeCoords[p].z <= 1.0f)
@@ -266,7 +260,6 @@ namespace mcrt {
                         numProbeContributions++;
                     }
                 }*/
-
    
                 glm::vec3 probeSampleDirection = distantProjectedPoint - probeCoord;
                 convert_xyz_to_cube_uv(probeSampleDirection.x, probeSampleDirection.y, probeSampleDirection.z, &cubeMapFaceIndex, &faceU, &faceV);
@@ -280,12 +273,7 @@ namespace mcrt {
                 averageProbeContribution += glm::vec3{ incomingRadiance.x, incomingRadiance.y, incomingRadiance.z };
 
                 // Cosine weighted contribution
-                float cosContribution = dot(normalize(randomDir), normalize(uvNormal3f));
-                if (cosContribution >= 0)
-                {
-                    totalRadiance += cosContribution * averageProbeContribution;
-                    numSamples++;
-                }
+                totalRadiance += cosContribution * averageProbeContribution;
             }
         }
 
@@ -293,11 +281,11 @@ namespace mcrt {
         totalRadiance *= diffuseColor;
 
         // Monte-Carlo weighted estimation
-        const float r = totalRadiance.x / (float(numSamples) * 2 * PI);
-        const float g = totalRadiance.y / (float(numSamples) * 2 * PI);
-        const float b = totalRadiance.z / (float(numSamples) * 2 * PI);
+        const float r = totalRadiance.x / (float(NUM_SAMPLES_HEMISPHERE) * 2 * PI);
+        const float g = totalRadiance.y / (float(NUM_SAMPLES_HEMISPHERE) * 2 * PI);
+        const float b = totalRadiance.z / (float(NUM_SAMPLES_HEMISPHERE) * 2 * PI);
 
         float4 resultValue = float4{ r, g, b, 0.0f };
-        surf2Dwrite(resultValue, optixLaunchParams.currentBounceTextures[gameObjectNr], int(uv.x * (optixLaunchParams.objectTextureResolutions[gameObjectNr])) * 16, int(uv.y * (optixLaunchParams.objectTextureResolutions[gameObjectNr])));
+        surf2Dwrite(resultValue, optixLaunchParams.currentBounceTextures[gameObjectNr], int(uv.x * optixLaunchParams.objectTextureResolutions[gameObjectNr] / 2) * 16, int(uv.y * optixLaunchParams.objectTextureResolutions[gameObjectNr] / 2));
     }
 }
