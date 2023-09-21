@@ -11,5 +11,16 @@ Render engine implementation for my Master Thesis subject: A Scalable and Cohere
 * In `unbiasedScattering.cu` and `radianceCellScattering_Cubemap_hybrid.cu`, make sure you uncomment the correct line where `diffuseTexColor` is set
 * You need one model with lightmap UV coordinates and a copy of the same model with diffuse UV coordinates!
 
+# Algorithm overview
+![Algorithm overview](./system_overview.png?raw=true "Algorithm overview schematic")
+Overview of the proposed algorithm, which consists of three high-level passes. In the first pass direct lighting is
+handled via forward path tracing (A). For indirect lighting a hybrid approach is adopted in which nearby indirect radiance is
+path traced and distant indirect radiance is approximated. Which of the two is used is determined by a tracing range threshold
+parameter. Approximations are made via the use of radiance probes (small blue spheres in figure). Also notice that the scene
+is subdivided into so-called radiance cells. Each radiance cell computes indirect lighting for its local surfaces independently.
+In the second pass (B) the radiance probes are charged with indirect radiance. In the third and final pass (C), the surfaces
+local to a radiance cell are illuminated by incoming indirect radiance. Passes B and C can be repeated based on the amount of
+lighting bounces that the user desires.
+
 # Screenshot
 ![Screenshot](./screenshot.png?raw=true "Sponza screenshot")
