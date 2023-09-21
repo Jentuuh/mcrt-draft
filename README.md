@@ -1,4 +1,4 @@
-# mcrt-draft
+# scalable-coherent-path-tracing
 Render engine implementation for my Master Thesis subject: A Scalable and Coherent Approach to Monte Carlo Path Tracing. This thesis explores an adaptation of the Monte-Carlo path tracing algorithm that makes it more modular and scalable for cloud environments. The proposed adaptation computes diffuse irradiance in texture space. This introduces aliasing and texture seam artifacts, which are visible in the screenshot. Solutions for these artifacts exist, but since the focus of this work was to investigate the performance of the proposed algorithm, these mitigations are not implemented here.
 
 # Setup and usage
